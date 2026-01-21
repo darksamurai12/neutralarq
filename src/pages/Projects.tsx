@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { useApp } from '@/contexts/AppContext';
-import { FolderKanban, Plus, Calendar, DollarSign, User, ArrowLeft, TrendingUp, TrendingDown } from 'lucide-react';
+import { FolderKanban, Plus, Calendar, DollarSign, User, TrendingUp, TrendingDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -31,6 +31,8 @@ import { Project, ProjectStatus } from '@/types';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { TaskKanban } from '@/components/projects/TaskKanban';
+import { formatCurrency } from '@/lib/currency';
 
 const statusConfig: Record<ProjectStatus, { label: string; className: string }> = {
   planning: { label: 'Planejamento', className: 'bg-muted text-muted-foreground border-border' },
@@ -39,7 +41,7 @@ const statusConfig: Record<ProjectStatus, { label: string; className: string }> 
 };
 
 export default function Projects() {
-  const { projects, clients, addProject, getProjectWithDetails } = useApp();
+  const { projects, clients, addProject, getProjectWithDetails, addTask, updateTask, deleteTask } = useApp();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
@@ -51,13 +53,6 @@ export default function Projects() {
   });
 
   const selectedProject = selectedProjectId ? getProjectWithDetails(selectedProjectId) : null;
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-    }).format(value);
-  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -136,7 +131,7 @@ export default function Projects() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="budget">Orçamento (R$)</Label>
+                  <Label htmlFor="budget">Orçamento (AOA)</Label>
                   <Input
                     id="budget"
                     type="number"
@@ -213,7 +208,7 @@ export default function Projects() {
 
       {/* Project Detail Sheet */}
       <Sheet open={!!selectedProject} onOpenChange={() => setSelectedProjectId(null)}>
-        <SheetContent className="sm:max-w-lg overflow-y-auto">
+        <SheetContent className="sm:max-w-2xl overflow-y-auto">
           {selectedProject && (
             <>
               <SheetHeader className="mb-6">
@@ -261,6 +256,17 @@ export default function Projects() {
                     {formatCurrency(selectedProject.profit)}
                   </span>
                 </div>
+              </div>
+
+              {/* Task Kanban */}
+              <div className="mb-6">
+                <TaskKanban
+                  tasks={selectedProject.tasks}
+                  onAddTask={addTask}
+                  onUpdateTask={updateTask}
+                  onDeleteTask={deleteTask}
+                  projectId={selectedProject.id}
+                />
               </div>
 
               {/* Transaction History */}
