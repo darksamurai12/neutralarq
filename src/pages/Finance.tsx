@@ -154,15 +154,15 @@ export default function Finance() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="project">Vincular a Projeto (opcional)</Label>
-                <Select
-                  value={formData.projectId}
-                  onValueChange={(value) => setFormData({ ...formData, projectId: value })}
+              <Select
+                  value={formData.projectId || "none"}
+                  onValueChange={(value) => setFormData({ ...formData, projectId: value === "none" ? "" : value })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione um projeto" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Sem vínculo</SelectItem>
+                    <SelectItem value="none">Sem vínculo</SelectItem>
                     {projects.map((project) => {
                       const client = clients.find((c) => c.id === project.clientId);
                       return (
