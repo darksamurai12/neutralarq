@@ -9,6 +9,19 @@ export interface Client {
   createdAt: Date;
 }
 
+// Task Types
+export type TaskStatus = 'todo' | 'doing' | 'done';
+
+export interface Task {
+  id: string;
+  projectId: string;
+  title: string;
+  responsible: string;
+  deadline: Date | null;
+  status: TaskStatus;
+  createdAt: Date;
+}
+
 // Project Types
 export type ProjectStatus = 'planning' | 'in_progress' | 'completed';
 
@@ -40,6 +53,7 @@ export interface Transaction {
 export interface ProjectWithDetails extends Project {
   client: Client | undefined;
   transactions: Transaction[];
+  tasks: Task[];
   totalIncome: number;
   totalExpenses: number;
   profit: number;

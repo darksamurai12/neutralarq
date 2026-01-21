@@ -23,6 +23,7 @@ import {
 import { TransactionType } from '@/types';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
+import { formatCurrency } from '@/lib/currency';
 
 export default function Finance() {
   const { transactions, projects, clients, addTransaction } = useApp();
@@ -34,13 +35,6 @@ export default function Finance() {
     projectId: '',
     date: format(new Date(), 'yyyy-MM-dd'),
   });
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-    }).format(value);
-  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -105,7 +99,7 @@ export default function Finance() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="value">Valor (R$)</Label>
+                  <Label htmlFor="value">Valor (AOA)</Label>
                   <Input
                     id="value"
                     type="number"

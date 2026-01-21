@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
-import { Client, Project, Transaction, ProjectWithDetails, DashboardMetrics, MonthlyFlow } from '@/types';
+import { Client, Project, Transaction, Task, ProjectWithDetails, DashboardMetrics, MonthlyFlow, TaskStatus } from '@/types';
 import { format, subMonths, isWithinInterval, startOfMonth, endOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -32,11 +32,21 @@ const initialTransactions: Transaction[] = [
   { id: '10', description: 'API Gateway', value: 120, type: 'expense', projectId: '2', clientId: '3', date: new Date('2026-01-15'), createdAt: new Date('2026-01-15') },
 ];
 
+const initialTasks: Task[] = [
+  { id: '1', projectId: '1', title: 'Análise de requisitos', responsible: 'João Silva', deadline: new Date('2025-10-01'), status: 'done', createdAt: new Date('2025-09-20') },
+  { id: '2', projectId: '1', title: 'Desenvolver módulo de vendas', responsible: 'Maria Santos', deadline: new Date('2026-01-15'), status: 'doing', createdAt: new Date('2025-10-01') },
+  { id: '3', projectId: '1', title: 'Integração com API bancária', responsible: 'Pedro Costa', deadline: new Date('2026-02-01'), status: 'todo', createdAt: new Date('2025-11-01') },
+  { id: '4', projectId: '2', title: 'Design do app', responsible: 'Ana Lima', deadline: new Date('2025-11-15'), status: 'done', createdAt: new Date('2025-10-05') },
+  { id: '5', projectId: '2', title: 'Implementar carrinho', responsible: 'João Silva', deadline: new Date('2026-01-20'), status: 'doing', createdAt: new Date('2025-11-20') },
+  { id: '6', projectId: '2', title: 'Testes de integração', responsible: 'Pedro Costa', deadline: new Date('2026-02-10'), status: 'todo', createdAt: new Date('2025-12-01') },
+];
+
 interface AppContextType {
   // Data
   clients: Client[];
   projects: Project[];
   transactions: Transaction[];
+  tasks: Task[];
   
   // Client operations
   addClient: (client: Omit<Client, 'id' | 'createdAt'>) => void;
@@ -53,6 +63,12 @@ interface AppContextType {
   updateTransaction: (id: string, transaction: Partial<Transaction>) => void;
   deleteTransaction: (id: string) => void;
   
+  // Task operations
+  addTask: (task: Omit<Task, 'id' | 'createdAt'>) => void;
+  updateTask: (id: string, task: Partial<Task>) => void;
+  deleteTask: (id: string) => void;
+  getProjectTasks: (projectId: string) => Task[];
+  
   // Computed data
   getProjectWithDetails: (projectId: string) => ProjectWithDetails | undefined;
   getClientProjects: (clientId: string) => Project[];
@@ -66,6 +82,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [clients, setClients] = useState<Client[]>(initialClients);
   const [projects, setProjects] = useState<Project[]>(initialProjects);
   const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions);
+  const [tasks, setTasks] = useState<Task[]>(initialTasks);
 
   // Client operations
   const addClient = useCallback((client: Omit<Client, 'id' | 'createdAt'>) => {
@@ -121,6 +138,28 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setTransactions(prev => prev.filter(t => t.id !== id));
   }, []);
 
+  // Task operations
+  const addTask = useCallback((task: Omit<Task, 'id' | 'createdAt'>) => {
+    const newTask: Task = {
+      ...task,
+      id: crypto.randomUUID(),
+      createdAt: new Date(),
+    };
+    setTasks(prev => [...prev, newTask]);
+  }, []);
+
+  const updateTask = useCallback((id: string, updates: Partial<Task>) => {
+    setTasks(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
+  }, []);
+
+  const deleteTask = useCallback((id: string) => {
+    setTasks(prev => prev.filter(t => t.id !== id));
+  }, []);
+
+  const getProjectTasks = useCallback((projectId: string) => {
+    return tasks.filter(t => t.projectId === projectId);
+  }, [tasks]);
+
   // Computed data
   const getProjectTransactions = useCallback((projectId: string) => {
     return transactions.filter(t => t.projectId === projectId);
@@ -136,6 +175,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     const client = clients.find(c => c.id === project.clientId);
     const projectTransactions = getProjectTransactions(projectId);
+    const projectTasks = getProjectTasks(projectId);
     const totalIncome = projectTransactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.value, 0);
     const totalExpenses = projectTransactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.value, 0);
 
@@ -143,11 +183,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       ...project,
       client,
       transactions: projectTransactions,
+      tasks: projectTasks,
       totalIncome,
       totalExpenses,
       profit: totalIncome - totalExpenses,
     };
-  }, [projects, clients, getProjectTransactions]);
+  }, [projects, clients, getProjectTransactions, getProjectTasks]);
 
   const getDashboardMetrics = useCallback((): DashboardMetrics => {
     const totalRevenue = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.value, 0);
@@ -192,6 +233,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     clients,
     projects,
     transactions,
+    tasks,
     addClient,
     updateClient,
     deleteClient,
@@ -201,15 +243,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     addTransaction,
     updateTransaction,
     deleteTransaction,
+    addTask,
+    updateTask,
+    deleteTask,
+    getProjectTasks,
     getProjectWithDetails,
     getClientProjects,
     getProjectTransactions,
     getDashboardMetrics,
   }), [
-    clients, projects, transactions,
+    clients, projects, transactions, tasks,
     addClient, updateClient, deleteClient,
     addProject, updateProject, deleteProject,
     addTransaction, updateTransaction, deleteTransaction,
+    addTask, updateTask, deleteTask, getProjectTasks,
     getProjectWithDetails, getClientProjects, getProjectTransactions, getDashboardMetrics,
   ]);
 

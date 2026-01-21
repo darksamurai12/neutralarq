@@ -1,15 +1,16 @@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { MonthlyFlow } from '@/types';
+import { formatCurrency } from '@/lib/currency';
 
 interface CashFlowChartProps {
   data: MonthlyFlow[];
 }
 
 export function CashFlowChart({ data }: CashFlowChartProps) {
-  const formatValue = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
+  const formatCompact = (value: number) => {
+    return new Intl.NumberFormat('pt-AO', {
       style: 'currency',
-      currency: 'BRL',
+      currency: 'AOA',
       notation: 'compact',
     }).format(value);
   };
@@ -34,7 +35,7 @@ export function CashFlowChart({ data }: CashFlowChartProps) {
               axisLine={false} 
               tickLine={false} 
               tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
-              tickFormatter={formatValue}
+              tickFormatter={formatCompact}
             />
             <Tooltip
               contentStyle={{
@@ -44,7 +45,7 @@ export function CashFlowChart({ data }: CashFlowChartProps) {
                 boxShadow: 'var(--shadow-md)',
               }}
               labelStyle={{ color: 'hsl(var(--foreground))' }}
-              formatter={(value: number) => [formatValue(value)]}
+              formatter={(value: number) => [formatCurrency(value)]}
             />
             <Legend 
               wrapperStyle={{ paddingTop: 20 }}

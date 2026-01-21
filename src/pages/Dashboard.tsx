@@ -4,17 +4,11 @@ import { StatCard } from '@/components/dashboard/StatCard';
 import { CashFlowChart } from '@/components/dashboard/CashFlowChart';
 import { useApp } from '@/contexts/AppContext';
 import { LayoutDashboard, DollarSign, Wallet, FolderKanban, Users } from 'lucide-react';
+import { formatCurrency } from '@/lib/currency';
 
 export default function Dashboard() {
   const { getDashboardMetrics } = useApp();
   const metrics = getDashboardMetrics();
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-    }).format(value);
-  };
 
   return (
     <AppLayout>
