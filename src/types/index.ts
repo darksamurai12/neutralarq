@@ -5,6 +5,11 @@ export interface Client {
   id: string;
   name: string;
   email: string;
+  phone: string;
+  company: string;
+  position: string;
+  address: string;
+  notes: string;
   status: ClientStatus;
   createdAt: Date;
 }
@@ -12,13 +17,29 @@ export interface Client {
 // Task Types
 export type TaskStatus = 'todo' | 'doing' | 'done';
 
+export interface Subtask {
+  id: string;
+  title: string;
+  completed: boolean;
+}
+
+export interface Comment {
+  id: string;
+  content: string;
+  author: string;
+  createdAt: Date;
+}
+
 export interface Task {
   id: string;
   projectId: string;
   title: string;
+  description: string;
   responsible: string;
   deadline: Date | null;
   status: TaskStatus;
+  subtasks: Subtask[];
+  comments: Comment[];
   createdAt: Date;
 }
 

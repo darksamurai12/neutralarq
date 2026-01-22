@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { useApp } from '@/contexts/AppContext';
-import { FolderKanban, Plus, Calendar, DollarSign, User, TrendingUp, TrendingDown } from 'lucide-react';
+import { FolderKanban, Plus, Calendar, DollarSign, User, TrendingUp, TrendingDown, Pencil, Trash2, MoreHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -12,6 +12,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
   Sheet,
   SheetContent,
@@ -33,6 +39,8 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { TaskKanban } from '@/components/projects/TaskKanban';
 import { formatCurrency } from '@/lib/currency';
+import { SearchFilter } from '@/components/filters/SearchFilter';
+import { StatusFilter } from '@/components/filters/StatusFilter';
 
 const statusConfig: Record<ProjectStatus, { label: string; className: string }> = {
   planning: { label: 'Planejamento', className: 'bg-muted text-muted-foreground border-border' },
@@ -40,36 +48,85 @@ const statusConfig: Record<ProjectStatus, { label: string; className: string }> 
   completed: { label: 'Concluído', className: 'bg-success/10 text-success border-success/20' },
 };
 
+const statusOptions = [
+  { value: 'planning' as const, label: 'Planejamento' },
+  { value: 'in_progress' as const, label: 'Em Curso' },
+  { value: 'completed' as const, label: 'Concluído' },
+];
+
+const emptyFormData = {
+  name: '',
+  clientId: '',
+  deadline: '',
+  budget: '',
+  status: 'planning' as ProjectStatus,
+};
+
 export default function Projects() {
-  const { projects, clients, addProject, getProjectWithDetails, addTask, updateTask, deleteTask } = useApp();
+  const { projects, clients, addProject, updateProject, deleteProject, getProjectWithDetails, addTask, updateTask, deleteTask } = useApp();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
-  const [formData, setFormData] = useState({
-    name: '',
-    clientId: '',
-    deadline: '',
-    budget: '',
-    status: 'planning' as ProjectStatus,
-  });
+  const [formData, setFormData] = useState(emptyFormData);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<ProjectStatus | 'all'>('all');
 
   const selectedProject = selectedProjectId ? getProjectWithDetails(selectedProjectId) : null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    addProject({
-      name: formData.name,
-      clientId: formData.clientId,
-      deadline: new Date(formData.deadline),
-      budget: parseFloat(formData.budget),
-      status: formData.status,
-    });
+    if (editingProject) {
+      updateProject(editingProject.id, {
+        name: formData.name,
+        clientId: formData.clientId,
+        deadline: new Date(formData.deadline),
+        budget: parseFloat(formData.budget),
+        status: formData.status,
+      });
+    } else {
+      addProject({
+        name: formData.name,
+        clientId: formData.clientId,
+        deadline: new Date(formData.deadline),
+        budget: parseFloat(formData.budget),
+        status: formData.status,
+      });
+    }
     resetForm();
   };
 
   const resetForm = () => {
-    setFormData({ name: '', clientId: '', deadline: '', budget: '', status: 'planning' });
+    setFormData(emptyFormData);
+    setEditingProject(null);
     setIsDialogOpen(false);
   };
+
+  const handleEdit = (project: Project, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    setEditingProject(project);
+    setFormData({
+      name: project.name,
+      clientId: project.clientId,
+      deadline: format(new Date(project.deadline), 'yyyy-MM-dd'),
+      budget: project.budget.toString(),
+      status: project.status,
+    });
+    setIsDialogOpen(true);
+  };
+
+  const handleDelete = (id: string, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    deleteProject(id);
+  };
+
+  const filteredProjects = projects.filter((project) => {
+    const client = clients.find((c) => c.id === project.clientId);
+    const matchesSearch =
+      project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      client?.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || project.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
 
   return (
     <AppLayout>
@@ -78,7 +135,7 @@ export default function Projects() {
         description="Gestão de projetos e entregas"
         icon={FolderKanban}
       >
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <Dialog open={isDialogOpen} onOpenChange={(open) => { setIsDialogOpen(open); if (!open) resetForm(); }}>
           <DialogTrigger asChild>
             <Button className="gap-2">
               <Plus className="w-4 h-4" />
@@ -87,7 +144,7 @@ export default function Projects() {
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Novo Projeto</DialogTitle>
+              <DialogTitle>{editingProject ? 'Editar Projeto' : 'Novo Projeto'}</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4 mt-4">
               <div className="space-y-2">
@@ -163,16 +220,32 @@ export default function Projects() {
                 <Button type="button" variant="outline" onClick={resetForm}>
                   Cancelar
                 </Button>
-                <Button type="submit">Criar Projeto</Button>
+                <Button type="submit">{editingProject ? 'Salvar' : 'Criar Projeto'}</Button>
               </div>
             </form>
           </DialogContent>
         </Dialog>
       </PageHeader>
 
+      {/* Filters */}
+      <div className="flex flex-col sm:flex-row gap-3 mb-6">
+        <div className="flex-1 max-w-sm">
+          <SearchFilter
+            value={searchQuery}
+            onChange={setSearchQuery}
+            placeholder="Pesquisar projetos..."
+          />
+        </div>
+        <StatusFilter<ProjectStatus>
+          value={statusFilter}
+          onChange={(v) => setStatusFilter(v)}
+          options={statusOptions}
+        />
+      </div>
+
       {/* Project Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {projects.map((project) => {
+        {filteredProjects.map((project) => {
           const client = clients.find((c) => c.id === project.clientId);
           return (
             <div
@@ -181,10 +254,32 @@ export default function Projects() {
               className="rounded-xl border border-border bg-card p-5 shadow-card cursor-pointer transition-all hover:shadow-elevated hover:border-primary/30 animate-in-up"
             >
               <div className="flex items-start justify-between mb-3">
-                <h3 className="font-semibold text-foreground line-clamp-1">{project.name}</h3>
-                <Badge variant="outline" className={cn('ml-2 flex-shrink-0', statusConfig[project.status].className)}>
-                  {statusConfig[project.status].label}
-                </Badge>
+                <h3 className="font-semibold text-foreground line-clamp-1 flex-1">{project.name}</h3>
+                <div className="flex items-center gap-2 ml-2">
+                  <Badge variant="outline" className={cn('flex-shrink-0', statusConfig[project.status].className)}>
+                    {statusConfig[project.status].label}
+                  </Badge>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                      <Button variant="ghost" size="icon" className="h-7 w-7">
+                        <MoreHorizontal className="w-4 h-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={(e) => handleEdit(project, e)}>
+                        <Pencil className="w-4 h-4 mr-2" />
+                        Editar
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="text-destructive"
+                        onClick={(e) => handleDelete(project.id, e)}
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Excluir
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
               </div>
               
               <div className="space-y-2 text-sm">
@@ -204,6 +299,11 @@ export default function Projects() {
             </div>
           );
         })}
+        {filteredProjects.length === 0 && (
+          <div className="col-span-full py-8 text-center text-muted-foreground">
+            Nenhum projeto encontrado
+          </div>
+        )}
       </div>
 
       {/* Project Detail Sheet */}
@@ -212,7 +312,31 @@ export default function Projects() {
           {selectedProject && (
             <>
               <SheetHeader className="mb-6">
-                <SheetTitle className="text-xl">{selectedProject.name}</SheetTitle>
+                <div className="flex items-center justify-between">
+                  <SheetTitle className="text-xl">{selectedProject.name}</SheetTitle>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => {
+                        handleEdit(selectedProject);
+                        setSelectedProjectId(null);
+                      }}
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      onClick={() => {
+                        deleteProject(selectedProject.id);
+                        setSelectedProjectId(null);
+                      }}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
               </SheetHeader>
 
               {/* Client Info */}

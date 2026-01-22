@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { useApp } from '@/contexts/AppContext';
-import { Wallet, Plus, TrendingUp, TrendingDown } from 'lucide-react';
+import { Wallet, Plus, TrendingUp, TrendingDown, Pencil, Trash2, MoreHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -11,6 +11,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -20,14 +26,22 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { TransactionType } from '@/types';
+import { Transaction, TransactionType } from '@/types';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { formatCurrency } from '@/lib/currency';
+import { SearchFilter } from '@/components/filters/SearchFilter';
+import { StatusFilter } from '@/components/filters/StatusFilter';
+
+const typeOptions = [
+  { value: 'income' as const, label: 'Entradas' },
+  { value: 'expense' as const, label: 'Saídas' },
+];
 
 export default function Finance() {
-  const { transactions, projects, clients, addTransaction } = useApp();
+  const { transactions, projects, clients, addTransaction, updateTransaction, deleteTransaction } = useApp();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [formData, setFormData] = useState({
     description: '',
     value: '',
@@ -35,18 +49,32 @@ export default function Finance() {
     projectId: '',
     date: format(new Date(), 'yyyy-MM-dd'),
   });
+  const [searchQuery, setSearchQuery] = useState('');
+  const [typeFilter, setTypeFilter] = useState<TransactionType | 'all'>('all');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const project = projects.find((p) => p.id === formData.projectId);
-    addTransaction({
-      description: formData.description,
-      value: parseFloat(formData.value),
-      type: formData.type,
-      projectId: formData.projectId || null,
-      clientId: project?.clientId || null,
-      date: new Date(formData.date),
-    });
+    
+    if (editingTransaction) {
+      updateTransaction(editingTransaction.id, {
+        description: formData.description,
+        value: parseFloat(formData.value),
+        type: formData.type,
+        projectId: formData.projectId || null,
+        clientId: project?.clientId || null,
+        date: new Date(formData.date),
+      });
+    } else {
+      addTransaction({
+        description: formData.description,
+        value: parseFloat(formData.value),
+        type: formData.type,
+        projectId: formData.projectId || null,
+        clientId: project?.clientId || null,
+        date: new Date(formData.date),
+      });
+    }
     resetForm();
   };
 
@@ -58,10 +86,29 @@ export default function Finance() {
       projectId: '',
       date: format(new Date(), 'yyyy-MM-dd'),
     });
+    setEditingTransaction(null);
     setIsDialogOpen(false);
   };
 
-  const sortedTransactions = [...transactions].sort(
+  const handleEdit = (transaction: Transaction) => {
+    setEditingTransaction(transaction);
+    setFormData({
+      description: transaction.description,
+      value: transaction.value.toString(),
+      type: transaction.type,
+      projectId: transaction.projectId || '',
+      date: format(new Date(transaction.date), 'yyyy-MM-dd'),
+    });
+    setIsDialogOpen(true);
+  };
+
+  const filteredTransactions = transactions.filter((t) => {
+    const matchesSearch = t.description.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesType = typeFilter === 'all' || t.type === typeFilter;
+    return matchesSearch && matchesType;
+  });
+
+  const sortedTransactions = [...filteredTransactions].sort(
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
   );
 
@@ -75,7 +122,7 @@ export default function Finance() {
         description="Controle de fluxo de caixa"
         icon={Wallet}
       >
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <Dialog open={isDialogOpen} onOpenChange={(open) => { setIsDialogOpen(open); if (!open) resetForm(); }}>
           <DialogTrigger asChild>
             <Button className="gap-2">
               <Plus className="w-4 h-4" />
@@ -84,7 +131,7 @@ export default function Finance() {
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Nova Transação</DialogTitle>
+              <DialogTitle>{editingTransaction ? 'Editar Transação' : 'Nova Transação'}</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4 mt-4">
               <div className="space-y-2">
@@ -172,7 +219,7 @@ export default function Finance() {
                 <Button type="button" variant="outline" onClick={resetForm}>
                   Cancelar
                 </Button>
-                <Button type="submit">Adicionar</Button>
+                <Button type="submit">{editingTransaction ? 'Salvar' : 'Adicionar'}</Button>
               </div>
             </form>
           </DialogContent>
@@ -207,6 +254,23 @@ export default function Finance() {
             {formatCurrency(totalIncome - totalExpenses)}
           </p>
         </div>
+      </div>
+
+      {/* Filters */}
+      <div className="flex flex-col sm:flex-row gap-3 mb-6">
+        <div className="flex-1 max-w-sm">
+          <SearchFilter
+            value={searchQuery}
+            onChange={setSearchQuery}
+            placeholder="Pesquisar transações..."
+          />
+        </div>
+        <StatusFilter<TransactionType>
+          value={typeFilter}
+          onChange={(v) => setTypeFilter(v)}
+          options={typeOptions}
+          placeholder="Tipo"
+        />
       </div>
 
       {/* Transaction List */}
@@ -253,15 +317,42 @@ export default function Finance() {
                     </div>
                   </div>
                 </div>
-                <span className={cn(
-                  'font-semibold text-lg',
-                  transaction.type === 'income' ? 'text-success' : 'text-destructive'
-                )}>
-                  {transaction.type === 'income' ? '+' : '-'} {formatCurrency(transaction.value)}
-                </span>
+                <div className="flex items-center gap-3">
+                  <span className={cn(
+                    'font-semibold text-lg',
+                    transaction.type === 'income' ? 'text-success' : 'text-destructive'
+                  )}>
+                    {transaction.type === 'income' ? '+' : '-'} {formatCurrency(transaction.value)}
+                  </span>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <MoreHorizontal className="w-4 h-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => handleEdit(transaction)}>
+                        <Pencil className="w-4 h-4 mr-2" />
+                        Editar
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="text-destructive"
+                        onClick={() => deleteTransaction(transaction.id)}
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Excluir
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
               </div>
             );
           })}
+          {sortedTransactions.length === 0 && (
+            <div className="py-8 text-center text-muted-foreground">
+              Nenhuma transação encontrada
+            </div>
+          )}
         </div>
       </div>
     </AppLayout>
