@@ -5,40 +5,40 @@ import { ptBR } from 'date-fns/locale';
 
 // Initial mock data
 const initialClients: Client[] = [
-  { id: '1', name: 'Tech Solutions Ltda', email: 'contato@techsolutions.com', status: 'active', createdAt: new Date('2025-09-15') },
-  { id: '2', name: 'Startup Digital', email: 'ola@startupdigital.io', status: 'lead', createdAt: new Date('2025-10-20') },
-  { id: '3', name: 'Comércio Express', email: 'vendas@comercioexpress.com.br', status: 'active', createdAt: new Date('2025-11-10') },
-  { id: '4', name: 'Agência Criativa', email: 'projetos@agenciacriativa.com', status: 'inactive', createdAt: new Date('2025-07-05') },
-  { id: '5', name: 'Fintech Brasil', email: 'dev@fintechbrasil.com', status: 'lead', createdAt: new Date('2025-12-01') },
+  { id: '1', name: 'Tech Solutions Ltda', email: 'contato@techsolutions.com', phone: '+244 923 456 789', company: 'Tech Solutions', position: 'CEO', address: 'Rua da Inovação, 123, Luanda', notes: 'Cliente premium desde 2024', status: 'active', createdAt: new Date('2025-09-15') },
+  { id: '2', name: 'Carlos Startup', email: 'ola@startupdigital.io', phone: '+244 912 345 678', company: 'Startup Digital', position: 'Fundador', address: 'Av. Marginal, 456, Luanda', notes: 'Interessado em app mobile', status: 'lead', createdAt: new Date('2025-10-20') },
+  { id: '3', name: 'Maria Express', email: 'vendas@comercioexpress.com.br', phone: '+244 934 567 890', company: 'Comércio Express', position: 'Directora Comercial', address: 'Bairro Maculusso, Luanda', notes: 'Projecto e-commerce em andamento', status: 'active', createdAt: new Date('2025-11-10') },
+  { id: '4', name: 'João Criativo', email: 'projetos@agenciacriativa.com', phone: '+244 945 678 901', company: 'Agência Criativa', position: 'Director Criativo', address: 'Talatona, Luanda Sul', notes: 'Projecto anterior concluído com sucesso', status: 'inactive', createdAt: new Date('2025-07-05') },
+  { id: '5', name: 'Ana Fintech', email: 'dev@fintechbrasil.com', phone: '+244 956 789 012', company: 'Fintech Angola', position: 'CTO', address: 'Ilha de Luanda', notes: 'Novo lead via referência', status: 'lead', createdAt: new Date('2025-12-01') },
 ];
 
 const initialProjects: Project[] = [
-  { id: '1', name: 'Sistema de Gestão ERP', clientId: '1', deadline: new Date('2026-03-30'), budget: 45000, status: 'in_progress', createdAt: new Date('2025-09-20') },
-  { id: '2', name: 'App Mobile E-commerce', clientId: '3', deadline: new Date('2026-02-15'), budget: 28000, status: 'in_progress', createdAt: new Date('2025-10-01') },
-  { id: '3', name: 'Website Institucional', clientId: '1', deadline: new Date('2025-12-30'), budget: 8500, status: 'completed', createdAt: new Date('2025-10-15') },
-  { id: '4', name: 'Dashboard Analytics', clientId: '3', deadline: new Date('2026-04-20'), budget: 32000, status: 'planning', createdAt: new Date('2025-12-10') },
+  { id: '1', name: 'Sistema de Gestão ERP', clientId: '1', deadline: new Date('2026-03-30'), budget: 4500000, status: 'in_progress', createdAt: new Date('2025-09-20') },
+  { id: '2', name: 'App Mobile E-commerce', clientId: '3', deadline: new Date('2026-02-15'), budget: 2800000, status: 'in_progress', createdAt: new Date('2025-10-01') },
+  { id: '3', name: 'Website Institucional', clientId: '1', deadline: new Date('2025-12-30'), budget: 850000, status: 'completed', createdAt: new Date('2025-10-15') },
+  { id: '4', name: 'Dashboard Analytics', clientId: '3', deadline: new Date('2026-04-20'), budget: 3200000, status: 'planning', createdAt: new Date('2025-12-10') },
 ];
 
 const initialTransactions: Transaction[] = [
-  { id: '1', description: 'Entrada - Sistema ERP (Parcela 1)', value: 15000, type: 'income', projectId: '1', clientId: '1', date: new Date('2025-09-25'), createdAt: new Date('2025-09-25') },
-  { id: '2', description: 'Servidor Cloud AWS', value: 450, type: 'expense', projectId: '1', clientId: '1', date: new Date('2025-10-01'), createdAt: new Date('2025-10-01') },
-  { id: '3', description: 'Entrada - App Mobile (Sinal)', value: 8400, type: 'income', projectId: '2', clientId: '3', date: new Date('2025-10-05'), createdAt: new Date('2025-10-05') },
-  { id: '4', description: 'Licença Software Design', value: 299, type: 'expense', projectId: '2', clientId: '3', date: new Date('2025-10-10'), createdAt: new Date('2025-10-10') },
-  { id: '5', description: 'Entrada - Website (Total)', value: 8500, type: 'income', projectId: '3', clientId: '1', date: new Date('2025-11-20'), createdAt: new Date('2025-11-20') },
-  { id: '6', description: 'Hospedagem Anual', value: 180, type: 'expense', projectId: '3', clientId: '1', date: new Date('2025-11-22'), createdAt: new Date('2025-11-22') },
-  { id: '7', description: 'Entrada - Sistema ERP (Parcela 2)', value: 15000, type: 'income', projectId: '1', clientId: '1', date: new Date('2025-12-01'), createdAt: new Date('2025-12-01') },
-  { id: '8', description: 'Freelancer Backend', value: 3500, type: 'expense', projectId: '1', clientId: '1', date: new Date('2025-12-15'), createdAt: new Date('2025-12-15') },
-  { id: '9', description: 'Entrada - App Mobile (Parcela 2)', value: 9800, type: 'income', projectId: '2', clientId: '3', date: new Date('2026-01-10'), createdAt: new Date('2026-01-10') },
-  { id: '10', description: 'API Gateway', value: 120, type: 'expense', projectId: '2', clientId: '3', date: new Date('2026-01-15'), createdAt: new Date('2026-01-15') },
+  { id: '1', description: 'Entrada - Sistema ERP (Parcela 1)', value: 1500000, type: 'income', projectId: '1', clientId: '1', date: new Date('2025-09-25'), createdAt: new Date('2025-09-25') },
+  { id: '2', description: 'Servidor Cloud AWS', value: 45000, type: 'expense', projectId: '1', clientId: '1', date: new Date('2025-10-01'), createdAt: new Date('2025-10-01') },
+  { id: '3', description: 'Entrada - App Mobile (Sinal)', value: 840000, type: 'income', projectId: '2', clientId: '3', date: new Date('2025-10-05'), createdAt: new Date('2025-10-05') },
+  { id: '4', description: 'Licença Software Design', value: 29900, type: 'expense', projectId: '2', clientId: '3', date: new Date('2025-10-10'), createdAt: new Date('2025-10-10') },
+  { id: '5', description: 'Entrada - Website (Total)', value: 850000, type: 'income', projectId: '3', clientId: '1', date: new Date('2025-11-20'), createdAt: new Date('2025-11-20') },
+  { id: '6', description: 'Hospedagem Anual', value: 18000, type: 'expense', projectId: '3', clientId: '1', date: new Date('2025-11-22'), createdAt: new Date('2025-11-22') },
+  { id: '7', description: 'Entrada - Sistema ERP (Parcela 2)', value: 1500000, type: 'income', projectId: '1', clientId: '1', date: new Date('2025-12-01'), createdAt: new Date('2025-12-01') },
+  { id: '8', description: 'Freelancer Backend', value: 350000, type: 'expense', projectId: '1', clientId: '1', date: new Date('2025-12-15'), createdAt: new Date('2025-12-15') },
+  { id: '9', description: 'Entrada - App Mobile (Parcela 2)', value: 980000, type: 'income', projectId: '2', clientId: '3', date: new Date('2026-01-10'), createdAt: new Date('2026-01-10') },
+  { id: '10', description: 'API Gateway', value: 12000, type: 'expense', projectId: '2', clientId: '3', date: new Date('2026-01-15'), createdAt: new Date('2026-01-15') },
 ];
 
 const initialTasks: Task[] = [
-  { id: '1', projectId: '1', title: 'Análise de requisitos', responsible: 'João Silva', deadline: new Date('2025-10-01'), status: 'done', createdAt: new Date('2025-09-20') },
-  { id: '2', projectId: '1', title: 'Desenvolver módulo de vendas', responsible: 'Maria Santos', deadline: new Date('2026-01-15'), status: 'doing', createdAt: new Date('2025-10-01') },
-  { id: '3', projectId: '1', title: 'Integração com API bancária', responsible: 'Pedro Costa', deadline: new Date('2026-02-01'), status: 'todo', createdAt: new Date('2025-11-01') },
-  { id: '4', projectId: '2', title: 'Design do app', responsible: 'Ana Lima', deadline: new Date('2025-11-15'), status: 'done', createdAt: new Date('2025-10-05') },
-  { id: '5', projectId: '2', title: 'Implementar carrinho', responsible: 'João Silva', deadline: new Date('2026-01-20'), status: 'doing', createdAt: new Date('2025-11-20') },
-  { id: '6', projectId: '2', title: 'Testes de integração', responsible: 'Pedro Costa', deadline: new Date('2026-02-10'), status: 'todo', createdAt: new Date('2025-12-01') },
+  { id: '1', projectId: '1', title: 'Análise de requisitos', description: 'Levantar todos os requisitos com o cliente', responsible: 'João Silva', deadline: new Date('2025-10-01'), status: 'done', subtasks: [{ id: 's1', title: 'Reunião inicial', completed: true }, { id: 's2', title: 'Documentação', completed: true }], comments: [], createdAt: new Date('2025-09-20') },
+  { id: '2', projectId: '1', title: 'Desenvolver módulo de vendas', description: 'Implementar CRUD de vendas', responsible: 'Maria Santos', deadline: new Date('2026-01-15'), status: 'doing', subtasks: [{ id: 's3', title: 'API de vendas', completed: true }, { id: 's4', title: 'Interface', completed: false }], comments: [], createdAt: new Date('2025-10-01') },
+  { id: '3', projectId: '1', title: 'Integração com API bancária', description: 'Integrar com Multicaixa Express', responsible: 'Pedro Costa', deadline: new Date('2026-02-01'), status: 'todo', subtasks: [], comments: [], createdAt: new Date('2025-11-01') },
+  { id: '4', projectId: '2', title: 'Design do app', description: 'Criar protótipos no Figma', responsible: 'Ana Lima', deadline: new Date('2025-11-15'), status: 'done', subtasks: [], comments: [], createdAt: new Date('2025-10-05') },
+  { id: '5', projectId: '2', title: 'Implementar carrinho', description: 'Funcionalidade de carrinho de compras', responsible: 'João Silva', deadline: new Date('2026-01-20'), status: 'doing', subtasks: [], comments: [], createdAt: new Date('2025-11-20') },
+  { id: '6', projectId: '2', title: 'Testes de integração', description: 'Testes end-to-end', responsible: 'Pedro Costa', deadline: new Date('2026-02-10'), status: 'todo', subtasks: [], comments: [], createdAt: new Date('2025-12-01') },
 ];
 
 interface AppContextType {

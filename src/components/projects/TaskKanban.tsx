@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Task, TaskStatus } from '@/types';
-import { Plus, Calendar, User, GripVertical, Trash2 } from 'lucide-react';
+import { Plus, Calendar, User, GripVertical, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -21,6 +21,7 @@ import {
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { TaskEditDialog } from '@/components/tasks/TaskEditDialog';
 
 interface TaskKanbanProps {
   tasks: Task[];
@@ -38,6 +39,7 @@ const columns: { status: TaskStatus; label: string; color: string }[] = [
 
 export function TaskKanban({ tasks, onAddTask, onUpdateTask, onDeleteTask, projectId }: TaskKanbanProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [formData, setFormData] = useState({
     title: '',
     responsible: '',
@@ -50,9 +52,12 @@ export function TaskKanban({ tasks, onAddTask, onUpdateTask, onDeleteTask, proje
     onAddTask({
       projectId,
       title: formData.title,
+      description: '',
       responsible: formData.responsible,
       deadline: formData.deadline ? new Date(formData.deadline) : null,
       status: formData.status,
+      subtasks: [],
+      comments: [],
     });
     setFormData({ title: '', responsible: '', deadline: '', status: 'todo' });
     setIsDialogOpen(false);
@@ -64,6 +69,12 @@ export function TaskKanban({ tasks, onAddTask, onUpdateTask, onDeleteTask, proje
 
   const getTasksByStatus = (status: TaskStatus) => {
     return tasks.filter((task) => task.status === status);
+  };
+
+  const getSubtaskProgress = (task: Task) => {
+    if (!task.subtasks || task.subtasks.length === 0) return null;
+    const completed = task.subtasks.filter(s => s.completed).length;
+    return `${completed}/${task.subtasks.length}`;
   };
 
   return (
@@ -158,54 +169,73 @@ export function TaskKanban({ tasks, onAddTask, onUpdateTask, onDeleteTask, proje
               </span>
             </div>
             <div className="space-y-2">
-              {getTasksByStatus(column.status).map((task) => (
-                <div
-                  key={task.id}
-                  className="bg-card rounded-md border border-border p-3 shadow-sm hover:shadow-md transition-shadow"
-                >
-                  <div className="flex items-start gap-2">
-                    <GripVertical className="w-3 h-3 text-muted-foreground mt-1 flex-shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-foreground line-clamp-2">{task.title}</p>
-                      {task.responsible && (
-                        <div className="flex items-center gap-1 mt-2 text-xs text-muted-foreground">
-                          <User className="w-3 h-3" />
-                          <span className="truncate">{task.responsible}</span>
-                        </div>
-                      )}
-                      {task.deadline && (
-                        <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
-                          <Calendar className="w-3 h-3" />
-                          <span>{format(new Date(task.deadline), "dd/MM/yy", { locale: ptBR })}</span>
-                        </div>
-                      )}
+              {getTasksByStatus(column.status).map((task) => {
+                const subtaskProgress = getSubtaskProgress(task);
+                return (
+                  <div
+                    key={task.id}
+                    className="bg-card rounded-md border border-border p-3 shadow-sm hover:shadow-md transition-shadow"
+                  >
+                    <div className="flex items-start gap-2">
+                      <GripVertical className="w-3 h-3 text-muted-foreground mt-1 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-foreground line-clamp-2">{task.title}</p>
+                        {task.responsible && (
+                          <div className="flex items-center gap-1 mt-2 text-xs text-muted-foreground">
+                            <User className="w-3 h-3" />
+                            <span className="truncate">{task.responsible}</span>
+                          </div>
+                        )}
+                        {task.deadline && (
+                          <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
+                            <Calendar className="w-3 h-3" />
+                            <span>{format(new Date(task.deadline), "dd/MM/yy", { locale: ptBR })}</span>
+                          </div>
+                        )}
+                        {subtaskProgress && (
+                          <div className="mt-2">
+                            <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
+                              <span>Checklist</span>
+                              <span>{subtaskProgress}</span>
+                            </div>
+                            <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                              <div
+                                className="h-full bg-success transition-all"
+                                style={{
+                                  width: `${(task.subtasks.filter(s => s.completed).length / task.subtasks.length) * 100}%`,
+                                }}
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between mt-3 pt-2 border-t border-border">
+                      <Select
+                        value={task.status}
+                        onValueChange={(value: TaskStatus) => handleStatusChange(task.id, value)}
+                      >
+                        <SelectTrigger className="h-7 text-xs w-24">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="todo">A Fazer</SelectItem>
+                          <SelectItem value="doing">Em Progresso</SelectItem>
+                          <SelectItem value="done">Concluído</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-6 w-6 text-muted-foreground hover:text-primary"
+                        onClick={() => setEditingTask(task)}
+                      >
+                        <Pencil className="w-3 h-3" />
+                      </Button>
                     </div>
                   </div>
-                  <div className="flex items-center justify-between mt-3 pt-2 border-t border-border">
-                    <Select
-                      value={task.status}
-                      onValueChange={(value: TaskStatus) => handleStatusChange(task.id, value)}
-                    >
-                      <SelectTrigger className="h-7 text-xs w-24">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="todo">A Fazer</SelectItem>
-                        <SelectItem value="doing">Em Progresso</SelectItem>
-                        <SelectItem value="done">Concluído</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="h-6 w-6 text-muted-foreground hover:text-destructive"
-                      onClick={() => onDeleteTask(task.id)}
-                    >
-                      <Trash2 className="w-3 h-3" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
               {getTasksByStatus(column.status).length === 0 && (
                 <p className="text-xs text-muted-foreground text-center py-4">
                   Nenhuma tarefa
@@ -215,6 +245,15 @@ export function TaskKanban({ tasks, onAddTask, onUpdateTask, onDeleteTask, proje
           </div>
         ))}
       </div>
+
+      {/* Task Edit Dialog */}
+      <TaskEditDialog
+        task={editingTask}
+        open={!!editingTask}
+        onOpenChange={(open) => !open && setEditingTask(null)}
+        onSave={onUpdateTask}
+        onDelete={onDeleteTask}
+      />
     </div>
   );
 }
