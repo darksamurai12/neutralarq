@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { useApp } from '@/contexts/AppContext';
-import { FolderKanban, Plus, Calendar, DollarSign, User, TrendingUp, TrendingDown, Pencil, Trash2, MoreHorizontal } from 'lucide-react';
+import { FolderKanban, Plus, Calendar, DollarSign, MapPin, Pencil, Trash2, MoreHorizontal, Building2, CalendarClock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -26,6 +26,7 @@ import {
 } from '@/components/ui/sheet';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -33,30 +34,37 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Project, ProjectStatus } from '@/types';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Project, ProjectStatus, ProjectType } from '@/types';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { TaskKanban } from '@/components/projects/TaskKanban';
+import { ProjectKPIs } from '@/components/projects/ProjectKPIs';
+import { ProjectHistory } from '@/components/projects/ProjectHistory';
+import { ProjectFilters } from '@/components/projects/ProjectFilters';
 import { formatCurrency } from '@/lib/currency';
-import { SearchFilter } from '@/components/filters/SearchFilter';
-import { StatusFilter } from '@/components/filters/StatusFilter';
 
 const statusConfig: Record<ProjectStatus, { label: string; className: string }> = {
-  planning: { label: 'Planejamento', className: 'bg-muted text-muted-foreground border-border' },
-  in_progress: { label: 'Em Curso', className: 'bg-primary/10 text-primary border-primary/20' },
+  planning: { label: 'Planeamento', className: 'bg-muted text-muted-foreground border-border' },
+  in_progress: { label: 'Em Execução', className: 'bg-primary/10 text-primary border-primary/20' },
+  paused: { label: 'Parado', className: 'bg-warning/10 text-warning border-warning/20' },
   completed: { label: 'Concluído', className: 'bg-success/10 text-success border-success/20' },
 };
 
-const statusOptions = [
-  { value: 'planning' as const, label: 'Planejamento' },
-  { value: 'in_progress' as const, label: 'Em Curso' },
-  { value: 'completed' as const, label: 'Concluído' },
-];
+const typeConfig: Record<ProjectType, { label: string; icon: string }> = {
+  architecture: { label: 'Arquitectura', icon: '🏛️' },
+  construction: { label: 'Construção Civil', icon: '🏗️' },
+  interior_design: { label: 'Design de Interiores', icon: '🎨' },
+};
 
 const emptyFormData = {
   name: '',
   clientId: '',
+  type: 'architecture' as ProjectType,
+  location: '',
+  description: '',
+  startDate: '',
   deadline: '',
   budget: '',
   status: 'planning' as ProjectStatus,
@@ -68,29 +76,33 @@ export default function Projects() {
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [formData, setFormData] = useState(emptyFormData);
+  
+  // Filters
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<ProjectStatus | 'all'>('all');
+  const [typeFilter, setTypeFilter] = useState<ProjectType | 'all'>('all');
+  const [clientFilter, setClientFilter] = useState<string>('all');
 
   const selectedProject = selectedProjectId ? getProjectWithDetails(selectedProjectId) : null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const projectData = {
+      name: formData.name,
+      clientId: formData.clientId,
+      type: formData.type,
+      location: formData.location,
+      description: formData.description,
+      startDate: new Date(formData.startDate),
+      deadline: new Date(formData.deadline),
+      budget: parseFloat(formData.budget),
+      status: formData.status,
+    };
+
     if (editingProject) {
-      updateProject(editingProject.id, {
-        name: formData.name,
-        clientId: formData.clientId,
-        deadline: new Date(formData.deadline),
-        budget: parseFloat(formData.budget),
-        status: formData.status,
-      });
+      updateProject(editingProject.id, projectData);
     } else {
-      addProject({
-        name: formData.name,
-        clientId: formData.clientId,
-        deadline: new Date(formData.deadline),
-        budget: parseFloat(formData.budget),
-        status: formData.status,
-      });
+      addProject(projectData);
     }
     resetForm();
   };
@@ -107,6 +119,10 @@ export default function Projects() {
     setFormData({
       name: project.name,
       clientId: project.clientId,
+      type: project.type,
+      location: project.location,
+      description: project.description,
+      startDate: format(new Date(project.startDate), 'yyyy-MM-dd'),
       deadline: format(new Date(project.deadline), 'yyyy-MM-dd'),
       budget: project.budget.toString(),
       status: project.status,
@@ -123,62 +139,106 @@ export default function Projects() {
     const client = clients.find((c) => c.id === project.clientId);
     const matchesSearch =
       project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      project.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
       client?.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = statusFilter === 'all' || project.status === statusFilter;
-    return matchesSearch && matchesStatus;
+    const matchesType = typeFilter === 'all' || project.type === typeFilter;
+    const matchesClient = clientFilter === 'all' || project.clientId === clientFilter;
+    return matchesSearch && matchesStatus && matchesType && matchesClient;
   });
 
   return (
     <AppLayout>
       <PageHeader
-        title="Projetos"
-        description="Gestão de projetos e entregas"
+        title="Projectos"
+        description="Gestão de obras, projectos arquitectónicos e design de interiores"
         icon={FolderKanban}
       >
         <Dialog open={isDialogOpen} onOpenChange={(open) => { setIsDialogOpen(open); if (!open) resetForm(); }}>
           <DialogTrigger asChild>
             <Button className="gap-2">
               <Plus className="w-4 h-4" />
-              Novo Projeto
+              Novo Projecto
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>{editingProject ? 'Editar Projeto' : 'Novo Projeto'}</DialogTitle>
+              <DialogTitle>{editingProject ? 'Editar Projecto' : 'Novo Projecto'}</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Nome do Projeto</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="Ex: Sistema de Gestão"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="client">Cliente</Label>
-                <Select
-                  value={formData.clientId}
-                  onValueChange={(value) => setFormData({ ...formData, clientId: value })}
-                  required
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione um cliente" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {clients.filter(c => c.status !== 'inactive').map((client) => (
-                      <SelectItem key={client.id} value={client.id}>
-                        {client.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
               <div className="grid grid-cols-2 gap-4">
+                <div className="col-span-2 space-y-2">
+                  <Label htmlFor="name">Nome do Projecto</Label>
+                  <Input
+                    id="name"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    placeholder="Ex: Edifício Comercial Talatona"
+                    required
+                  />
+                </div>
+                
                 <div className="space-y-2">
-                  <Label htmlFor="deadline">Prazo</Label>
+                  <Label htmlFor="client">Cliente</Label>
+                  <Select
+                    value={formData.clientId}
+                    onValueChange={(value) => setFormData({ ...formData, clientId: value })}
+                    required
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione um cliente" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {clients.filter(c => c.status !== 'inactive').map((client) => (
+                        <SelectItem key={client.id} value={client.id}>
+                          {client.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="type">Tipo de Projecto</Label>
+                  <Select
+                    value={formData.type}
+                    onValueChange={(value: ProjectType) => setFormData({ ...formData, type: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="architecture">Arquitectura</SelectItem>
+                      <SelectItem value="construction">Construção Civil</SelectItem>
+                      <SelectItem value="interior_design">Design de Interiores</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="col-span-2 space-y-2">
+                  <Label htmlFor="location">Local da Obra</Label>
+                  <Input
+                    id="location"
+                    value={formData.location}
+                    onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                    placeholder="Ex: Talatona, Luanda Sul"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="startDate">Data de Início</Label>
+                  <Input
+                    id="startDate"
+                    type="date"
+                    value={formData.startDate}
+                    onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="deadline">Data Prevista de Conclusão</Label>
                   <Input
                     id="deadline"
                     type="date"
@@ -187,8 +247,9 @@ export default function Projects() {
                     required
                   />
                 </div>
+
                 <div className="space-y-2">
-                  <Label htmlFor="budget">Orçamento (AOA)</Label>
+                  <Label htmlFor="budget">Orçamento Aprovado (AOA)</Label>
                   <Input
                     id="budget"
                     type="number"
@@ -199,28 +260,42 @@ export default function Projects() {
                     required
                   />
                 </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="status">Estado</Label>
+                  <Select
+                    value={formData.status}
+                    onValueChange={(value: ProjectStatus) => setFormData({ ...formData, status: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="planning">Planeamento</SelectItem>
+                      <SelectItem value="in_progress">Em Execução</SelectItem>
+                      <SelectItem value="paused">Parado</SelectItem>
+                      <SelectItem value="completed">Concluído</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="col-span-2 space-y-2">
+                  <Label htmlFor="description">Descrição Geral</Label>
+                  <Textarea
+                    id="description"
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    placeholder="Descreva o projecto..."
+                    rows={3}
+                  />
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="status">Status</Label>
-                <Select
-                  value={formData.status}
-                  onValueChange={(value: ProjectStatus) => setFormData({ ...formData, status: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="planning">Planejamento</SelectItem>
-                    <SelectItem value="in_progress">Em Curso</SelectItem>
-                    <SelectItem value="completed">Concluído</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+
               <div className="flex justify-end gap-2 pt-4">
                 <Button type="button" variant="outline" onClick={resetForm}>
                   Cancelar
                 </Button>
-                <Button type="submit">{editingProject ? 'Salvar' : 'Criar Projeto'}</Button>
+                <Button type="submit">{editingProject ? 'Salvar' : 'Criar Projecto'}</Button>
               </div>
             </form>
           </DialogContent>
@@ -228,20 +303,17 @@ export default function Projects() {
       </PageHeader>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-6">
-        <div className="flex-1 max-w-sm">
-          <SearchFilter
-            value={searchQuery}
-            onChange={setSearchQuery}
-            placeholder="Pesquisar projetos..."
-          />
-        </div>
-        <StatusFilter<ProjectStatus>
-          value={statusFilter}
-          onChange={(v) => setStatusFilter(v)}
-          options={statusOptions}
-        />
-      </div>
+      <ProjectFilters
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        statusFilter={statusFilter}
+        onStatusChange={setStatusFilter}
+        typeFilter={typeFilter}
+        onTypeChange={setTypeFilter}
+        clientFilter={clientFilter}
+        onClientChange={setClientFilter}
+        clients={clients.filter(c => c.status !== 'inactive')}
+      />
 
       {/* Project Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -254,9 +326,12 @@ export default function Projects() {
               className="rounded-xl border border-border bg-card p-5 shadow-card cursor-pointer transition-all hover:shadow-elevated hover:border-primary/30 animate-in-up"
             >
               <div className="flex items-start justify-between mb-3">
-                <h3 className="font-semibold text-foreground line-clamp-1 flex-1">{project.name}</h3>
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">{typeConfig[project.type].icon}</span>
+                  <h3 className="font-semibold text-foreground line-clamp-1">{project.name}</h3>
+                </div>
                 <div className="flex items-center gap-2 ml-2">
-                  <Badge variant="outline" className={cn('flex-shrink-0', statusConfig[project.status].className)}>
+                  <Badge variant="outline" className={cn('flex-shrink-0 text-xs', statusConfig[project.status].className)}>
                     {statusConfig[project.status].label}
                   </Badge>
                   <DropdownMenu>
@@ -284,11 +359,15 @@ export default function Projects() {
               
               <div className="space-y-2 text-sm">
                 <div className="flex items-center gap-2 text-muted-foreground">
-                  <User className="w-4 h-4" />
-                  <span>{client?.name || 'Cliente não encontrado'}</span>
+                  <Building2 className="w-4 h-4" />
+                  <span className="truncate">{client?.name || 'Cliente não encontrado'}</span>
                 </div>
                 <div className="flex items-center gap-2 text-muted-foreground">
-                  <Calendar className="w-4 h-4" />
+                  <MapPin className="w-4 h-4" />
+                  <span className="truncate">{project.location}</span>
+                </div>
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <CalendarClock className="w-4 h-4" />
                   <span>{format(new Date(project.deadline), "dd 'de' MMM, yyyy", { locale: ptBR })}</span>
                 </div>
                 <div className="flex items-center gap-2 text-muted-foreground">
@@ -301,19 +380,25 @@ export default function Projects() {
         })}
         {filteredProjects.length === 0 && (
           <div className="col-span-full py-8 text-center text-muted-foreground">
-            Nenhum projeto encontrado
+            Nenhum projecto encontrado
           </div>
         )}
       </div>
 
       {/* Project Detail Sheet */}
       <Sheet open={!!selectedProject} onOpenChange={() => setSelectedProjectId(null)}>
-        <SheetContent className="sm:max-w-2xl overflow-y-auto">
+        <SheetContent className="sm:max-w-3xl overflow-y-auto">
           {selectedProject && (
             <>
               <SheetHeader className="mb-6">
                 <div className="flex items-center justify-between">
-                  <SheetTitle className="text-xl">{selectedProject.name}</SheetTitle>
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">{typeConfig[selectedProject.type].icon}</span>
+                    <div>
+                      <SheetTitle className="text-xl">{selectedProject.name}</SheetTitle>
+                      <p className="text-sm text-muted-foreground">{typeConfig[selectedProject.type].label}</p>
+                    </div>
+                  </div>
                   <div className="flex gap-2">
                     <Button
                       variant="outline"
@@ -337,93 +422,99 @@ export default function Projects() {
                     </Button>
                   </div>
                 </div>
+                <Badge variant="outline" className={cn('w-fit mt-2', statusConfig[selectedProject.status].className)}>
+                  {statusConfig[selectedProject.status].label}
+                </Badge>
               </SheetHeader>
 
-              {/* Client Info */}
-              <div className="mb-6 p-4 rounded-lg bg-muted/50">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
-                  <User className="w-4 h-4" />
-                  <span>Cliente</span>
-                </div>
-                <p className="font-medium text-foreground">
-                  {selectedProject.client?.name || 'Cliente não encontrado'}
-                </p>
-                <p className="text-sm text-muted-foreground">{selectedProject.client?.email}</p>
-              </div>
-
-              {/* Financial Summary */}
-              <div className="grid grid-cols-2 gap-3 mb-6">
-                <div className="p-4 rounded-lg border border-border bg-card">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
-                    <TrendingUp className="w-4 h-4 text-success" />
-                    <span>Entradas</span>
+              {/* Project Info */}
+              <div className="mb-6 p-4 rounded-lg bg-muted/50 space-y-3">
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="text-muted-foreground">Cliente</span>
+                    <p className="font-medium text-foreground">{selectedProject.client?.name || 'N/A'}</p>
                   </div>
-                  <p className="text-lg font-semibold text-success">{formatCurrency(selectedProject.totalIncome)}</p>
-                </div>
-                <div className="p-4 rounded-lg border border-border bg-card">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
-                    <TrendingDown className="w-4 h-4 text-destructive" />
-                    <span>Saídas</span>
+                  <div>
+                    <span className="text-muted-foreground">Local</span>
+                    <p className="font-medium text-foreground">{selectedProject.location}</p>
                   </div>
-                  <p className="text-lg font-semibold text-destructive">{formatCurrency(selectedProject.totalExpenses)}</p>
+                  <div>
+                    <span className="text-muted-foreground">Data de Início</span>
+                    <p className="font-medium text-foreground">{format(new Date(selectedProject.startDate), "dd/MM/yyyy")}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Prazo Previsto</span>
+                    <p className="font-medium text-foreground">{format(new Date(selectedProject.deadline), "dd/MM/yyyy")}</p>
+                  </div>
                 </div>
-              </div>
-
-              {/* Profit */}
-              <div className="p-4 rounded-lg border border-primary/20 bg-primary/5 mb-6">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-muted-foreground">Lucro Real</span>
-                  <span className={cn(
-                    'text-xl font-bold',
-                    selectedProject.profit >= 0 ? 'text-success' : 'text-destructive'
-                  )}>
-                    {formatCurrency(selectedProject.profit)}
-                  </span>
-                </div>
-              </div>
-
-              {/* Task Kanban */}
-              <div className="mb-6">
-                <TaskKanban
-                  tasks={selectedProject.tasks}
-                  onAddTask={addTask}
-                  onUpdateTask={updateTask}
-                  onDeleteTask={deleteTask}
-                  projectId={selectedProject.id}
-                />
-              </div>
-
-              {/* Transaction History */}
-              <div>
-                <h4 className="text-sm font-semibold text-foreground mb-3">Extrato Financeiro</h4>
-                {selectedProject.transactions.length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-8">
-                    Nenhuma transação registrada
-                  </p>
-                ) : (
-                  <div className="space-y-2">
-                    {selectedProject.transactions.map((transaction) => (
-                      <div
-                        key={transaction.id}
-                        className="flex items-center justify-between p-3 rounded-lg border border-border bg-card"
-                      >
-                        <div>
-                          <p className="text-sm font-medium text-foreground">{transaction.description}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {format(new Date(transaction.date), "dd/MM/yyyy")}
-                          </p>
-                        </div>
-                        <span className={cn(
-                          'font-semibold',
-                          transaction.type === 'income' ? 'text-success' : 'text-destructive'
-                        )}>
-                          {transaction.type === 'income' ? '+' : '-'} {formatCurrency(transaction.value)}
-                        </span>
-                      </div>
-                    ))}
+                {selectedProject.description && (
+                  <div>
+                    <span className="text-sm text-muted-foreground">Descrição</span>
+                    <p className="text-sm text-foreground mt-1">{selectedProject.description}</p>
                   </div>
                 )}
               </div>
+
+              {/* Tabs */}
+              <Tabs defaultValue="kpis" className="w-full">
+                <TabsList className="w-full grid grid-cols-4 mb-4">
+                  <TabsTrigger value="kpis">KPIs</TabsTrigger>
+                  <TabsTrigger value="kanban">Tarefas</TabsTrigger>
+                  <TabsTrigger value="finance">Finanças</TabsTrigger>
+                  <TabsTrigger value="history">Histórico</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="kpis">
+                  <ProjectKPIs kpis={selectedProject.kpis} budget={selectedProject.budget} />
+                </TabsContent>
+
+                <TabsContent value="kanban">
+                  <TaskKanban
+                    tasks={selectedProject.tasks}
+                    onAddTask={addTask}
+                    onUpdateTask={updateTask}
+                    onDeleteTask={deleteTask}
+                    projectId={selectedProject.id}
+                  />
+                </TabsContent>
+
+                <TabsContent value="finance">
+                  <div className="space-y-4">
+                    <h4 className="text-sm font-semibold text-foreground">Extrato Financeiro</h4>
+                    {selectedProject.transactions.length === 0 ? (
+                      <p className="text-sm text-muted-foreground text-center py-8">
+                        Nenhuma transação registada
+                      </p>
+                    ) : (
+                      <div className="space-y-2">
+                        {selectedProject.transactions.map((transaction) => (
+                          <div
+                            key={transaction.id}
+                            className="flex items-center justify-between p-3 rounded-lg border border-border bg-card"
+                          >
+                            <div>
+                              <p className="text-sm font-medium text-foreground">{transaction.description}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {format(new Date(transaction.date), "dd/MM/yyyy")}
+                              </p>
+                            </div>
+                            <span className={cn(
+                              'font-semibold',
+                              transaction.type === 'income' ? 'text-success' : 'text-destructive'
+                            )}>
+                              {transaction.type === 'income' ? '+' : '-'} {formatCurrency(transaction.value)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="history">
+                  <ProjectHistory history={selectedProject.history} />
+                </TabsContent>
+              </Tabs>
             </>
           )}
         </SheetContent>
