@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Task, TaskStatus, Subtask, Comment } from '@/types';
+import { Task, TaskStatus, TaskPriority, ProjectPhase, Subtask, Comment } from '@/types';
 import { Plus, Trash2, MessageSquare, ListChecks, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -45,6 +45,9 @@ export function TaskEditDialog({
     responsible: '',
     deadline: '',
     status: 'todo' as TaskStatus,
+    priority: 'medium' as TaskPriority,
+    phase: 'projeto' as ProjectPhase,
+    completionPercentage: 0,
     subtasks: [] as Subtask[],
     comments: [] as Comment[],
   });
@@ -59,6 +62,9 @@ export function TaskEditDialog({
         responsible: task.responsible,
         deadline: task.deadline ? format(new Date(task.deadline), 'yyyy-MM-dd') : '',
         status: task.status,
+        priority: task.priority,
+        phase: task.phase,
+        completionPercentage: task.completionPercentage,
         subtasks: task.subtasks || [],
         comments: task.comments || [],
       });
@@ -73,6 +79,9 @@ export function TaskEditDialog({
       responsible: formData.responsible,
       deadline: formData.deadline ? new Date(formData.deadline) : null,
       status: formData.status,
+      priority: formData.priority,
+      phase: formData.phase,
+      completionPercentage: formData.completionPercentage,
       subtasks: formData.subtasks,
       comments: formData.comments,
     });
@@ -213,21 +222,71 @@ export function TaskEditDialog({
                 />
               </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="status">Status</Label>
-              <Select
-                value={formData.status}
-                onValueChange={(value: TaskStatus) => setFormData({ ...formData, status: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todo">A Fazer</SelectItem>
-                  <SelectItem value="doing">Em Progresso</SelectItem>
-                  <SelectItem value="done">Concluído</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="priority">Prioridade</Label>
+                <Select
+                  value={formData.priority}
+                  onValueChange={(value: TaskPriority) => setFormData({ ...formData, priority: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="low">Baixa</SelectItem>
+                    <SelectItem value="medium">Média</SelectItem>
+                    <SelectItem value="high">Alta</SelectItem>
+                    <SelectItem value="critical">Crítica</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="phase">Fase</Label>
+                <Select
+                  value={formData.phase}
+                  onValueChange={(value: ProjectPhase) => setFormData({ ...formData, phase: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="projeto">Projecto</SelectItem>
+                    <SelectItem value="obra">Obra</SelectItem>
+                    <SelectItem value="acabamento">Acabamento</SelectItem>
+                    <SelectItem value="entrega">Entrega</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="status">Estado</Label>
+                <Select
+                  value={formData.status}
+                  onValueChange={(value: TaskStatus) => setFormData({ ...formData, status: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todo">A Fazer</SelectItem>
+                    <SelectItem value="doing">Em Progresso</SelectItem>
+                    <SelectItem value="review">Em Revisão</SelectItem>
+                    <SelectItem value="done">Concluído</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="completion">Conclusão (%)</Label>
+                <Input
+                  id="completion"
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={formData.completionPercentage}
+                  onChange={(e) => setFormData({ ...formData, completionPercentage: parseInt(e.target.value) || 0 })}
+                />
+              </div>
             </div>
           </TabsContent>
 

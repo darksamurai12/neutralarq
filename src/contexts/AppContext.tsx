@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
-import { Client, Project, Transaction, Task, ProjectWithDetails, DashboardMetrics, MonthlyFlow, TaskStatus } from '@/types';
-import { format, subMonths, isWithinInterval, startOfMonth, endOfMonth } from 'date-fns';
+import { Client, Project, Transaction, Task, ProjectWithDetails, DashboardMetrics, MonthlyFlow, TaskStatus, ProjectStatus, ProjectKPIs } from '@/types';
+import { format, subMonths, isWithinInterval, startOfMonth, endOfMonth, differenceInDays, isPast, isFuture, addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 // Initial mock data
@@ -13,32 +13,104 @@ const initialClients: Client[] = [
 ];
 
 const initialProjects: Project[] = [
-  { id: '1', name: 'Sistema de Gestão ERP', clientId: '1', deadline: new Date('2026-03-30'), budget: 4500000, status: 'in_progress', createdAt: new Date('2025-09-20') },
-  { id: '2', name: 'App Mobile E-commerce', clientId: '3', deadline: new Date('2026-02-15'), budget: 2800000, status: 'in_progress', createdAt: new Date('2025-10-01') },
-  { id: '3', name: 'Website Institucional', clientId: '1', deadline: new Date('2025-12-30'), budget: 850000, status: 'completed', createdAt: new Date('2025-10-15') },
-  { id: '4', name: 'Dashboard Analytics', clientId: '3', deadline: new Date('2026-04-20'), budget: 3200000, status: 'planning', createdAt: new Date('2025-12-10') },
+  { 
+    id: '1', 
+    name: 'Edifício Comercial Talatona', 
+    clientId: '1', 
+    type: 'architecture',
+    location: 'Talatona, Luanda Sul',
+    description: 'Projecto arquitectónico de edifício comercial de 8 andares com estacionamento subterrâneo',
+    startDate: new Date('2025-09-20'),
+    deadline: new Date('2026-06-30'), 
+    budget: 45000000, 
+    status: 'in_progress', 
+    createdAt: new Date('2025-09-20'),
+    history: [
+      { id: 'h1', action: 'Criação', description: 'Projecto criado', date: new Date('2025-09-20') },
+      { id: 'h2', action: 'Alteração de estado', description: 'De Planeamento para Em Execução', date: new Date('2025-10-01') }
+    ]
+  },
+  { 
+    id: '2', 
+    name: 'Residência Miramar', 
+    clientId: '3', 
+    type: 'interior_design',
+    location: 'Miramar, Luanda',
+    description: 'Design de interiores para moradia de luxo com 4 quartos e áreas sociais',
+    startDate: new Date('2025-10-01'),
+    deadline: new Date('2026-02-15'), 
+    budget: 12000000, 
+    status: 'in_progress', 
+    createdAt: new Date('2025-10-01'),
+    history: []
+  },
+  { 
+    id: '3', 
+    name: 'Moradia Alvalade', 
+    clientId: '1', 
+    type: 'construction',
+    location: 'Alvalade, Luanda',
+    description: 'Construção civil de moradia unifamiliar T4 com piscina',
+    startDate: new Date('2025-10-15'),
+    deadline: new Date('2025-12-30'), 
+    budget: 25000000, 
+    status: 'completed', 
+    createdAt: new Date('2025-10-15'),
+    history: []
+  },
+  { 
+    id: '4', 
+    name: 'Centro de Convenções Viana', 
+    clientId: '3', 
+    type: 'architecture',
+    location: 'Viana, Luanda',
+    description: 'Projecto de centro de convenções com capacidade para 500 pessoas',
+    startDate: new Date('2025-12-10'),
+    deadline: new Date('2026-12-20'), 
+    budget: 85000000, 
+    status: 'planning', 
+    createdAt: new Date('2025-12-10'),
+    history: []
+  },
+  { 
+    id: '5', 
+    name: 'Reabilitação Hotel Marginal', 
+    clientId: '1', 
+    type: 'construction',
+    location: 'Marginal, Luanda',
+    description: 'Reabilitação completa de hotel histórico na marginal',
+    startDate: new Date('2025-11-01'),
+    deadline: new Date('2026-08-01'), 
+    budget: 120000000, 
+    status: 'paused', 
+    createdAt: new Date('2025-11-01'),
+    history: [
+      { id: 'h3', action: 'Pausa', description: 'Projecto pausado por questões de licenciamento', date: new Date('2025-12-15') }
+    ]
+  },
 ];
 
 const initialTransactions: Transaction[] = [
-  { id: '1', description: 'Entrada - Sistema ERP (Parcela 1)', value: 1500000, type: 'income', projectId: '1', clientId: '1', date: new Date('2025-09-25'), createdAt: new Date('2025-09-25') },
-  { id: '2', description: 'Servidor Cloud AWS', value: 45000, type: 'expense', projectId: '1', clientId: '1', date: new Date('2025-10-01'), createdAt: new Date('2025-10-01') },
-  { id: '3', description: 'Entrada - App Mobile (Sinal)', value: 840000, type: 'income', projectId: '2', clientId: '3', date: new Date('2025-10-05'), createdAt: new Date('2025-10-05') },
-  { id: '4', description: 'Licença Software Design', value: 29900, type: 'expense', projectId: '2', clientId: '3', date: new Date('2025-10-10'), createdAt: new Date('2025-10-10') },
-  { id: '5', description: 'Entrada - Website (Total)', value: 850000, type: 'income', projectId: '3', clientId: '1', date: new Date('2025-11-20'), createdAt: new Date('2025-11-20') },
-  { id: '6', description: 'Hospedagem Anual', value: 18000, type: 'expense', projectId: '3', clientId: '1', date: new Date('2025-11-22'), createdAt: new Date('2025-11-22') },
-  { id: '7', description: 'Entrada - Sistema ERP (Parcela 2)', value: 1500000, type: 'income', projectId: '1', clientId: '1', date: new Date('2025-12-01'), createdAt: new Date('2025-12-01') },
-  { id: '8', description: 'Freelancer Backend', value: 350000, type: 'expense', projectId: '1', clientId: '1', date: new Date('2025-12-15'), createdAt: new Date('2025-12-15') },
-  { id: '9', description: 'Entrada - App Mobile (Parcela 2)', value: 980000, type: 'income', projectId: '2', clientId: '3', date: new Date('2026-01-10'), createdAt: new Date('2026-01-10') },
-  { id: '10', description: 'API Gateway', value: 12000, type: 'expense', projectId: '2', clientId: '3', date: new Date('2026-01-15'), createdAt: new Date('2026-01-15') },
+  { id: '1', description: 'Entrada - Edifício Talatona (Parcela 1)', value: 15000000, type: 'income', projectId: '1', clientId: '1', date: new Date('2025-09-25'), createdAt: new Date('2025-09-25') },
+  { id: '2', description: 'Material de construção', value: 2500000, type: 'expense', projectId: '1', clientId: '1', date: new Date('2025-10-01'), createdAt: new Date('2025-10-01') },
+  { id: '3', description: 'Entrada - Residência Miramar (Sinal)', value: 4000000, type: 'income', projectId: '2', clientId: '3', date: new Date('2025-10-05'), createdAt: new Date('2025-10-05') },
+  { id: '4', description: 'Mobiliário e decoração', value: 1500000, type: 'expense', projectId: '2', clientId: '3', date: new Date('2025-10-10'), createdAt: new Date('2025-10-10') },
+  { id: '5', description: 'Entrada - Moradia Alvalade (Total)', value: 25000000, type: 'income', projectId: '3', clientId: '1', date: new Date('2025-11-20'), createdAt: new Date('2025-11-20') },
+  { id: '6', description: 'Mão de obra especializada', value: 8000000, type: 'expense', projectId: '3', clientId: '1', date: new Date('2025-11-22'), createdAt: new Date('2025-11-22') },
+  { id: '7', description: 'Entrada - Edifício Talatona (Parcela 2)', value: 15000000, type: 'income', projectId: '1', clientId: '1', date: new Date('2025-12-01'), createdAt: new Date('2025-12-01') },
+  { id: '8', description: 'Equipamentos de construção', value: 5000000, type: 'expense', projectId: '1', clientId: '1', date: new Date('2025-12-15'), createdAt: new Date('2025-12-15') },
+  { id: '9', description: 'Entrada - Residência Miramar (Parcela 2)', value: 4000000, type: 'income', projectId: '2', clientId: '3', date: new Date('2026-01-10'), createdAt: new Date('2026-01-10') },
+  { id: '10', description: 'Iluminação decorativa', value: 800000, type: 'expense', projectId: '2', clientId: '3', date: new Date('2026-01-15'), createdAt: new Date('2026-01-15') },
 ];
 
 const initialTasks: Task[] = [
-  { id: '1', projectId: '1', title: 'Análise de requisitos', description: 'Levantar todos os requisitos com o cliente', responsible: 'João Silva', deadline: new Date('2025-10-01'), status: 'done', subtasks: [{ id: 's1', title: 'Reunião inicial', completed: true }, { id: 's2', title: 'Documentação', completed: true }], comments: [], createdAt: new Date('2025-09-20') },
-  { id: '2', projectId: '1', title: 'Desenvolver módulo de vendas', description: 'Implementar CRUD de vendas', responsible: 'Maria Santos', deadline: new Date('2026-01-15'), status: 'doing', subtasks: [{ id: 's3', title: 'API de vendas', completed: true }, { id: 's4', title: 'Interface', completed: false }], comments: [], createdAt: new Date('2025-10-01') },
-  { id: '3', projectId: '1', title: 'Integração com API bancária', description: 'Integrar com Multicaixa Express', responsible: 'Pedro Costa', deadline: new Date('2026-02-01'), status: 'todo', subtasks: [], comments: [], createdAt: new Date('2025-11-01') },
-  { id: '4', projectId: '2', title: 'Design do app', description: 'Criar protótipos no Figma', responsible: 'Ana Lima', deadline: new Date('2025-11-15'), status: 'done', subtasks: [], comments: [], createdAt: new Date('2025-10-05') },
-  { id: '5', projectId: '2', title: 'Implementar carrinho', description: 'Funcionalidade de carrinho de compras', responsible: 'João Silva', deadline: new Date('2026-01-20'), status: 'doing', subtasks: [], comments: [], createdAt: new Date('2025-11-20') },
-  { id: '6', projectId: '2', title: 'Testes de integração', description: 'Testes end-to-end', responsible: 'Pedro Costa', deadline: new Date('2026-02-10'), status: 'todo', subtasks: [], comments: [], createdAt: new Date('2025-12-01') },
+  { id: '1', projectId: '1', title: 'Levantamento topográfico', description: 'Realizar levantamento topográfico completo do terreno', responsible: 'João Silva', deadline: new Date('2025-10-01'), status: 'done', priority: 'high', phase: 'projeto', completionPercentage: 100, subtasks: [{ id: 's1', title: 'Contratação de topógrafo', completed: true }, { id: 's2', title: 'Entrega do relatório', completed: true }], comments: [], createdAt: new Date('2025-09-20') },
+  { id: '2', projectId: '1', title: 'Projecto de fundações', description: 'Desenvolver projecto estrutural de fundações', responsible: 'Maria Santos', deadline: new Date('2026-01-15'), status: 'doing', priority: 'critical', phase: 'projeto', completionPercentage: 60, subtasks: [{ id: 's3', title: 'Estudo geotécnico', completed: true }, { id: 's4', title: 'Cálculo estrutural', completed: false }], comments: [], createdAt: new Date('2025-10-01') },
+  { id: '3', projectId: '1', title: 'Aprovação camarária', description: 'Submeter projecto para aprovação municipal', responsible: 'Pedro Costa', deadline: new Date('2026-02-01'), status: 'todo', priority: 'high', phase: 'projeto', completionPercentage: 0, subtasks: [], comments: [], createdAt: new Date('2025-11-01') },
+  { id: '4', projectId: '1', title: 'Revisão arquitectónica', description: 'Revisão final do projecto arquitectónico', responsible: 'Ana Lima', deadline: new Date('2026-01-30'), status: 'review', priority: 'medium', phase: 'projeto', completionPercentage: 80, subtasks: [], comments: [], createdAt: new Date('2025-12-01') },
+  { id: '5', projectId: '2', title: 'Moodboard e conceito', description: 'Criar moodboard com conceito de design', responsible: 'Ana Lima', deadline: new Date('2025-11-15'), status: 'done', priority: 'high', phase: 'projeto', completionPercentage: 100, subtasks: [], comments: [], createdAt: new Date('2025-10-05') },
+  { id: '6', projectId: '2', title: 'Selecção de mobiliário', description: 'Definir peças de mobiliário para todos os ambientes', responsible: 'João Silva', deadline: new Date('2026-01-20'), status: 'doing', priority: 'medium', phase: 'acabamento', completionPercentage: 40, subtasks: [], comments: [], createdAt: new Date('2025-11-20') },
+  { id: '7', projectId: '2', title: 'Instalação decorativa', description: 'Coordenar instalação de elementos decorativos', responsible: 'Pedro Costa', deadline: new Date('2026-02-10'), status: 'todo', priority: 'low', phase: 'acabamento', completionPercentage: 0, subtasks: [], comments: [], createdAt: new Date('2025-12-01') },
 ];
 
 interface AppContextType {
@@ -54,7 +126,7 @@ interface AppContextType {
   deleteClient: (id: string) => void;
   
   // Project operations
-  addProject: (project: Omit<Project, 'id' | 'createdAt'>) => void;
+  addProject: (project: Omit<Project, 'id' | 'createdAt' | 'history'>) => void;
   updateProject: (id: string, project: Partial<Project>) => void;
   deleteProject: (id: string) => void;
   
@@ -74,6 +146,7 @@ interface AppContextType {
   getClientProjects: (clientId: string) => Project[];
   getProjectTransactions: (projectId: string) => Transaction[];
   getDashboardMetrics: () => DashboardMetrics;
+  getProjectKPIs: (projectId: string) => ProjectKPIs;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -103,17 +176,32 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   // Project operations
-  const addProject = useCallback((project: Omit<Project, 'id' | 'createdAt'>) => {
+  const addProject = useCallback((project: Omit<Project, 'id' | 'createdAt' | 'history'>) => {
     const newProject: Project = {
       ...project,
       id: crypto.randomUUID(),
       createdAt: new Date(),
+      history: [{ id: crypto.randomUUID(), action: 'Criação', description: 'Projecto criado', date: new Date() }],
     };
     setProjects(prev => [...prev, newProject]);
   }, []);
 
   const updateProject = useCallback((id: string, updates: Partial<Project>) => {
-    setProjects(prev => prev.map(p => p.id === id ? { ...p, ...updates } : p));
+    setProjects(prev => prev.map(p => {
+      if (p.id === id) {
+        const newHistory = [...p.history];
+        if (updates.status && updates.status !== p.status) {
+          newHistory.push({
+            id: crypto.randomUUID(),
+            action: 'Alteração de estado',
+            description: `De ${p.status} para ${updates.status}`,
+            date: new Date(),
+          });
+        }
+        return { ...p, ...updates, history: newHistory };
+      }
+      return p;
+    }));
   }, []);
 
   const deleteProject = useCallback((id: string) => {
@@ -169,6 +257,48 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return projects.filter(p => p.clientId === clientId);
   }, [projects]);
 
+  const getProjectKPIs = useCallback((projectId: string): ProjectKPIs => {
+    const project = projects.find(p => p.id === projectId);
+    const projectTasks = tasks.filter(t => t.projectId === projectId);
+    const projectTransactions = transactions.filter(t => t.projectId === projectId);
+
+    const totalIncome = projectTransactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.value, 0);
+    const totalExpenses = projectTransactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.value, 0);
+    const budget = project?.budget || 0;
+
+    const tasksByStatus: Record<TaskStatus, number> = {
+      todo: projectTasks.filter(t => t.status === 'todo').length,
+      doing: projectTasks.filter(t => t.status === 'doing').length,
+      review: projectTasks.filter(t => t.status === 'review').length,
+      done: projectTasks.filter(t => t.status === 'done').length,
+    };
+
+    const overdueTasks = projectTasks.filter(t => 
+      t.deadline && isPast(new Date(t.deadline)) && t.status !== 'done'
+    ).length;
+
+    const progressPercentage = projectTasks.length > 0
+      ? Math.round(projectTasks.reduce((sum, t) => sum + t.completionPercentage, 0) / projectTasks.length)
+      : 0;
+
+    const deadlineDeviation = project 
+      ? differenceInDays(new Date(), new Date(project.deadline))
+      : 0;
+
+    return {
+      progressPercentage,
+      tasksByStatus,
+      overdueTasks,
+      deadlineDeviation,
+      budgetUsed: totalExpenses,
+      budgetRemaining: budget - totalExpenses,
+      budgetPercentage: budget > 0 ? Math.round((totalExpenses / budget) * 100) : 0,
+      totalIncome,
+      totalExpenses,
+      profit: totalIncome - totalExpenses,
+    };
+  }, [projects, tasks, transactions]);
+
   const getProjectWithDetails = useCallback((projectId: string): ProjectWithDetails | undefined => {
     const project = projects.find(p => p.id === projectId);
     if (!project) return undefined;
@@ -176,26 +306,36 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const client = clients.find(c => c.id === project.clientId);
     const projectTransactions = getProjectTransactions(projectId);
     const projectTasks = getProjectTasks(projectId);
-    const totalIncome = projectTransactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.value, 0);
-    const totalExpenses = projectTransactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.value, 0);
+    const kpis = getProjectKPIs(projectId);
 
     return {
       ...project,
       client,
       transactions: projectTransactions,
       tasks: projectTasks,
-      totalIncome,
-      totalExpenses,
-      profit: totalIncome - totalExpenses,
+      kpis,
     };
-  }, [projects, clients, getProjectTransactions, getProjectTasks]);
+  }, [projects, clients, getProjectTransactions, getProjectTasks, getProjectKPIs]);
 
   const getDashboardMetrics = useCallback((): DashboardMetrics => {
     const totalRevenue = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.value, 0);
     const totalExpenses = transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.value, 0);
     const currentBalance = totalRevenue - totalExpenses;
     const activeProjects = projects.filter(p => p.status === 'in_progress').length;
+    const completedProjects = projects.filter(p => p.status === 'completed').length;
+    const activeClients = clients.filter(c => c.status === 'active').length;
     const leadsInFunnel = clients.filter(c => c.status === 'lead').length;
+
+    const projectsByStatus: Record<ProjectStatus, number> = {
+      planning: projects.filter(p => p.status === 'planning').length,
+      in_progress: projects.filter(p => p.status === 'in_progress').length,
+      paused: projects.filter(p => p.status === 'paused').length,
+      completed: projects.filter(p => p.status === 'completed').length,
+    };
+
+    const recentProjects = [...projects]
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, 5);
 
     // Calculate monthly flow for last 6 months
     const monthlyFlow: MonthlyFlow[] = [];
@@ -224,7 +364,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       totalRevenue,
       currentBalance,
       activeProjects,
+      completedProjects,
+      activeClients,
       leadsInFunnel,
+      projectsByStatus,
+      recentProjects,
       monthlyFlow,
     };
   }, [transactions, projects, clients]);
@@ -251,13 +395,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     getClientProjects,
     getProjectTransactions,
     getDashboardMetrics,
+    getProjectKPIs,
   }), [
     clients, projects, transactions, tasks,
     addClient, updateClient, deleteClient,
     addProject, updateProject, deleteProject,
     addTransaction, updateTransaction, deleteTransaction,
     addTask, updateTask, deleteTask, getProjectTasks,
-    getProjectWithDetails, getClientProjects, getProjectTransactions, getDashboardMetrics,
+    getProjectWithDetails, getClientProjects, getProjectTransactions, getDashboardMetrics, getProjectKPIs,
   ]);
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
