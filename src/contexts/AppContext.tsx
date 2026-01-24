@@ -1,7 +1,17 @@
 import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
-import { Client, Project, Transaction, Task, ProjectWithDetails, DashboardMetrics, MonthlyFlow, TaskStatus, ProjectStatus, ProjectKPIs } from '@/types';
+import { Client, Project, Transaction, Task, ProjectWithDetails, DashboardMetrics, MonthlyFlow, TaskStatus, ProjectStatus, ProjectKPIs, Deal, DealStage, DealStageConfig } from '@/types';
 import { format, subMonths, isWithinInterval, startOfMonth, endOfMonth, differenceInDays, isPast, isFuture, addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+
+// Deal stage configuration with probabilities
+export const dealStageConfig: DealStageConfig[] = [
+  { id: 'lead', label: 'Lead', probability: 10, color: 'from-slate-500 to-slate-600' },
+  { id: 'qualification', label: 'Qualificação', probability: 25, color: 'from-blue-500 to-blue-600' },
+  { id: 'proposal', label: 'Proposta', probability: 50, color: 'from-amber-500 to-amber-600' },
+  { id: 'negotiation', label: 'Negociação', probability: 75, color: 'from-purple-500 to-purple-600' },
+  { id: 'won', label: 'Ganhou', probability: 100, color: 'from-emerald-500 to-emerald-600' },
+  { id: 'lost', label: 'Perdeu', probability: 0, color: 'from-rose-500 to-rose-600' },
+];
 
 // Initial mock data
 const initialClients: Client[] = [
@@ -113,12 +123,22 @@ const initialTasks: Task[] = [
   { id: '7', projectId: '2', title: 'Instalação decorativa', description: 'Coordenar instalação de elementos decorativos', responsible: 'Pedro Costa', deadline: new Date('2026-02-10'), status: 'todo', priority: 'low', phase: 'acabamento', completionPercentage: 0, subtasks: [], comments: [], createdAt: new Date('2025-12-01') },
 ];
 
+const initialDeals: Deal[] = [
+  { id: '1', title: 'Projecto Escritórios Kinaxixi', clientId: '2', value: 35000000, stage: 'lead', probability: 10, expectedCloseDate: new Date('2026-03-15'), notes: 'Contacto inicial via website', createdAt: new Date('2026-01-10') },
+  { id: '2', title: 'Renovação Moradia Maianga', clientId: '5', value: 18000000, stage: 'qualification', probability: 25, expectedCloseDate: new Date('2026-02-28'), notes: 'Reunião agendada para próxima semana', createdAt: new Date('2026-01-05') },
+  { id: '3', title: 'Centro Comercial Cacuaco', clientId: '2', value: 150000000, stage: 'proposal', probability: 50, expectedCloseDate: new Date('2026-06-01'), notes: 'Proposta enviada, aguardando feedback', createdAt: new Date('2025-12-20') },
+  { id: '4', title: 'Condomínio Residencial Talatona', clientId: '1', value: 280000000, stage: 'negotiation', probability: 75, expectedCloseDate: new Date('2026-04-15'), notes: 'Em negociação de valores finais', createdAt: new Date('2025-11-15') },
+  { id: '5', title: 'Edifício Comercial Maculusso', clientId: '3', value: 45000000, stage: 'won', probability: 100, expectedCloseDate: new Date('2026-01-20'), notes: 'Contrato assinado!', createdAt: new Date('2025-10-01') },
+  { id: '6', title: 'Armazém Industrial Viana', clientId: '4', value: 25000000, stage: 'lost', probability: 0, expectedCloseDate: null, notes: 'Cliente optou por outro fornecedor', createdAt: new Date('2025-09-15') },
+];
+
 interface AppContextType {
   // Data
   clients: Client[];
   projects: Project[];
   transactions: Transaction[];
   tasks: Task[];
+  deals: Deal[];
   
   // Client operations
   addClient: (client: Omit<Client, 'id' | 'createdAt'>) => void;
@@ -141,6 +161,15 @@ interface AppContextType {
   deleteTask: (id: string) => void;
   getProjectTasks: (projectId: string) => Task[];
   
+  // Deal operations
+  addDeal: (deal: Omit<Deal, 'id' | 'createdAt'>) => void;
+  updateDeal: (id: string, deal: Partial<Deal>) => void;
+  deleteDeal: (id: string) => void;
+  moveDealToStage: (dealId: string, newStage: DealStage) => void;
+  getClientDeals: (clientId: string) => Deal[];
+  getDealsByStage: (stage: DealStage) => Deal[];
+  getPipelineMetrics: () => { totalValue: number; weightedValue: number; dealsByStage: Record<DealStage, number>; stageValues: Record<DealStage, number> };
+  
   // Computed data
   getProjectWithDetails: (projectId: string) => ProjectWithDetails | undefined;
   getClientProjects: (clientId: string) => Project[];
@@ -156,6 +185,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [projects, setProjects] = useState<Project[]>(initialProjects);
   const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions);
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
+  const [deals, setDeals] = useState<Deal[]>(initialDeals);
 
   // Client operations
   const addClient = useCallback((client: Omit<Client, 'id' | 'createdAt'>) => {
@@ -248,7 +278,66 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return tasks.filter(t => t.projectId === projectId);
   }, [tasks]);
 
-  // Computed data
+  // Deal operations
+  const addDeal = useCallback((deal: Omit<Deal, 'id' | 'createdAt'>) => {
+    const newDeal: Deal = {
+      ...deal,
+      id: crypto.randomUUID(),
+      createdAt: new Date(),
+    };
+    setDeals(prev => [...prev, newDeal]);
+  }, []);
+
+  const updateDeal = useCallback((id: string, updates: Partial<Deal>) => {
+    setDeals(prev => prev.map(d => d.id === id ? { ...d, ...updates } : d));
+  }, []);
+
+  const deleteDeal = useCallback((id: string) => {
+    setDeals(prev => prev.filter(d => d.id !== id));
+  }, []);
+
+  const moveDealToStage = useCallback((dealId: string, newStage: DealStage) => {
+    const stageConfig = dealStageConfig.find(s => s.id === newStage);
+    setDeals(prev => prev.map(d => 
+      d.id === dealId 
+        ? { ...d, stage: newStage, probability: stageConfig?.probability || d.probability }
+        : d
+    ));
+  }, []);
+
+  const getClientDeals = useCallback((clientId: string) => {
+    return deals.filter(d => d.clientId === clientId);
+  }, [deals]);
+
+  const getDealsByStage = useCallback((stage: DealStage) => {
+    return deals.filter(d => d.stage === stage);
+  }, [deals]);
+
+  const getPipelineMetrics = useCallback(() => {
+    const activeDeals = deals.filter(d => d.stage !== 'won' && d.stage !== 'lost');
+    const totalValue = activeDeals.reduce((sum, d) => sum + d.value, 0);
+    const weightedValue = activeDeals.reduce((sum, d) => sum + (d.value * d.probability / 100), 0);
+    
+    const dealsByStage: Record<DealStage, number> = {
+      lead: deals.filter(d => d.stage === 'lead').length,
+      qualification: deals.filter(d => d.stage === 'qualification').length,
+      proposal: deals.filter(d => d.stage === 'proposal').length,
+      negotiation: deals.filter(d => d.stage === 'negotiation').length,
+      won: deals.filter(d => d.stage === 'won').length,
+      lost: deals.filter(d => d.stage === 'lost').length,
+    };
+
+    const stageValues: Record<DealStage, number> = {
+      lead: deals.filter(d => d.stage === 'lead').reduce((sum, d) => sum + d.value, 0),
+      qualification: deals.filter(d => d.stage === 'qualification').reduce((sum, d) => sum + d.value, 0),
+      proposal: deals.filter(d => d.stage === 'proposal').reduce((sum, d) => sum + d.value, 0),
+      negotiation: deals.filter(d => d.stage === 'negotiation').reduce((sum, d) => sum + d.value, 0),
+      won: deals.filter(d => d.stage === 'won').reduce((sum, d) => sum + d.value, 0),
+      lost: deals.filter(d => d.stage === 'lost').reduce((sum, d) => sum + d.value, 0),
+    };
+
+    return { totalValue, weightedValue, dealsByStage, stageValues };
+  }, [deals]);
   const getProjectTransactions = useCallback((projectId: string) => {
     return transactions.filter(t => t.projectId === projectId);
   }, [transactions]);
@@ -378,6 +467,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     projects,
     transactions,
     tasks,
+    deals,
     addClient,
     updateClient,
     deleteClient,
@@ -391,17 +481,25 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     updateTask,
     deleteTask,
     getProjectTasks,
+    addDeal,
+    updateDeal,
+    deleteDeal,
+    moveDealToStage,
+    getClientDeals,
+    getDealsByStage,
+    getPipelineMetrics,
     getProjectWithDetails,
     getClientProjects,
     getProjectTransactions,
     getDashboardMetrics,
     getProjectKPIs,
   }), [
-    clients, projects, transactions, tasks,
+    clients, projects, transactions, tasks, deals,
     addClient, updateClient, deleteClient,
     addProject, updateProject, deleteProject,
     addTransaction, updateTransaction, deleteTransaction,
     addTask, updateTask, deleteTask, getProjectTasks,
+    addDeal, updateDeal, deleteDeal, moveDealToStage, getClientDeals, getDealsByStage, getPipelineMetrics,
     getProjectWithDetails, getClientProjects, getProjectTransactions, getDashboardMetrics, getProjectKPIs,
   ]);
 
