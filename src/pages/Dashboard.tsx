@@ -3,6 +3,7 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { CashFlowChart } from '@/components/dashboard/CashFlowChart';
 import { ProjectStatusChart } from '@/components/dashboard/ProjectStatusChart';
 import { RecentProjects } from '@/components/dashboard/RecentProjects';
+import { AlertBanner } from '@/components/alerts/AlertCenter';
 import { useApp } from '@/contexts/AppContext';
 import { 
   LayoutDashboard, 
@@ -32,6 +33,9 @@ export default function Dashboard() {
         description="Visão geral do seu negócio"
         icon={LayoutDashboard}
       />
+
+      {/* Alert Banner */}
+      <AlertBanner />
 
       {/* Stats Grid - Modern Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-8">

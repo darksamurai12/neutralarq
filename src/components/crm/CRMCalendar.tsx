@@ -614,14 +614,14 @@ export function CRMCalendar() {
                       <div className="space-y-2">
                         <Label>Contacto</Label>
                         <Select
-                          value={formData.clientId || ''}
-                          onValueChange={(value) => setFormData({ ...formData, clientId: value || null })}
+                          value={formData.clientId || 'none'}
+                          onValueChange={(value) => setFormData({ ...formData, clientId: value === 'none' ? null : value })}
                         >
                           <SelectTrigger>
                             <SelectValue placeholder="Seleccionar contacto" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">Nenhum</SelectItem>
+                            <SelectItem value="none">Nenhum</SelectItem>
                             {clients.map((client) => (
                               <SelectItem key={client.id} value={client.id}>{client.name}</SelectItem>
                             ))}
@@ -632,14 +632,14 @@ export function CRMCalendar() {
                       <div className="space-y-2">
                         <Label>Negócio</Label>
                         <Select
-                          value={formData.dealId || ''}
-                          onValueChange={(value) => setFormData({ ...formData, dealId: value || null })}
+                          value={formData.dealId || 'none'}
+                          onValueChange={(value) => setFormData({ ...formData, dealId: value === 'none' ? null : value })}
                         >
                           <SelectTrigger>
                             <SelectValue placeholder="Seleccionar negócio" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">Nenhum</SelectItem>
+                            <SelectItem value="none">Nenhum</SelectItem>
                             {deals.map((deal) => (
                               <SelectItem key={deal.id} value={deal.id}>{deal.title}</SelectItem>
                             ))}
