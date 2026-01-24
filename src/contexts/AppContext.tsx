@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
-import { Client, Project, Transaction, Task, ProjectWithDetails, DashboardMetrics, MonthlyFlow, TaskStatus, ProjectStatus, ProjectKPIs, Deal, DealStage, DealStageConfig } from '@/types';
-import { format, subMonths, isWithinInterval, startOfMonth, endOfMonth, differenceInDays, isPast, isFuture, addDays } from 'date-fns';
+import { Client, Project, Transaction, Task, ProjectWithDetails, DashboardMetrics, MonthlyFlow, TaskStatus, ProjectStatus, ProjectKPIs, Deal, DealStage, DealStageConfig, CalendarEvent, CalendarEventType } from '@/types';
+import { format, subMonths, isWithinInterval, startOfMonth, endOfMonth, differenceInDays, isPast, isFuture, addDays, isSameDay, startOfWeek, endOfWeek } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 // Deal stage configuration with probabilities
@@ -139,6 +139,7 @@ interface AppContextType {
   transactions: Transaction[];
   tasks: Task[];
   deals: Deal[];
+  calendarEvents: CalendarEvent[];
   
   // Client operations
   addClient: (client: Omit<Client, 'id' | 'createdAt'>) => void;
@@ -170,6 +171,15 @@ interface AppContextType {
   getDealsByStage: (stage: DealStage) => Deal[];
   getPipelineMetrics: () => { totalValue: number; weightedValue: number; dealsByStage: Record<DealStage, number>; stageValues: Record<DealStage, number> };
   
+  // Calendar operations
+  addCalendarEvent: (event: Omit<CalendarEvent, 'id' | 'createdAt'>) => void;
+  updateCalendarEvent: (id: string, event: Partial<CalendarEvent>) => void;
+  deleteCalendarEvent: (id: string) => void;
+  getEventsForDay: (date: Date) => CalendarEvent[];
+  getEventsForWeek: (date: Date) => CalendarEvent[];
+  getEventsForMonth: (date: Date) => CalendarEvent[];
+  getUpcomingEvents: (limit?: number) => CalendarEvent[];
+  
   // Computed data
   getProjectWithDetails: (projectId: string) => ProjectWithDetails | undefined;
   getClientProjects: (clientId: string) => Project[];
@@ -186,6 +196,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions);
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const [deals, setDeals] = useState<Deal[]>(initialDeals);
+  const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([
+    { id: '1', title: 'Reunião com Tech Solutions', description: 'Discutir andamento do projecto Talatona', type: 'meeting', startDate: new Date('2026-01-27T10:00:00'), endDate: new Date('2026-01-27T11:30:00'), allDay: false, clientId: '1', dealId: '4', reminder: 30, completed: false, createdAt: new Date() },
+    { id: '2', title: 'Chamada de acompanhamento - Fintech', description: 'Follow-up da proposta enviada', type: 'call', startDate: new Date('2026-01-25T14:00:00'), endDate: new Date('2026-01-25T14:30:00'), allDay: false, clientId: '5', dealId: '2', reminder: 15, completed: false, createdAt: new Date() },
+    { id: '3', title: 'Deadline Proposta Centro Comercial', description: 'Prazo para envio da proposta final', type: 'deadline', startDate: new Date('2026-01-28T00:00:00'), endDate: new Date('2026-01-28T23:59:00'), allDay: true, clientId: '2', dealId: '3', reminder: 1440, completed: false, createdAt: new Date() },
+    { id: '4', title: 'Visita ao terreno Viana', description: 'Visita técnica para levantamento', type: 'follow_up', startDate: new Date('2026-01-29T09:00:00'), endDate: new Date('2026-01-29T12:00:00'), allDay: false, clientId: '3', dealId: null, reminder: 60, completed: false, createdAt: new Date() },
+    { id: '5', title: 'Apresentação Projecto Miramar', description: 'Apresentação do design de interiores ao cliente', type: 'meeting', startDate: new Date('2026-01-30T15:00:00'), endDate: new Date('2026-01-30T17:00:00'), allDay: false, clientId: '3', dealId: null, reminder: 60, completed: false, createdAt: new Date() },
+  ]);
 
   // Client operations
   const addClient = useCallback((client: Omit<Client, 'id' | 'createdAt'>) => {
@@ -338,6 +355,54 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     return { totalValue, weightedValue, dealsByStage, stageValues };
   }, [deals]);
+
+  // Calendar operations
+  const addCalendarEvent = useCallback((event: Omit<CalendarEvent, 'id' | 'createdAt'>) => {
+    const newEvent: CalendarEvent = {
+      ...event,
+      id: crypto.randomUUID(),
+      createdAt: new Date(),
+    };
+    setCalendarEvents(prev => [...prev, newEvent]);
+  }, []);
+
+  const updateCalendarEvent = useCallback((id: string, updates: Partial<CalendarEvent>) => {
+    setCalendarEvents(prev => prev.map(e => e.id === id ? { ...e, ...updates } : e));
+  }, []);
+
+  const deleteCalendarEvent = useCallback((id: string) => {
+    setCalendarEvents(prev => prev.filter(e => e.id !== id));
+  }, []);
+
+  const getEventsForDay = useCallback((date: Date) => {
+    return calendarEvents.filter(e => isSameDay(new Date(e.startDate), date));
+  }, [calendarEvents]);
+
+  const getEventsForWeek = useCallback((date: Date) => {
+    const weekStart = startOfWeek(date, { weekStartsOn: 1 });
+    const weekEnd = endOfWeek(date, { weekStartsOn: 1 });
+    return calendarEvents.filter(e => {
+      const eventDate = new Date(e.startDate);
+      return isWithinInterval(eventDate, { start: weekStart, end: weekEnd });
+    });
+  }, [calendarEvents]);
+
+  const getEventsForMonth = useCallback((date: Date) => {
+    const monthStart = startOfMonth(date);
+    const monthEnd = endOfMonth(date);
+    return calendarEvents.filter(e => {
+      const eventDate = new Date(e.startDate);
+      return isWithinInterval(eventDate, { start: monthStart, end: monthEnd });
+    });
+  }, [calendarEvents]);
+
+  const getUpcomingEvents = useCallback((limit: number = 5) => {
+    const now = new Date();
+    return calendarEvents
+      .filter(e => new Date(e.startDate) >= now && !e.completed)
+      .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
+      .slice(0, limit);
+  }, [calendarEvents]);
   const getProjectTransactions = useCallback((projectId: string) => {
     return transactions.filter(t => t.projectId === projectId);
   }, [transactions]);
@@ -488,18 +553,27 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     getClientDeals,
     getDealsByStage,
     getPipelineMetrics,
+    calendarEvents,
+    addCalendarEvent,
+    updateCalendarEvent,
+    deleteCalendarEvent,
+    getEventsForDay,
+    getEventsForWeek,
+    getEventsForMonth,
+    getUpcomingEvents,
     getProjectWithDetails,
     getClientProjects,
     getProjectTransactions,
     getDashboardMetrics,
     getProjectKPIs,
   }), [
-    clients, projects, transactions, tasks, deals,
+    clients, projects, transactions, tasks, deals, calendarEvents,
     addClient, updateClient, deleteClient,
     addProject, updateProject, deleteProject,
     addTransaction, updateTransaction, deleteTransaction,
     addTask, updateTask, deleteTask, getProjectTasks,
     addDeal, updateDeal, deleteDeal, moveDealToStage, getClientDeals, getDealsByStage, getPipelineMetrics,
+    addCalendarEvent, updateCalendarEvent, deleteCalendarEvent, getEventsForDay, getEventsForWeek, getEventsForMonth, getUpcomingEvents,
     getProjectWithDetails, getClientProjects, getProjectTransactions, getDashboardMetrics, getProjectKPIs,
   ]);
 

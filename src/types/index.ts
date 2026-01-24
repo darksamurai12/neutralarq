@@ -148,3 +148,23 @@ export interface MonthlyFlow {
   income: number;
   expenses: number;
 }
+
+// Calendar Event Types
+export type CalendarEventType = 'meeting' | 'call' | 'follow_up' | 'deadline' | 'other';
+
+export interface CalendarEvent {
+  id: string;
+  title: string;
+  description: string;
+  type: CalendarEventType;
+  startDate: Date;
+  endDate: Date;
+  allDay: boolean;
+  clientId: string | null;
+  dealId: string | null;
+  reminder: number | null; // minutes before event
+  completed: boolean;
+  createdAt: Date;
+}
+
+export type CalendarView = 'day' | 'week' | 'month';
