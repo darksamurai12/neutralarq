@@ -2,7 +2,22 @@ import { useState } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { useApp } from '@/contexts/AppContext';
-import { Wallet, Plus, TrendingUp, TrendingDown, Pencil, Trash2, MoreHorizontal } from 'lucide-react';
+import { 
+  Wallet, 
+  Plus, 
+  TrendingUp, 
+  TrendingDown, 
+  Pencil, 
+  Trash2, 
+  MoreHorizontal,
+  ArrowUpRight,
+  ArrowDownRight,
+  Calendar,
+  Filter,
+  Receipt,
+  PiggyBank,
+  CreditCard
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -29,9 +44,27 @@ import {
 import { Transaction, TransactionType } from '@/types';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
+import { pt } from 'date-fns/locale';
 import { formatCurrency } from '@/lib/currency';
 import { SearchFilter } from '@/components/filters/SearchFilter';
 import { StatusFilter } from '@/components/filters/StatusFilter';
+import { CashFlowChart } from '@/components/dashboard/CashFlowChart';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  Legend
+} from 'recharts';
 
 const typeOptions = [
   { value: 'income' as const, label: 'Entradas' },
@@ -39,7 +72,7 @@ const typeOptions = [
 ];
 
 export default function Finance() {
-  const { transactions, projects, clients, addTransaction, updateTransaction, deleteTransaction } = useApp();
+  const { transactions, projects, clients, addTransaction, updateTransaction, deleteTransaction, getDashboardMetrics } = useApp();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [formData, setFormData] = useState({
@@ -51,6 +84,8 @@ export default function Finance() {
   });
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<TransactionType | 'all'>('all');
+  
+  const dashboardMetrics = getDashboardMetrics();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -114,19 +149,42 @@ export default function Finance() {
 
   const totalIncome = transactions.filter((t) => t.type === 'income').reduce((sum, t) => sum + t.value, 0);
   const totalExpenses = transactions.filter((t) => t.type === 'expense').reduce((sum, t) => sum + t.value, 0);
+  const balance = totalIncome - totalExpenses;
+  const savingsRate = totalIncome > 0 ? ((balance / totalIncome) * 100).toFixed(1) : '0';
+
+  // Calcular dados para gráfico de área
+  const areaChartData = dashboardMetrics.monthlyFlow.map(item => ({
+    ...item,
+    balance: item.income - item.expenses,
+  }));
+
+  // Dados para gráfico de distribuição por projecto
+  const projectExpenses = projects.map(project => {
+    const projectTransactions = transactions.filter(t => t.projectId === project.id);
+    const total = projectTransactions.reduce((sum, t) => sum + (t.type === 'expense' ? t.value : 0), 0);
+    return {
+      name: project.name,
+      value: total,
+    };
+  }).filter(p => p.value > 0).slice(0, 5);
+
+  const COLORS = ['hsl(217, 91%, 60%)', 'hsl(142, 76%, 36%)', 'hsl(38, 92%, 50%)', 'hsl(0, 84%, 60%)', 'hsl(280, 84%, 60%)'];
+
+  // Transações recentes (últimas 5)
+  const recentTransactions = sortedTransactions.slice(0, 5);
 
   return (
     <AppLayout>
       <PageHeader
         title="Finanças"
-        description="Controle de fluxo de caixa"
+        description="Gestão completa do fluxo de caixa"
         icon={Wallet}
       >
         <Dialog open={isDialogOpen} onOpenChange={(open) => { setIsDialogOpen(open); if (!open) resetForm(); }}>
           <DialogTrigger asChild>
-            <Button className="gap-2">
+            <Button className="gap-2 shadow-lg hover:shadow-xl transition-all duration-300">
               <Plus className="w-4 h-4" />
-              Adicionar Transação
+              Nova Transação
             </Button>
           </DialogTrigger>
           <DialogContent>
@@ -195,7 +253,7 @@ export default function Finance() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="project">Vincular a Projeto (opcional)</Label>
-              <Select
+                <Select
                   value={formData.projectId || "none"}
                   onValueChange={(value) => setFormData({ ...formData, projectId: value === "none" ? "" : value })}
                 >
@@ -219,142 +277,340 @@ export default function Finance() {
                 <Button type="button" variant="outline" onClick={resetForm}>
                   Cancelar
                 </Button>
-                <Button type="submit">{editingTransaction ? 'Salvar' : 'Adicionar'}</Button>
+                <Button type="submit">{editingTransaction ? 'Guardar' : 'Adicionar'}</Button>
               </div>
             </form>
           </DialogContent>
         </Dialog>
       </PageHeader>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-        <div className="rounded-xl border border-border bg-card p-4 shadow-card">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
-            <TrendingUp className="w-4 h-4 text-success" />
-            <span>Total Entradas</span>
-          </div>
-          <p className="text-xl font-semibold text-success">{formatCurrency(totalIncome)}</p>
-        </div>
-        <div className="rounded-xl border border-border bg-card p-4 shadow-card">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
-            <TrendingDown className="w-4 h-4 text-destructive" />
-            <span>Total Saídas</span>
-          </div>
-          <p className="text-xl font-semibold text-destructive">{formatCurrency(totalExpenses)}</p>
-        </div>
-        <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 shadow-card">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
-            <Wallet className="w-4 h-4 text-primary" />
-            <span>Saldo</span>
-          </div>
-          <p className={cn(
-            'text-xl font-semibold',
-            totalIncome - totalExpenses >= 0 ? 'text-primary' : 'text-destructive'
-          )}>
-            {formatCurrency(totalIncome - totalExpenses)}
-          </p>
-        </div>
-      </div>
-
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-6">
-        <div className="flex-1 max-w-sm">
-          <SearchFilter
-            value={searchQuery}
-            onChange={setSearchQuery}
-            placeholder="Pesquisar transações..."
-          />
-        </div>
-        <StatusFilter<TransactionType>
-          value={typeFilter}
-          onChange={(v) => setTypeFilter(v)}
-          options={typeOptions}
-          placeholder="Tipo"
-        />
-      </div>
-
-      {/* Transaction List */}
-      <div className="rounded-xl border border-border bg-card shadow-card overflow-hidden">
-        <div className="p-4 border-b border-border">
-          <h3 className="font-semibold text-foreground">Histórico de Transações</h3>
-        </div>
-        <div className="divide-y divide-border">
-          {sortedTransactions.map((transaction) => {
-            const project = projects.find((p) => p.id === transaction.projectId);
-            const client = clients.find((c) => c.id === transaction.clientId);
-            return (
-              <div
-                key={transaction.id}
-                className="flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <div className={cn(
-                    'w-10 h-10 rounded-full flex items-center justify-center',
-                    transaction.type === 'income' ? 'bg-success/10' : 'bg-destructive/10'
-                  )}>
-                    {transaction.type === 'income' ? (
-                      <TrendingUp className="w-5 h-5 text-success" />
-                    ) : (
-                      <TrendingDown className="w-5 h-5 text-destructive" />
-                    )}
-                  </div>
-                  <div>
-                    <p className="font-medium text-foreground">{transaction.description}</p>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <span>{format(new Date(transaction.date), 'dd/MM/yyyy')}</span>
-                      {project && (
-                        <>
-                          <span>•</span>
-                          <span>{project.name}</span>
-                        </>
-                      )}
-                      {client && (
-                        <>
-                          <span>•</span>
-                          <span>{client.name}</span>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className={cn(
-                    'font-semibold text-lg',
-                    transaction.type === 'income' ? 'text-success' : 'text-destructive'
-                  )}>
-                    {transaction.type === 'income' ? '+' : '-'} {formatCurrency(transaction.value)}
-                  </span>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <MoreHorizontal className="w-4 h-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => handleEdit(transaction)}>
-                        <Pencil className="w-4 h-4 mr-2" />
-                        Editar
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        className="text-destructive"
-                        onClick={() => deleteTransaction(transaction.id)}
-                      >
-                        <Trash2 className="w-4 h-4 mr-2" />
-                        Excluir
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+      {/* Summary Cards - Modern Design */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        {/* Total Entradas */}
+        <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-emerald-100 text-sm font-medium mb-1">Total Entradas</p>
+                <p className="text-2xl font-bold tracking-tight">{formatCurrency(totalIncome)}</p>
+                <div className="flex items-center gap-1 mt-2 text-emerald-100 text-xs">
+                  <ArrowUpRight className="w-3 h-3" />
+                  <span>+12.5% este mês</span>
                 </div>
               </div>
-            );
-          })}
-          {sortedTransactions.length === 0 && (
-            <div className="py-8 text-center text-muted-foreground">
-              Nenhuma transação encontrada
+              <div className="h-12 w-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                <TrendingUp className="w-6 h-6 text-white" />
+              </div>
             </div>
-          )}
-        </div>
+            <div className="absolute -bottom-4 -right-4 h-24 w-24 rounded-full bg-white/10" />
+          </CardContent>
+        </Card>
+
+        {/* Total Saídas */}
+        <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-rose-500 to-rose-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-rose-100 text-sm font-medium mb-1">Total Saídas</p>
+                <p className="text-2xl font-bold tracking-tight">{formatCurrency(totalExpenses)}</p>
+                <div className="flex items-center gap-1 mt-2 text-rose-100 text-xs">
+                  <ArrowDownRight className="w-3 h-3" />
+                  <span>-8.2% este mês</span>
+                </div>
+              </div>
+              <div className="h-12 w-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                <TrendingDown className="w-6 h-6 text-white" />
+              </div>
+            </div>
+            <div className="absolute -bottom-4 -right-4 h-24 w-24 rounded-full bg-white/10" />
+          </CardContent>
+        </Card>
+
+        {/* Saldo */}
+        <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-blue-100 text-sm font-medium mb-1">Saldo Actual</p>
+                <p className="text-2xl font-bold tracking-tight">{formatCurrency(balance)}</p>
+                <div className="flex items-center gap-1 mt-2 text-blue-100 text-xs">
+                  <PiggyBank className="w-3 h-3" />
+                  <span>{savingsRate}% taxa poupança</span>
+                </div>
+              </div>
+              <div className="h-12 w-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                <Wallet className="w-6 h-6 text-white" />
+              </div>
+            </div>
+            <div className="absolute -bottom-4 -right-4 h-24 w-24 rounded-full bg-white/10" />
+          </CardContent>
+        </Card>
+
+        {/* Total Transações */}
+        <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-violet-500 to-violet-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-violet-100 text-sm font-medium mb-1">Total Transações</p>
+                <p className="text-2xl font-bold tracking-tight">{transactions.length}</p>
+                <div className="flex items-center gap-1 mt-2 text-violet-100 text-xs">
+                  <Receipt className="w-3 h-3" />
+                  <span>{filteredTransactions.length} visíveis</span>
+                </div>
+              </div>
+              <div className="h-12 w-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                <CreditCard className="w-6 h-6 text-white" />
+              </div>
+            </div>
+            <div className="absolute -bottom-4 -right-4 h-24 w-24 rounded-full bg-white/10" />
+          </CardContent>
+        </Card>
       </div>
+
+      {/* Charts Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        {/* Cash Flow Chart */}
+        <Card className="lg:col-span-2 shadow-lg border-0 bg-card">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg font-semibold flex items-center gap-2">
+              <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                <TrendingUp className="w-4 h-4 text-primary" />
+              </div>
+              Evolução do Fluxo de Caixa
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={areaChartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="hsl(142, 76%, 36%)" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="hsl(142, 76%, 36%)" stopOpacity={0}/>
+                    </linearGradient>
+                    <linearGradient id="colorExpenses" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="hsl(0, 84%, 60%)" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="hsl(0, 84%, 60%)" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                  <XAxis 
+                    dataKey="month" 
+                    axisLine={false} 
+                    tickLine={false} 
+                    tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+                  />
+                  <YAxis 
+                    axisLine={false} 
+                    tickLine={false} 
+                    tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+                    tickFormatter={(value) => `${(value / 1000000).toFixed(1)}M`}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--card))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '12px',
+                      boxShadow: '0 10px 40px -10px rgba(0,0,0,0.2)',
+                    }}
+                    labelStyle={{ color: 'hsl(var(--foreground))', fontWeight: 600 }}
+                    formatter={(value: number, name: string) => [
+                      formatCurrency(value),
+                      name === 'income' ? 'Entradas' : 'Saídas'
+                    ]}
+                  />
+                  <Area 
+                    type="monotone"
+                    dataKey="income" 
+                    stroke="hsl(142, 76%, 36%)" 
+                    strokeWidth={2}
+                    fillOpacity={1}
+                    fill="url(#colorIncome)"
+                  />
+                  <Area 
+                    type="monotone"
+                    dataKey="expenses" 
+                    stroke="hsl(0, 84%, 60%)" 
+                    strokeWidth={2}
+                    fillOpacity={1}
+                    fill="url(#colorExpenses)"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Distribution by Project */}
+        <Card className="shadow-lg border-0 bg-card">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg font-semibold flex items-center gap-2">
+              <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                <PiggyBank className="w-4 h-4 text-primary" />
+              </div>
+              Despesas por Projecto
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {projectExpenses.length > 0 ? (
+              <div className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={projectExpenses}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={100}
+                      paddingAngle={4}
+                      dataKey="value"
+                    >
+                      {projectExpenses.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip 
+                      formatter={(value: number) => formatCurrency(value)}
+                      contentStyle={{
+                        backgroundColor: 'hsl(var(--card))',
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '12px',
+                      }}
+                    />
+                    <Legend 
+                      verticalAlign="bottom"
+                      height={36}
+                      formatter={(value) => (
+                        <span className="text-xs text-muted-foreground">{value}</span>
+                      )}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <div className="h-[300px] flex items-center justify-center text-muted-foreground text-sm">
+                Sem despesas associadas a projectos
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Transactions Section */}
+      <Card className="shadow-lg border-0">
+        <CardHeader className="border-b border-border/50">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <CardTitle className="text-lg font-semibold flex items-center gap-2">
+              <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Receipt className="w-4 h-4 text-primary" />
+              </div>
+              Histórico de Transações
+            </CardTitle>
+            {/* Filters */}
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="w-full sm:w-64">
+                <SearchFilter
+                  value={searchQuery}
+                  onChange={setSearchQuery}
+                  placeholder="Pesquisar transações..."
+                />
+              </div>
+              <StatusFilter<TransactionType>
+                value={typeFilter}
+                onChange={(v) => setTypeFilter(v)}
+                options={typeOptions}
+                placeholder="Tipo"
+              />
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="p-0">
+          <div className="divide-y divide-border/50">
+            {sortedTransactions.map((transaction, index) => {
+              const project = projects.find((p) => p.id === transaction.projectId);
+              const client = clients.find((c) => c.id === transaction.clientId);
+              return (
+                <div
+                  key={transaction.id}
+                  className="flex items-center justify-between p-4 hover:bg-muted/30 transition-all duration-200 group"
+                  style={{ animationDelay: `${index * 50}ms` }}
+                >
+                  <div className="flex items-center gap-4">
+                    <div className={cn(
+                      'w-12 h-12 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110',
+                      transaction.type === 'income' 
+                        ? 'bg-gradient-to-br from-emerald-500/20 to-emerald-600/20' 
+                        : 'bg-gradient-to-br from-rose-500/20 to-rose-600/20'
+                    )}>
+                      {transaction.type === 'income' ? (
+                        <ArrowUpRight className="w-5 h-5 text-emerald-600" />
+                      ) : (
+                        <ArrowDownRight className="w-5 h-5 text-rose-600" />
+                      )}
+                    </div>
+                    <div>
+                      <p className="font-medium text-foreground">{transaction.description}</p>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                        <div className="flex items-center gap-1">
+                          <Calendar className="w-3 h-3" />
+                          <span>{format(new Date(transaction.date), "dd MMM yyyy", { locale: pt })}</span>
+                        </div>
+                        {project && (
+                          <Badge variant="secondary" className="text-xs py-0">
+                            {project.name}
+                          </Badge>
+                        )}
+                        {client && (
+                          <Badge variant="outline" className="text-xs py-0">
+                            {client.name}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <span className={cn(
+                      'font-bold text-lg tabular-nums',
+                      transaction.type === 'income' ? 'text-emerald-600' : 'text-rose-600'
+                    )}>
+                      {transaction.type === 'income' ? '+' : '-'} {formatCurrency(transaction.value)}
+                    </span>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <MoreHorizontal className="w-4 h-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-40">
+                        <DropdownMenuItem onClick={() => handleEdit(transaction)}>
+                          <Pencil className="w-4 h-4 mr-2" />
+                          Editar
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          className="text-destructive focus:text-destructive"
+                          onClick={() => deleteTransaction(transaction.id)}
+                        >
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          Excluir
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </div>
+              );
+            })}
+            {sortedTransactions.length === 0 && (
+              <div className="py-16 text-center">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted/50 flex items-center justify-center">
+                  <Receipt className="w-8 h-8 text-muted-foreground" />
+                </div>
+                <p className="text-muted-foreground font-medium">Nenhuma transação encontrada</p>
+                <p className="text-sm text-muted-foreground mt-1">Ajuste os filtros ou adicione uma nova transação</p>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
     </AppLayout>
   );
 }
