@@ -168,3 +168,20 @@ export interface CalendarEvent {
 }
 
 export type CalendarView = 'day' | 'week' | 'month';
+
+// Alert Types
+export type AlertType = 'event_reminder' | 'task_overdue' | 'task_due_soon' | 'deal_inactive' | 'project_paused' | 'budget_warning';
+export type AlertSeverity = 'info' | 'warning' | 'critical';
+
+export interface Alert {
+  id: string;
+  type: AlertType;
+  severity: AlertSeverity;
+  title: string;
+  description: string;
+  entityId: string | null;
+  entityType: 'event' | 'task' | 'deal' | 'project' | null;
+  createdAt: Date;
+  read: boolean;
+  dismissed: boolean;
+}
