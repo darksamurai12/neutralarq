@@ -14,6 +14,28 @@ export interface Client {
   createdAt: Date;
 }
 
+// Deal/Pipeline Types
+export type DealStage = 'lead' | 'qualification' | 'proposal' | 'negotiation' | 'won' | 'lost';
+
+export interface DealStageConfig {
+  id: DealStage;
+  label: string;
+  probability: number; // 0-100
+  color: string;
+}
+
+export interface Deal {
+  id: string;
+  title: string;
+  clientId: string;
+  value: number;
+  stage: DealStage;
+  probability: number;
+  expectedCloseDate: Date | null;
+  notes: string;
+  createdAt: Date;
+}
+
 // Task Types
 export type TaskStatus = 'todo' | 'doing' | 'review' | 'done';
 export type TaskPriority = 'low' | 'medium' | 'high' | 'critical';
