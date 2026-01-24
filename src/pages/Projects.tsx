@@ -1,8 +1,25 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { useApp } from '@/contexts/AppContext';
-import { FolderKanban, Plus, Calendar, DollarSign, MapPin, Pencil, Trash2, MoreHorizontal, Building2, CalendarClock } from 'lucide-react';
+import { 
+  FolderKanban, 
+  Plus, 
+  Calendar, 
+  DollarSign, 
+  MapPin, 
+  Pencil, 
+  Trash2, 
+  MoreHorizontal, 
+  Building2, 
+  CalendarClock,
+  Clock,
+  CheckCircle2,
+  PauseCircle,
+  PlayCircle,
+  ArrowUpRight,
+  TrendingUp
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -34,28 +51,30 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Progress } from '@/components/ui/progress';
 import { Project, ProjectStatus, ProjectType } from '@/types';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { pt } from 'date-fns/locale';
 import { TaskKanban } from '@/components/projects/TaskKanban';
 import { ProjectKPIs } from '@/components/projects/ProjectKPIs';
 import { ProjectHistory } from '@/components/projects/ProjectHistory';
 import { ProjectFilters } from '@/components/projects/ProjectFilters';
 import { formatCurrency } from '@/lib/currency';
 
-const statusConfig: Record<ProjectStatus, { label: string; className: string }> = {
-  planning: { label: 'Planeamento', className: 'bg-muted text-muted-foreground border-border' },
-  in_progress: { label: 'Em Execução', className: 'bg-primary/10 text-primary border-primary/20' },
-  paused: { label: 'Parado', className: 'bg-warning/10 text-warning border-warning/20' },
-  completed: { label: 'Concluído', className: 'bg-success/10 text-success border-success/20' },
+const statusConfig: Record<ProjectStatus, { label: string; className: string; bgClass: string; icon: React.ElementType }> = {
+  planning: { label: 'Planeamento', className: 'bg-slate-500/10 text-slate-600 border-slate-500/20', bgClass: 'from-slate-500 to-slate-600', icon: Clock },
+  in_progress: { label: 'Em Execução', className: 'bg-blue-500/10 text-blue-600 border-blue-500/20', bgClass: 'from-blue-500 to-blue-600', icon: PlayCircle },
+  paused: { label: 'Parado', className: 'bg-amber-500/10 text-amber-600 border-amber-500/20', bgClass: 'from-amber-500 to-amber-600', icon: PauseCircle },
+  completed: { label: 'Concluído', className: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20', bgClass: 'from-emerald-500 to-emerald-600', icon: CheckCircle2 },
 };
 
-const typeConfig: Record<ProjectType, { label: string; icon: string }> = {
-  architecture: { label: 'Arquitectura', icon: '🏛️' },
-  construction: { label: 'Construção Civil', icon: '🏗️' },
-  interior_design: { label: 'Design de Interiores', icon: '🎨' },
+const typeConfig: Record<ProjectType, { label: string; icon: string; color: string }> = {
+  architecture: { label: 'Arquitectura', icon: '🏛️', color: 'from-violet-500 to-violet-600' },
+  construction: { label: 'Construção Civil', icon: '🏗️', color: 'from-orange-500 to-orange-600' },
+  interior_design: { label: 'Design de Interiores', icon: '🎨', color: 'from-pink-500 to-pink-600' },
 };
 
 const emptyFormData = {
@@ -84,6 +103,12 @@ export default function Projects() {
   const [clientFilter, setClientFilter] = useState<string>('all');
 
   const selectedProject = selectedProjectId ? getProjectWithDetails(selectedProjectId) : null;
+
+  // Stats
+  const planningProjects = projects.filter(p => p.status === 'planning').length;
+  const activeProjects = projects.filter(p => p.status === 'in_progress').length;
+  const pausedProjects = projects.filter(p => p.status === 'paused').length;
+  const completedProjects = projects.filter(p => p.status === 'completed').length;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -156,7 +181,7 @@ export default function Projects() {
       >
         <Dialog open={isDialogOpen} onOpenChange={(open) => { setIsDialogOpen(open); if (!open) resetForm(); }}>
           <DialogTrigger asChild>
-            <Button className="gap-2">
+            <Button className="gap-2 shadow-lg hover:shadow-xl transition-all duration-300">
               <Plus className="w-4 h-4" />
               Novo Projecto
             </Button>
@@ -208,9 +233,9 @@ export default function Projects() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="architecture">Arquitectura</SelectItem>
-                      <SelectItem value="construction">Construção Civil</SelectItem>
-                      <SelectItem value="interior_design">Design de Interiores</SelectItem>
+                      <SelectItem value="architecture">🏛️ Arquitectura</SelectItem>
+                      <SelectItem value="construction">🏗️ Construção Civil</SelectItem>
+                      <SelectItem value="interior_design">🎨 Design de Interiores</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -295,48 +320,127 @@ export default function Projects() {
                 <Button type="button" variant="outline" onClick={resetForm}>
                   Cancelar
                 </Button>
-                <Button type="submit">{editingProject ? 'Salvar' : 'Criar Projecto'}</Button>
+                <Button type="submit">{editingProject ? 'Guardar' : 'Criar Projecto'}</Button>
               </div>
             </form>
           </DialogContent>
         </Dialog>
       </PageHeader>
 
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-slate-500 to-slate-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-slate-100 text-sm font-medium mb-1">Em Planeamento</p>
+                <p className="text-3xl font-bold tracking-tight">{planningProjects}</p>
+              </div>
+              <div className="h-12 w-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                <Clock className="w-6 h-6 text-white" />
+              </div>
+            </div>
+            <div className="absolute -bottom-4 -right-4 h-24 w-24 rounded-full bg-white/10" />
+          </CardContent>
+        </Card>
+
+        <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-blue-100 text-sm font-medium mb-1">Em Execução</p>
+                <p className="text-3xl font-bold tracking-tight">{activeProjects}</p>
+              </div>
+              <div className="h-12 w-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                <PlayCircle className="w-6 h-6 text-white" />
+              </div>
+            </div>
+            <div className="absolute -bottom-4 -right-4 h-24 w-24 rounded-full bg-white/10" />
+          </CardContent>
+        </Card>
+
+        <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-amber-500 to-amber-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-amber-100 text-sm font-medium mb-1">Parados</p>
+                <p className="text-3xl font-bold tracking-tight">{pausedProjects}</p>
+              </div>
+              <div className="h-12 w-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                <PauseCircle className="w-6 h-6 text-white" />
+              </div>
+            </div>
+            <div className="absolute -bottom-4 -right-4 h-24 w-24 rounded-full bg-white/10" />
+          </CardContent>
+        </Card>
+
+        <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-emerald-100 text-sm font-medium mb-1">Concluídos</p>
+                <p className="text-3xl font-bold tracking-tight">{completedProjects}</p>
+              </div>
+              <div className="h-12 w-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                <CheckCircle2 className="w-6 h-6 text-white" />
+              </div>
+            </div>
+            <div className="absolute -bottom-4 -right-4 h-24 w-24 rounded-full bg-white/10" />
+          </CardContent>
+        </Card>
+      </div>
+
       {/* Filters */}
-      <ProjectFilters
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        statusFilter={statusFilter}
-        onStatusChange={setStatusFilter}
-        typeFilter={typeFilter}
-        onTypeChange={setTypeFilter}
-        clientFilter={clientFilter}
-        onClientChange={setClientFilter}
-        clients={clients.filter(c => c.status !== 'inactive')}
-      />
+      <Card className="shadow-lg border-0 mb-6">
+        <CardContent className="p-4">
+          <ProjectFilters
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            statusFilter={statusFilter}
+            onStatusChange={setStatusFilter}
+            typeFilter={typeFilter}
+            onTypeChange={setTypeFilter}
+            clientFilter={clientFilter}
+            onClientChange={setClientFilter}
+            clients={clients.filter(c => c.status !== 'inactive')}
+          />
+        </CardContent>
+      </Card>
 
       {/* Project Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredProjects.map((project) => {
           const client = clients.find((c) => c.id === project.clientId);
+          const projectDetails = getProjectWithDetails(project.id);
+          const progress = projectDetails?.kpis.progressPercentage || 0;
+          const StatusIcon = statusConfig[project.status].icon;
+          
           return (
-            <div
+            <Card
               key={project.id}
               onClick={() => setSelectedProjectId(project.id)}
-              className="rounded-xl border border-border bg-card p-5 shadow-card cursor-pointer transition-all hover:shadow-elevated hover:border-primary/30 animate-in-up"
+              className="group cursor-pointer shadow-lg border-0 bg-card hover:shadow-xl transition-all duration-300 hover:-translate-y-1 overflow-hidden"
             >
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <span className="text-xl">{typeConfig[project.type].icon}</span>
-                  <h3 className="font-semibold text-foreground line-clamp-1">{project.name}</h3>
-                </div>
-                <div className="flex items-center gap-2 ml-2">
-                  <Badge variant="outline" className={cn('flex-shrink-0 text-xs', statusConfig[project.status].className)}>
-                    {statusConfig[project.status].label}
-                  </Badge>
+              {/* Type Banner */}
+              <div className={cn(
+                'h-2 bg-gradient-to-r',
+                typeConfig[project.type].color
+              )} />
+              
+              <CardContent className="p-5">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">{typeConfig[project.type].icon}</span>
+                    <div>
+                      <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-1">
+                        {project.name}
+                      </h3>
+                      <p className="text-xs text-muted-foreground">{typeConfig[project.type].label}</p>
+                    </div>
+                  </div>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                      <Button variant="ghost" size="icon" className="h-7 w-7">
+                      <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
                         <MoreHorizontal className="w-4 h-4" />
                       </Button>
                     </DropdownMenuTrigger>
@@ -346,7 +450,7 @@ export default function Projects() {
                         Editar
                       </DropdownMenuItem>
                       <DropdownMenuItem
-                        className="text-destructive"
+                        className="text-destructive focus:text-destructive"
                         onClick={(e) => handleDelete(project.id, e)}
                       >
                         <Trash2 className="w-4 h-4 mr-2" />
@@ -355,32 +459,59 @@ export default function Projects() {
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
-              </div>
-              
-              <div className="space-y-2 text-sm">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Building2 className="w-4 h-4" />
-                  <span className="truncate">{client?.name || 'Cliente não encontrado'}</span>
+                
+                <div className="space-y-2 text-sm mb-4">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Building2 className="w-4 h-4 flex-shrink-0" />
+                    <span className="truncate">{client?.name || 'Cliente não encontrado'}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <MapPin className="w-4 h-4 flex-shrink-0" />
+                    <span className="truncate">{project.location}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <CalendarClock className="w-4 h-4 flex-shrink-0" />
+                    <span>{format(new Date(project.deadline), "dd MMM yyyy", { locale: pt })}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <DollarSign className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                    <span className="font-semibold text-foreground">{formatCurrency(project.budget)}</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <MapPin className="w-4 h-4" />
-                  <span className="truncate">{project.location}</span>
+
+                {/* Progress */}
+                <div className="mb-4">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs text-muted-foreground">Progresso</span>
+                    <span className="text-xs font-medium text-foreground">{progress}%</span>
+                  </div>
+                  <Progress value={progress} className="h-2" />
                 </div>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <CalendarClock className="w-4 h-4" />
-                  <span>{format(new Date(project.deadline), "dd 'de' MMM, yyyy", { locale: ptBR })}</span>
+
+                <div className="flex items-center justify-between pt-3 border-t border-border/50">
+                  <Badge variant="outline" className={cn('font-medium gap-1', statusConfig[project.status].className)}>
+                    <StatusIcon className="w-3 h-3" />
+                    {statusConfig[project.status].label}
+                  </Badge>
+                  <span className="text-xs text-muted-foreground">
+                    {projectDetails?.tasks.length || 0} tarefa{(projectDetails?.tasks.length || 0) !== 1 ? 's' : ''}
+                  </span>
                 </div>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <DollarSign className="w-4 h-4" />
-                  <span className="font-medium text-foreground">{formatCurrency(project.budget)}</span>
-                </div>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           );
         })}
         {filteredProjects.length === 0 && (
-          <div className="col-span-full py-8 text-center text-muted-foreground">
-            Nenhum projecto encontrado
+          <div className="col-span-full">
+            <Card className="shadow-lg border-0">
+              <CardContent className="py-16 text-center">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted/50 flex items-center justify-center">
+                  <FolderKanban className="w-8 h-8 text-muted-foreground" />
+                </div>
+                <p className="text-muted-foreground font-medium">Nenhum projecto encontrado</p>
+                <p className="text-sm text-muted-foreground mt-1">Ajuste os filtros ou adicione um novo projecto</p>
+              </CardContent>
+            </Card>
           </div>
         )}
       </div>
@@ -392,8 +523,13 @@ export default function Projects() {
             <>
               <SheetHeader className="mb-6">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl">{typeConfig[selectedProject.type].icon}</span>
+                  <div className="flex items-center gap-4">
+                    <div className={cn(
+                      'h-14 w-14 rounded-xl flex items-center justify-center text-2xl bg-gradient-to-br',
+                      typeConfig[selectedProject.type].color
+                    )}>
+                      {typeConfig[selectedProject.type].icon}
+                    </div>
                     <div>
                       <SheetTitle className="text-xl">{selectedProject.name}</SheetTitle>
                       <p className="text-sm text-muted-foreground">{typeConfig[selectedProject.type].label}</p>
@@ -422,13 +558,14 @@ export default function Projects() {
                     </Button>
                   </div>
                 </div>
-                <Badge variant="outline" className={cn('w-fit mt-2', statusConfig[selectedProject.status].className)}>
+                <Badge variant="outline" className={cn('w-fit mt-3 gap-1', statusConfig[selectedProject.status].className)}>
+                  {React.createElement(statusConfig[selectedProject.status].icon, { className: 'w-3 h-3' })}
                   {statusConfig[selectedProject.status].label}
                 </Badge>
               </SheetHeader>
 
               {/* Project Info */}
-              <div className="mb-6 p-4 rounded-lg bg-muted/50 space-y-3">
+              <div className="mb-6 p-4 rounded-xl bg-gradient-to-r from-muted/50 to-muted/30 border border-border/50 space-y-4">
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                     <span className="text-muted-foreground">Cliente</span>
@@ -480,17 +617,20 @@ export default function Projects() {
 
                 <TabsContent value="finance">
                   <div className="space-y-4">
-                    <h4 className="text-sm font-semibold text-foreground">Extrato Financeiro</h4>
+                    <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                      <DollarSign className="w-4 h-4 text-primary" />
+                      Extrato Financeiro
+                    </h4>
                     {selectedProject.transactions.length === 0 ? (
-                      <p className="text-sm text-muted-foreground text-center py-8">
-                        Nenhuma transação registada
-                      </p>
+                      <div className="text-center py-12 rounded-xl bg-muted/30 border border-dashed border-border">
+                        <p className="text-sm text-muted-foreground">Nenhuma transação registada</p>
+                      </div>
                     ) : (
                       <div className="space-y-2">
                         {selectedProject.transactions.map((transaction) => (
                           <div
                             key={transaction.id}
-                            className="flex items-center justify-between p-3 rounded-lg border border-border bg-card"
+                            className="flex items-center justify-between p-4 rounded-xl border border-border bg-card hover:border-primary/30 transition-colors"
                           >
                             <div>
                               <p className="text-sm font-medium text-foreground">{transaction.description}</p>
@@ -499,8 +639,8 @@ export default function Projects() {
                               </p>
                             </div>
                             <span className={cn(
-                              'font-semibold',
-                              transaction.type === 'income' ? 'text-success' : 'text-destructive'
+                              'font-bold',
+                              transaction.type === 'income' ? 'text-emerald-600' : 'text-rose-600'
                             )}>
                               {transaction.type === 'income' ? '+' : '-'} {formatCurrency(transaction.value)}
                             </span>

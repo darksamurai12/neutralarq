@@ -1,73 +1,72 @@
 import { Project, ProjectStatus, ProjectType } from '@/types';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-import { MapPin, Calendar, FolderKanban } from 'lucide-react';
+import { pt } from 'date-fns/locale';
+import { MapPin, Calendar, Clock, PlayCircle, PauseCircle, CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface RecentProjectsProps {
   projects: Project[];
 }
 
-const statusConfig: Record<ProjectStatus, { label: string; className: string }> = {
-  planning: { label: 'Planeamento', className: 'bg-muted text-muted-foreground border-border' },
-  in_progress: { label: 'Em Execução', className: 'bg-primary/10 text-primary border-primary/20' },
-  paused: { label: 'Parado', className: 'bg-warning/10 text-warning border-warning/20' },
-  completed: { label: 'Concluído', className: 'bg-success/10 text-success border-success/20' },
+const statusConfig: Record<ProjectStatus, { label: string; className: string; icon: React.ElementType }> = {
+  planning: { label: 'Planeamento', className: 'bg-slate-500/10 text-slate-600 border-slate-500/20', icon: Clock },
+  in_progress: { label: 'Em Execução', className: 'bg-blue-500/10 text-blue-600 border-blue-500/20', icon: PlayCircle },
+  paused: { label: 'Parado', className: 'bg-amber-500/10 text-amber-600 border-amber-500/20', icon: PauseCircle },
+  completed: { label: 'Concluído', className: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20', icon: CheckCircle2 },
 };
 
-const typeLabels: Record<ProjectType, string> = {
-  architecture: 'Arquitectura',
-  construction: 'Construção Civil',
-  interior_design: 'Design de Interiores',
+const typeConfig: Record<ProjectType, { label: string; icon: string }> = {
+  architecture: { label: 'Arquitectura', icon: '🏛️' },
+  construction: { label: 'Construção Civil', icon: '🏗️' },
+  interior_design: { label: 'Design de Interiores', icon: '🎨' },
 };
 
 export function RecentProjects({ projects }: RecentProjectsProps) {
+  if (projects.length === 0) {
+    return (
+      <div className="text-center py-12 rounded-xl bg-muted/30 border border-dashed border-border">
+        <p className="text-sm text-muted-foreground">Nenhum projecto registado</p>
+      </div>
+    );
+  }
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base font-semibold flex items-center gap-2">
-          <FolderKanban className="w-5 h-5" />
-          Projectos Recentes
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {projects.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            Nenhum projecto registado
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {projects.map((project) => (
-              <div
-                key={project.id}
-                className="p-3 rounded-lg border border-border bg-card hover:bg-muted/50 transition-colors"
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex-1 min-w-0">
-                    <h4 className="font-medium text-foreground truncate">{project.name}</h4>
-                    <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+    <div className="space-y-3">
+      {projects.map((project) => {
+        const StatusIcon = statusConfig[project.status].icon;
+        return (
+          <div
+            key={project.id}
+            className="p-4 rounded-xl border border-border bg-card hover:border-primary/30 hover:shadow-md transition-all duration-200 group"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">{typeConfig[project.type].icon}</span>
+                <div className="flex-1 min-w-0">
+                  <h4 className="font-medium text-foreground group-hover:text-primary transition-colors truncate">
+                    {project.name}
+                  </h4>
+                  <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                    <div className="flex items-center gap-1">
                       <MapPin className="w-3 h-3" />
                       <span className="truncate">{project.location}</span>
                     </div>
-                    <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+                    <div className="flex items-center gap-1">
                       <Calendar className="w-3 h-3" />
-                      <span>{format(new Date(project.deadline), "dd/MM/yyyy", { locale: ptBR })}</span>
+                      <span>{format(new Date(project.deadline), "dd MMM yyyy", { locale: pt })}</span>
                     </div>
-                  </div>
-                  <div className="flex flex-col items-end gap-1">
-                    <Badge variant="outline" className={cn('text-xs', statusConfig[project.status].className)}>
-                      {statusConfig[project.status].label}
-                    </Badge>
-                    <span className="text-xs text-muted-foreground">{typeLabels[project.type]}</span>
                   </div>
                 </div>
               </div>
-            ))}
+              <Badge variant="outline" className={cn('flex-shrink-0 text-xs gap-1', statusConfig[project.status].className)}>
+                <StatusIcon className="w-3 h-3" />
+                {statusConfig[project.status].label}
+              </Badge>
+            </div>
           </div>
-        )}
-      </CardContent>
-    </Card>
+        );
+      })}
+    </div>
   );
 }

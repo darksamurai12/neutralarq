@@ -1,5 +1,4 @@
 import { ProjectStatus } from '@/types';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 
 interface ProjectStatusChartProps {
@@ -33,59 +32,45 @@ export function ProjectStatusChart({ data }: ProjectStatusChartProps) {
 
   if (total === 0) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base font-semibold">Distribuição de Projectos por Estado</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="h-[200px] flex items-center justify-center text-muted-foreground">
-            Nenhum projecto registado
-          </div>
-        </CardContent>
-      </Card>
+      <div className="h-[280px] flex items-center justify-center text-muted-foreground">
+        Nenhum projecto registado
+      </div>
     );
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base font-semibold">Distribuição de Projectos por Estado</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="h-[250px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={chartData}
-                cx="50%"
-                cy="50%"
-                innerRadius={50}
-                outerRadius={80}
-                paddingAngle={2}
-                dataKey="value"
-                label={({ name, value }) => `${name}: ${value}`}
-                labelLine={false}
-              >
-                {chartData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Pie>
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: 'hsl(var(--card))',
-                  border: '1px solid hsl(var(--border))',
-                  borderRadius: '8px',
-                }}
-              />
-              <Legend 
-                verticalAlign="bottom" 
-                height={36}
-                formatter={(value) => <span className="text-sm text-foreground">{value}</span>}
-              />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
-      </CardContent>
-    </Card>
+    <div className="h-[280px]">
+      <ResponsiveContainer width="100%" height="100%">
+        <PieChart>
+          <Pie
+            data={chartData}
+            cx="50%"
+            cy="50%"
+            innerRadius={60}
+            outerRadius={100}
+            paddingAngle={4}
+            dataKey="value"
+          >
+            {chartData.map((entry, index) => (
+              <Cell key={`cell-${index}`} fill={entry.color} />
+            ))}
+          </Pie>
+          <Tooltip 
+            contentStyle={{ 
+              backgroundColor: 'hsl(var(--card))',
+              border: '1px solid hsl(var(--border))',
+              borderRadius: '12px',
+              boxShadow: '0 10px 40px -10px rgba(0,0,0,0.2)',
+            }}
+            formatter={(value: number, name: string) => [value, name]}
+          />
+          <Legend 
+            verticalAlign="bottom" 
+            height={36}
+            formatter={(value) => <span className="text-xs text-muted-foreground">{value}</span>}
+          />
+        </PieChart>
+      </ResponsiveContainer>
+    </div>
   );
 }
