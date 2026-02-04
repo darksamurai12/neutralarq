@@ -185,3 +185,62 @@ export interface Alert {
   read: boolean;
   dismissed: boolean;
 }
+
+// Pricing Types
+export interface PricingProduct {
+  id: string;
+  name: string;
+  description: string;
+  basePrice: number;
+  marginPercent: number;
+  finalPrice: number;
+  createdAt: Date;
+}
+
+export interface PricingLabor {
+  id: string;
+  name: string;
+  description: string;
+  providerValue: number;
+  marginPercent: number;
+  finalPrice: number;
+  createdAt: Date;
+}
+
+export interface PricingTransport {
+  id: string;
+  name: string;
+  description: string;
+  baseCost: number;
+  marginPercent: number;
+  finalPrice: number;
+  createdAt: Date;
+}
+
+// Budget Types
+export interface BudgetItem {
+  id: string;
+  type: 'product' | 'labor' | 'transport';
+  itemId: string;
+  name: string;
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+  unitCost: number;
+  totalCost: number;
+  profit: number;
+}
+
+export interface Budget {
+  id: string;
+  name: string;
+  clientId: string | null;
+  projectId: string | null;
+  items: BudgetItem[];
+  totalValue: number;
+  totalCost: number;
+  totalProfit: number;
+  marginPercent: number;
+  createdAt: Date;
+  status: 'draft' | 'sent' | 'approved' | 'rejected';
+}
