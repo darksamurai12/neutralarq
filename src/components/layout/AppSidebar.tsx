@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, FolderKanban, Wallet, ChevronLeft, ChevronRight } from 'lucide-react';
+import { LayoutDashboard, Users, FolderKanban, Wallet, Calculator, ChevronLeft, ChevronRight } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
@@ -9,6 +9,7 @@ const navItems = [
   { title: 'CRM', url: '/crm', icon: Users },
   { title: 'Projetos', url: '/projetos', icon: FolderKanban },
   { title: 'Finanças', url: '/financas', icon: Wallet },
+  { title: 'Precificação', url: '/precificacao', icon: Calculator },
 ];
 
 export function AppSidebar() {
