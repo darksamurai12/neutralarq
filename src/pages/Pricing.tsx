@@ -1,8 +1,8 @@
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
-import { Calculator, Package, Users, Truck, FileText } from 'lucide-react';
+import { Calculator, Package, Users, Truck, FileText, Loader2 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { usePricing } from '@/hooks/usePricing';
+import { usePricingDB } from '@/hooks/usePricingDB';
 import { useApp } from '@/contexts/AppContext';
 import { ProductsTab } from '@/components/pricing/ProductsTab';
 import { LaborTab } from '@/components/pricing/LaborTab';
@@ -11,6 +11,7 @@ import { BudgetTab } from '@/components/pricing/BudgetTab';
 
 export default function Pricing() {
   const {
+    loading,
     products,
     labor,
     transport,
@@ -28,9 +29,22 @@ export default function Pricing() {
     updateBudget,
     deleteBudget,
     createBudgetItem,
-  } = usePricing();
+  } = usePricingDB();
 
   const { clients, projects } = useApp();
+
+  if (loading) {
+    return (
+      <AppLayout>
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-4" />
+            <p className="text-muted-foreground">A carregar dados...</p>
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
 
   return (
     <AppLayout>
