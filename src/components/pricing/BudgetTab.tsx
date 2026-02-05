@@ -44,7 +44,7 @@ interface BudgetTabProps {
   transport: PricingTransport[];
   clients: Client[];
   projects: Project[];
-  onCreateBudget: (budget: Omit<Budget, 'id' | 'createdAt' | 'totalValue' | 'totalCost' | 'totalProfit' | 'marginPercent'>) => Budget;
+  onCreateBudget: (budget: Omit<Budget, 'id' | 'createdAt' | 'totalValue' | 'totalCost' | 'totalProfit' | 'marginPercent'>) => Budget | Promise<Budget | null>;
   onUpdateBudget: (id: string, updates: Partial<Budget>) => void;
   onDeleteBudget: (id: string) => void;
   createBudgetItem: (type: 'product' | 'labor' | 'transport', itemId: string, quantity: number) => BudgetItem | null;

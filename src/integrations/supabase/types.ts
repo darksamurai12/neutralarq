@@ -14,7 +14,239 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      budget_items: {
+        Row: {
+          budget_id: string
+          created_at: string
+          id: string
+          item_id: string | null
+          name: string
+          profit: number
+          quantity: number
+          total_cost: number
+          total_price: number
+          type: string
+          unit_cost: number
+          unit_price: number
+        }
+        Insert: {
+          budget_id: string
+          created_at?: string
+          id?: string
+          item_id?: string | null
+          name: string
+          profit?: number
+          quantity?: number
+          total_cost?: number
+          total_price?: number
+          type: string
+          unit_cost?: number
+          unit_price?: number
+        }
+        Update: {
+          budget_id?: string
+          created_at?: string
+          id?: string
+          item_id?: string | null
+          name?: string
+          profit?: number
+          quantity?: number
+          total_cost?: number
+          total_price?: number
+          type?: string
+          unit_cost?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "budget_items_budget_id_fkey"
+            columns: ["budget_id"]
+            isOneToOne: false
+            referencedRelation: "budgets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      budgets: {
+        Row: {
+          client_name: string | null
+          created_at: string
+          id: string
+          margin_percent: number
+          name: string
+          notes: string | null
+          status: string
+          total_cost: number
+          total_profit: number
+          total_value: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          client_name?: string | null
+          created_at?: string
+          id?: string
+          margin_percent?: number
+          name: string
+          notes?: string | null
+          status?: string
+          total_cost?: number
+          total_profit?: number
+          total_value?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          client_name?: string | null
+          created_at?: string
+          id?: string
+          margin_percent?: number
+          name?: string
+          notes?: string | null
+          status?: string
+          total_cost?: number
+          total_profit?: number
+          total_value?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      pricing_labor: {
+        Row: {
+          created_at: string
+          description: string | null
+          final_price: number
+          id: string
+          margin_percent: number
+          name: string
+          provider_value: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          final_price?: number
+          id?: string
+          margin_percent?: number
+          name: string
+          provider_value?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          final_price?: number
+          id?: string
+          margin_percent?: number
+          name?: string
+          provider_value?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      pricing_products: {
+        Row: {
+          base_price: number
+          created_at: string
+          description: string | null
+          final_price: number
+          id: string
+          margin_percent: number
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          base_price?: number
+          created_at?: string
+          description?: string | null
+          final_price?: number
+          id?: string
+          margin_percent?: number
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          base_price?: number
+          created_at?: string
+          description?: string | null
+          final_price?: number
+          id?: string
+          margin_percent?: number
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      pricing_transport: {
+        Row: {
+          base_cost: number
+          created_at: string
+          description: string | null
+          final_price: number
+          id: string
+          margin_percent: number
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          base_cost?: number
+          created_at?: string
+          description?: string | null
+          final_price?: number
+          id?: string
+          margin_percent?: number
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          base_cost?: number
+          created_at?: string
+          description?: string | null
+          final_price?: number
+          id?: string
+          margin_percent?: number
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          company_name: string | null
+          created_at: string
+          full_name: string | null
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          company_name?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          company_name?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
