@@ -1,17 +1,15 @@
 import { useState, useEffect } from 'react';
 import { Task, TaskStatus, TaskPriority, ProjectPhase, Subtask, Comment } from '@/types';
-import { Plus, Trash2, MessageSquare, ListChecks, Info } from 'lucide-react';
+import { Trash2, X, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
 import {
   Select,
   SelectContent,
@@ -19,9 +17,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { TaskMetadataGrid } from './TaskMetadataGrid';
+import { TaskSubtasksSection } from './TaskSubtasksSection';
+import { TaskChecklistsSection, Checklist } from './TaskChecklistsSection';
+import { TaskAttachmentsSection, Attachment } from './TaskAttachmentsSection';
 import { cn } from '@/lib/utils';
 
 interface TaskEditDialogProps {
@@ -39,51 +38,58 @@ export function TaskEditDialog({
   onSave,
   onDelete,
 }: TaskEditDialogProps) {
-  const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    responsible: '',
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [status, setStatus] = useState<TaskStatus>('todo');
+  const [metadata, setMetadata] = useState({
     deadline: '',
-    status: 'todo' as TaskStatus,
+    startDate: '',
     priority: 'medium' as TaskPriority,
     phase: 'projeto' as ProjectPhase,
-    completionPercentage: 0,
-    subtasks: [] as Subtask[],
-    comments: [] as Comment[],
+    estimatedTime: '',
+    trackedTime: '',
+    tags: [] as string[],
+    relatedTaskId: '',
   });
-  const [newSubtask, setNewSubtask] = useState('');
-  const [newComment, setNewComment] = useState('');
+  const [subtasks, setSubtasks] = useState<Subtask[]>([]);
+  const [checklists, setChecklists] = useState<Checklist[]>([]);
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
+  const [comments, setComments] = useState<Comment[]>([]);
 
   useEffect(() => {
     if (task) {
-      setFormData({
-        title: task.title,
-        description: task.description || '',
-        responsible: task.responsible,
-        deadline: task.deadline ? format(new Date(task.deadline), 'yyyy-MM-dd') : '',
-        status: task.status,
+      setTitle(task.title);
+      setDescription(task.description || '');
+      setStatus(task.status);
+      setMetadata({
+        deadline: task.deadline ? new Date(task.deadline).toISOString().split('T')[0] : '',
+        startDate: task.createdAt ? new Date(task.createdAt).toISOString().split('T')[0] : '',
         priority: task.priority,
         phase: task.phase,
-        completionPercentage: task.completionPercentage,
-        subtasks: task.subtasks || [],
-        comments: task.comments || [],
+        estimatedTime: '',
+        trackedTime: '',
+        tags: [],
+        relatedTaskId: '',
       });
+      setSubtasks(task.subtasks || []);
+      setComments(task.comments || []);
+      setChecklists([]);
+      setAttachments([]);
     }
   }, [task]);
 
   const handleSave = () => {
     if (!task) return;
     onSave(task.id, {
-      title: formData.title,
-      description: formData.description,
-      responsible: formData.responsible,
-      deadline: formData.deadline ? new Date(formData.deadline) : null,
-      status: formData.status,
-      priority: formData.priority,
-      phase: formData.phase,
-      completionPercentage: formData.completionPercentage,
-      subtasks: formData.subtasks,
-      comments: formData.comments,
+      title,
+      description,
+      status,
+      priority: metadata.priority,
+      phase: metadata.phase,
+      deadline: metadata.deadline ? new Date(metadata.deadline) : null,
+      subtasks,
+      comments,
+      completionPercentage: calculateProgress(),
     });
     onOpenChange(false);
   };
@@ -94,324 +100,212 @@ export function TaskEditDialog({
     onOpenChange(false);
   };
 
-  const addSubtask = () => {
-    if (!newSubtask.trim()) return;
-    setFormData({
-      ...formData,
-      subtasks: [
-        ...formData.subtasks,
-        { id: crypto.randomUUID(), title: newSubtask.trim(), completed: false },
-      ],
-    });
-    setNewSubtask('');
+  const handleMetadataChange = (field: string, value: any) => {
+    setMetadata((prev) => ({ ...prev, [field]: value }));
+  };
+
+  // Subtasks handlers
+  const addSubtask = (title: string) => {
+    setSubtasks((prev) => [
+      ...prev,
+      { id: crypto.randomUUID(), title, completed: false },
+    ]);
   };
 
   const toggleSubtask = (id: string) => {
-    setFormData({
-      ...formData,
-      subtasks: formData.subtasks.map((s) =>
-        s.id === id ? { ...s, completed: !s.completed } : s
-      ),
-    });
+    setSubtasks((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, completed: !s.completed } : s))
+    );
   };
 
   const removeSubtask = (id: string) => {
-    setFormData({
-      ...formData,
-      subtasks: formData.subtasks.filter((s) => s.id !== id),
-    });
+    setSubtasks((prev) => prev.filter((s) => s.id !== id));
   };
 
-  const addComment = () => {
-    if (!newComment.trim()) return;
-    setFormData({
-      ...formData,
-      comments: [
-        ...formData.comments,
-        {
-          id: crypto.randomUUID(),
-          content: newComment.trim(),
-          author: 'Usuário',
-          createdAt: new Date(),
-        },
-      ],
-    });
-    setNewComment('');
+  // Checklists handlers
+  const addChecklist = (name: string) => {
+    setChecklists((prev) => [
+      ...prev,
+      { id: crypto.randomUUID(), name, items: [] },
+    ]);
   };
 
-  const removeComment = (id: string) => {
-    setFormData({
-      ...formData,
-      comments: formData.comments.filter((c) => c.id !== id),
-    });
+  const removeChecklist = (id: string) => {
+    setChecklists((prev) => prev.filter((c) => c.id !== id));
   };
 
-  const completedSubtasks = formData.subtasks.filter((s) => s.completed).length;
-  const totalSubtasks = formData.subtasks.length;
+  const addChecklistItem = (checklistId: string, title: string) => {
+    setChecklists((prev) =>
+      prev.map((c) =>
+        c.id === checklistId
+          ? {
+              ...c,
+              items: [
+                ...c.items,
+                { id: crypto.randomUUID(), title, completed: false },
+              ],
+            }
+          : c
+      )
+    );
+  };
+
+  const toggleChecklistItem = (checklistId: string, itemId: string) => {
+    setChecklists((prev) =>
+      prev.map((c) =>
+        c.id === checklistId
+          ? {
+              ...c,
+              items: c.items.map((i) =>
+                i.id === itemId ? { ...i, completed: !i.completed } : i
+              ),
+            }
+          : c
+      )
+    );
+  };
+
+  const removeChecklistItem = (checklistId: string, itemId: string) => {
+    setChecklists((prev) =>
+      prev.map((c) =>
+        c.id === checklistId
+          ? { ...c, items: c.items.filter((i) => i.id !== itemId) }
+          : c
+      )
+    );
+  };
+
+  // Attachments handlers
+  const handleAddAttachment = () => {
+    // TODO: Implement file upload
+    console.log('Add attachment clicked');
+  };
+
+  const removeAttachment = (id: string) => {
+    setAttachments((prev) => prev.filter((a) => a.id !== id));
+  };
+
+  // Calculate overall progress
+  const calculateProgress = () => {
+    const allItems = [
+      ...subtasks,
+      ...checklists.flatMap((c) => c.items),
+    ];
+    if (allItems.length === 0) return 0;
+    const completed = allItems.filter((i) => i.completed).length;
+    return Math.round((completed / allItems.length) * 100);
+  };
+
+  const statusConfig: Record<TaskStatus, { label: string; color: string }> = {
+    todo: { label: 'A Fazer', color: 'bg-muted' },
+    doing: { label: 'Em Progresso', color: 'bg-blue-500' },
+    review: { label: 'Em Revisão', color: 'bg-yellow-500' },
+    done: { label: 'Concluído', color: 'bg-success' },
+  };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Editar Tarefa</DialogTitle>
-        </DialogHeader>
-
-        <Tabs defaultValue="info" className="mt-4">
-          <TabsList className="grid grid-cols-3 w-full">
-            <TabsTrigger value="info" className="gap-2">
-              <Info className="w-4 h-4" />
-              Detalhes
-            </TabsTrigger>
-            <TabsTrigger value="checklist" className="gap-2">
-              <ListChecks className="w-4 h-4" />
-              Checklist
-              {totalSubtasks > 0 && (
-                <span className="text-xs bg-muted px-1.5 py-0.5 rounded-full">
-                  {completedSubtasks}/{totalSubtasks}
-                </span>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="comments" className="gap-2">
-              <MessageSquare className="w-4 h-4" />
-              Comentários
-              {formData.comments.length > 0 && (
-                <span className="text-xs bg-muted px-1.5 py-0.5 rounded-full">
-                  {formData.comments.length}
-                </span>
-              )}
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="info" className="space-y-4 mt-4">
-            <div className="space-y-2">
-              <Label htmlFor="title">Título</Label>
-              <Input
-                id="title"
-                value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                placeholder="Título da tarefa"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="description">Descrição</Label>
-              <Textarea
-                id="description"
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Descrição detalhada da tarefa"
-                rows={3}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="responsible">Responsável</Label>
-                <Input
-                  id="responsible"
-                  value={formData.responsible}
-                  onChange={(e) => setFormData({ ...formData, responsible: e.target.value })}
-                  placeholder="Nome do responsável"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="deadline">Prazo</Label>
-                <Input
-                  id="deadline"
-                  type="date"
-                  value={formData.deadline}
-                  onChange={(e) => setFormData({ ...formData, deadline: e.target.value })}
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="priority">Prioridade</Label>
-                <Select
-                  value={formData.priority}
-                  onValueChange={(value: TaskPriority) => setFormData({ ...formData, priority: value })}
-                >
-                  <SelectTrigger>
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="right" className="w-full sm:max-w-2xl p-0 overflow-y-auto">
+        <div className="flex flex-col h-full">
+          {/* Header */}
+          <SheetHeader className="p-4 border-b border-border sticky top-0 bg-background z-10">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Select value={status} onValueChange={(v: TaskStatus) => setStatus(v)}>
+                  <SelectTrigger className="h-8 w-32 text-xs">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="low">Baixa</SelectItem>
-                    <SelectItem value="medium">Média</SelectItem>
-                    <SelectItem value="high">Alta</SelectItem>
-                    <SelectItem value="critical">Crítica</SelectItem>
+                    {Object.entries(statusConfig).map(([key, config]) => (
+                      <SelectItem key={key} value={key}>
+                        <div className="flex items-center gap-2">
+                          <div className={cn('w-2 h-2 rounded-full', config.color)} />
+                          {config.label}
+                        </div>
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="phase">Fase</Label>
-                <Select
-                  value={formData.phase}
-                  onValueChange={(value: ProjectPhase) => setFormData({ ...formData, phase: value })}
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                  onClick={handleDelete}
                 >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="projeto">Projecto</SelectItem>
-                    <SelectItem value="obra">Obra</SelectItem>
-                    <SelectItem value="acabamento">Acabamento</SelectItem>
-                    <SelectItem value="entrega">Entrega</SelectItem>
-                  </SelectContent>
-                </Select>
+                  <Trash2 className="w-4 h-4" />
+                </Button>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="status">Estado</Label>
-                <Select
-                  value={formData.status}
-                  onValueChange={(value: TaskStatus) => setFormData({ ...formData, status: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="todo">A Fazer</SelectItem>
-                    <SelectItem value="doing">Em Progresso</SelectItem>
-                    <SelectItem value="review">Em Revisão</SelectItem>
-                    <SelectItem value="done">Concluído</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="completion">Conclusão (%)</Label>
-                <Input
-                  id="completion"
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={formData.completionPercentage}
-                  onChange={(e) => setFormData({ ...formData, completionPercentage: parseInt(e.target.value) || 0 })}
+          </SheetHeader>
+
+          {/* Content */}
+          <div className="flex-1 p-4 space-y-0">
+            {/* Title */}
+            <Input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Nome da tarefa"
+              className="text-lg font-semibold border-none shadow-none px-0 h-auto focus-visible:ring-0"
+            />
+
+            {/* Metadata Grid */}
+            <TaskMetadataGrid
+              formData={metadata}
+              onChange={handleMetadataChange}
+            />
+
+            {/* Description */}
+            <div className="py-4 border-b border-border">
+              <div className="flex items-start gap-2">
+                <FileText className="w-4 h-4 text-muted-foreground mt-0.5" />
+                <Textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Adicionar descrição"
+                  className="flex-1 min-h-[100px] border-none shadow-none px-0 resize-none focus-visible:ring-0"
                 />
               </div>
             </div>
-          </TabsContent>
 
-          <TabsContent value="checklist" className="space-y-4 mt-4">
-            <div className="flex items-center gap-2">
-              <Input
-                value={newSubtask}
-                onChange={(e) => setNewSubtask(e.target.value)}
-                placeholder="Nova sub-tarefa"
-                onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addSubtask())}
-              />
-              <Button type="button" size="icon" onClick={addSubtask}>
-                <Plus className="w-4 h-4" />
+            {/* Subtasks */}
+            <TaskSubtasksSection
+              subtasks={subtasks}
+              onAdd={addSubtask}
+              onToggle={toggleSubtask}
+              onRemove={removeSubtask}
+            />
+
+            {/* Checklists */}
+            <TaskChecklistsSection
+              checklists={checklists}
+              onAddChecklist={addChecklist}
+              onRemoveChecklist={removeChecklist}
+              onAddItem={addChecklistItem}
+              onToggleItem={toggleChecklistItem}
+              onRemoveItem={removeChecklistItem}
+            />
+
+            {/* Attachments */}
+            <TaskAttachmentsSection
+              attachments={attachments}
+              onAdd={handleAddAttachment}
+              onRemove={removeAttachment}
+            />
+          </div>
+
+          {/* Footer */}
+          <div className="p-4 border-t border-border sticky bottom-0 bg-background">
+            <div className="flex items-center justify-end gap-2">
+              <Button variant="outline" onClick={() => onOpenChange(false)}>
+                Cancelar
               </Button>
+              <Button onClick={handleSave}>Salvar Alterações</Button>
             </div>
-
-            {totalSubtasks > 0 && (
-              <div className="h-2 rounded-full bg-muted overflow-hidden">
-                <div
-                  className="h-full bg-success transition-all duration-300"
-                  style={{ width: `${(completedSubtasks / totalSubtasks) * 100}%` }}
-                />
-              </div>
-            )}
-
-            <div className="space-y-2 max-h-48 overflow-y-auto">
-              {formData.subtasks.map((subtask) => (
-                <div
-                  key={subtask.id}
-                  className={cn(
-                    'flex items-center gap-3 p-3 rounded-lg border border-border bg-card',
-                    subtask.completed && 'bg-muted/50'
-                  )}
-                >
-                  <Checkbox
-                    checked={subtask.completed}
-                    onCheckedChange={() => toggleSubtask(subtask.id)}
-                  />
-                  <span
-                    className={cn(
-                      'flex-1 text-sm',
-                      subtask.completed && 'line-through text-muted-foreground'
-                    )}
-                  >
-                    {subtask.title}
-                  </span>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                    onClick={() => removeSubtask(subtask.id)}
-                  >
-                    <Trash2 className="w-3 h-3" />
-                  </Button>
-                </div>
-              ))}
-              {formData.subtasks.length === 0 && (
-                <p className="text-sm text-muted-foreground text-center py-4">
-                  Nenhuma sub-tarefa adicionada
-                </p>
-              )}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="comments" className="space-y-4 mt-4">
-            <div className="flex items-start gap-2">
-              <Textarea
-                value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-                placeholder="Adicionar comentário..."
-                rows={2}
-                className="flex-1"
-              />
-              <Button type="button" size="icon" onClick={addComment} className="mt-1">
-                <Plus className="w-4 h-4" />
-              </Button>
-            </div>
-
-            <div className="space-y-3 max-h-48 overflow-y-auto">
-              {formData.comments.map((comment) => (
-                <div
-                  key={comment.id}
-                  className="p-3 rounded-lg border border-border bg-card"
-                >
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm font-medium text-foreground">{comment.author}</span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground">
-                        {format(new Date(comment.createdAt), "dd/MM/yy 'às' HH:mm", { locale: ptBR })}
-                      </span>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6 text-muted-foreground hover:text-destructive"
-                        onClick={() => removeComment(comment.id)}
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </Button>
-                    </div>
-                  </div>
-                  <p className="text-sm text-muted-foreground">{comment.content}</p>
-                </div>
-              ))}
-              {formData.comments.length === 0 && (
-                <p className="text-sm text-muted-foreground text-center py-4">
-                  Nenhum comentário adicionado
-                </p>
-              )}
-            </div>
-          </TabsContent>
-        </Tabs>
-
-        <div className="flex items-center justify-between pt-4 border-t border-border mt-4">
-          <Button variant="destructive" onClick={handleDelete}>
-            <Trash2 className="w-4 h-4 mr-2" />
-            Excluir
-          </Button>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
-              Cancelar
-            </Button>
-            <Button onClick={handleSave}>Salvar Alterações</Button>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   );
 }
