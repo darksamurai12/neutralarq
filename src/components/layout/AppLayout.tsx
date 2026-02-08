@@ -1,6 +1,7 @@
 import { ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AppSidebar } from './AppSidebar';
+import { ThemeToggle } from './ThemeToggle';
 import { AlertCenter } from '@/components/alerts/AlertCenter';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
@@ -44,7 +45,8 @@ export function AppLayout({ children }: AppLayoutProps) {
       <main className="flex-1 overflow-auto">
         {/* Top Bar */}
         <div className="sticky top-0 z-10 glass-surface border-b border-border/50">
-          <div className="container max-w-7xl flex items-center justify-end gap-3 h-16 px-4 md:px-8">
+          <div className="container max-w-7xl flex items-center justify-end gap-2 h-16 px-4 md:px-8">
+            <ThemeToggle />
             <AlertCenter />
             
             {user && (
