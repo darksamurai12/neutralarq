@@ -4,7 +4,7 @@ import { AppSidebar } from './AppSidebar';
 import { AlertCenter } from '@/components/alerts/AlertCenter';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
-import { LogOut, User } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -42,26 +42,26 @@ export function AppLayout({ children }: AppLayoutProps) {
     <div className="flex min-h-screen w-full bg-background">
       <AppSidebar />
       <main className="flex-1 overflow-auto">
-        {/* Top Bar with Alert Center and User Menu */}
-        <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b">
-          <div className="container max-w-7xl flex items-center justify-end gap-4 h-14 px-4 md:px-8">
+        {/* Top Bar */}
+        <div className="sticky top-0 z-10 glass-surface border-b border-border/50">
+          <div className="container max-w-7xl flex items-center justify-end gap-3 h-16 px-4 md:px-8">
             <AlertCenter />
             
             {user && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-9 w-9 rounded-full">
-                    <Avatar className="h-9 w-9">
-                      <AvatarFallback className="bg-primary text-primary-foreground">
+                  <Button variant="ghost" className="relative h-10 w-10 rounded-full hover:bg-accent">
+                    <Avatar className="h-10 w-10 ring-2 ring-border">
+                      <AvatarFallback className="bg-gradient-to-br from-primary to-purple-400 text-primary-foreground text-sm font-semibold">
                         {getInitials()}
                       </AvatarFallback>
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56" align="end" forceMount>
+                <DropdownMenuContent className="w-56 rounded-xl shadow-lg border-border/50" align="end" forceMount>
                   <DropdownMenuLabel className="font-normal">
                     <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium leading-none">
+                      <p className="text-sm font-semibold leading-none">
                         {profile?.full_name || 'Utilizador'}
                       </p>
                       <p className="text-xs leading-none text-muted-foreground">
@@ -70,7 +70,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleSignOut} className="text-destructive cursor-pointer">
+                  <DropdownMenuItem onClick={handleSignOut} className="text-destructive cursor-pointer rounded-lg">
                     <LogOut className="mr-2 h-4 w-4" />
                     <span>Terminar Sessão</span>
                   </DropdownMenuItem>
@@ -79,7 +79,7 @@ export function AppLayout({ children }: AppLayoutProps) {
             )}
           </div>
         </div>
-        <div className="container max-w-7xl py-6 px-4 md:px-8">
+        <div className="container max-w-7xl py-8 px-4 md:px-8">
           {children}
         </div>
       </main>

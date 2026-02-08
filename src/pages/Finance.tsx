@@ -284,96 +284,72 @@ export default function Finance() {
         </Dialog>
       </PageHeader>
 
-      {/* Summary Cards - Modern Design */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        {/* Total Entradas */}
-        <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-emerald-100 text-sm font-medium mb-1">Total Entradas</p>
-                <p className="text-2xl font-bold tracking-tight">{formatCurrency(totalIncome)}</p>
-                <div className="flex items-center gap-1 mt-2 text-emerald-100 text-xs">
-                  <ArrowUpRight className="w-3 h-3" />
-                  <span>+12.5% este mês</span>
-                </div>
-              </div>
-              <div className="h-12 w-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                <TrendingUp className="w-6 h-6 text-white" />
-              </div>
+      {/* Summary Cards - Pastel Design */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+        <div className="rounded-2xl p-5 bg-pastel-mint transition-all duration-300 hover:shadow-glass hover:-translate-y-0.5">
+          <div className="flex items-center justify-between mb-3">
+            <div className="h-10 w-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center">
+              <TrendingUp className="w-5 h-5" />
             </div>
-            <div className="absolute -bottom-4 -right-4 h-24 w-24 rounded-full bg-white/10" />
-          </CardContent>
-        </Card>
+          </div>
+          <p className="text-xs font-medium text-muted-foreground mb-1">Total Entradas</p>
+          <p className="text-lg font-bold text-foreground tracking-tight">{formatCurrency(totalIncome)}</p>
+          <div className="flex items-center gap-1 mt-2 text-xs text-muted-foreground">
+            <ArrowUpRight className="w-3 h-3" />
+            <span>+12.5% este mês</span>
+          </div>
+        </div>
 
-        {/* Total Saídas */}
-        <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-rose-500 to-rose-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-rose-100 text-sm font-medium mb-1">Total Saídas</p>
-                <p className="text-2xl font-bold tracking-tight">{formatCurrency(totalExpenses)}</p>
-                <div className="flex items-center gap-1 mt-2 text-rose-100 text-xs">
-                  <ArrowDownRight className="w-3 h-3" />
-                  <span>-8.2% este mês</span>
-                </div>
-              </div>
-              <div className="h-12 w-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                <TrendingDown className="w-6 h-6 text-white" />
-              </div>
+        <div className="rounded-2xl p-5 bg-pastel-rose transition-all duration-300 hover:shadow-glass hover:-translate-y-0.5">
+          <div className="flex items-center justify-between mb-3">
+            <div className="h-10 w-10 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center">
+              <TrendingDown className="w-5 h-5" />
             </div>
-            <div className="absolute -bottom-4 -right-4 h-24 w-24 rounded-full bg-white/10" />
-          </CardContent>
-        </Card>
+          </div>
+          <p className="text-xs font-medium text-muted-foreground mb-1">Total Saídas</p>
+          <p className="text-lg font-bold text-foreground tracking-tight">{formatCurrency(totalExpenses)}</p>
+          <div className="flex items-center gap-1 mt-2 text-xs text-muted-foreground">
+            <ArrowDownRight className="w-3 h-3" />
+            <span>-8.2% este mês</span>
+          </div>
+        </div>
 
-        {/* Saldo */}
-        <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-blue-100 text-sm font-medium mb-1">Saldo Actual</p>
-                <p className="text-2xl font-bold tracking-tight">{formatCurrency(balance)}</p>
-                <div className="flex items-center gap-1 mt-2 text-blue-100 text-xs">
-                  <PiggyBank className="w-3 h-3" />
-                  <span>{savingsRate}% taxa poupança</span>
-                </div>
-              </div>
-              <div className="h-12 w-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                <Wallet className="w-6 h-6 text-white" />
-              </div>
+        <div className="rounded-2xl p-5 bg-pastel-sky transition-all duration-300 hover:shadow-glass hover:-translate-y-0.5">
+          <div className="flex items-center justify-between mb-3">
+            <div className="h-10 w-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center">
+              <Wallet className="w-5 h-5" />
             </div>
-            <div className="absolute -bottom-4 -right-4 h-24 w-24 rounded-full bg-white/10" />
-          </CardContent>
-        </Card>
+          </div>
+          <p className="text-xs font-medium text-muted-foreground mb-1">Saldo Actual</p>
+          <p className="text-lg font-bold text-foreground tracking-tight">{formatCurrency(balance)}</p>
+          <div className="flex items-center gap-1 mt-2 text-xs text-muted-foreground">
+            <PiggyBank className="w-3 h-3" />
+            <span>{savingsRate}% taxa poupança</span>
+          </div>
+        </div>
 
-        {/* Total Transações */}
-        <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-violet-500 to-violet-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-violet-100 text-sm font-medium mb-1">Total Transações</p>
-                <p className="text-2xl font-bold tracking-tight">{transactions.length}</p>
-                <div className="flex items-center gap-1 mt-2 text-violet-100 text-xs">
-                  <Receipt className="w-3 h-3" />
-                  <span>{filteredTransactions.length} visíveis</span>
-                </div>
-              </div>
-              <div className="h-12 w-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                <CreditCard className="w-6 h-6 text-white" />
-              </div>
+        <div className="rounded-2xl p-5 bg-pastel-lavender transition-all duration-300 hover:shadow-glass hover:-translate-y-0.5">
+          <div className="flex items-center justify-between mb-3">
+            <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+              <CreditCard className="w-5 h-5" />
             </div>
-            <div className="absolute -bottom-4 -right-4 h-24 w-24 rounded-full bg-white/10" />
-          </CardContent>
-        </Card>
+          </div>
+          <p className="text-xs font-medium text-muted-foreground mb-1">Total Transações</p>
+          <p className="text-lg font-bold text-foreground tracking-tight">{transactions.length}</p>
+          <div className="flex items-center gap-1 mt-2 text-xs text-muted-foreground">
+            <Receipt className="w-3 h-3" />
+            <span>{filteredTransactions.length} visíveis</span>
+          </div>
+        </div>
       </div>
 
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         {/* Cash Flow Chart */}
-        <Card className="lg:col-span-2 shadow-lg border-0 bg-card">
+        <Card className="lg:col-span-2 shadow-card border-border/50 rounded-2xl">
           <CardHeader className="pb-2">
-            <CardTitle className="text-lg font-semibold flex items-center gap-2">
-              <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+            <CardTitle className="text-base font-semibold flex items-center gap-3">
+              <div className="h-9 w-9 rounded-xl bg-pastel-mint flex items-center justify-center">
                 <TrendingUp className="w-4 h-4 text-primary" />
               </div>
               Evolução do Fluxo de Caixa

@@ -328,70 +328,50 @@ export default function Projects() {
       </PageHeader>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-slate-500 to-slate-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-          <CardContent className="p-5">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-slate-100 text-sm font-medium mb-1">Em Planeamento</p>
-                <p className="text-3xl font-bold tracking-tight">{planningProjects}</p>
-              </div>
-              <div className="h-12 w-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                <Clock className="w-6 h-6 text-white" />
-              </div>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+        <div className="rounded-2xl p-5 bg-pastel-lavender transition-all duration-300 hover:shadow-glass hover:-translate-y-0.5">
+          <div className="flex items-center justify-between mb-3">
+            <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+              <Clock className="w-5 h-5" />
             </div>
-            <div className="absolute -bottom-4 -right-4 h-24 w-24 rounded-full bg-white/10" />
-          </CardContent>
-        </Card>
+          </div>
+          <p className="text-xs font-medium text-muted-foreground mb-1">Em Planeamento</p>
+          <p className="text-xl font-bold text-foreground tracking-tight">{planningProjects}</p>
+        </div>
 
-        <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-          <CardContent className="p-5">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-blue-100 text-sm font-medium mb-1">Em Execução</p>
-                <p className="text-3xl font-bold tracking-tight">{activeProjects}</p>
-              </div>
-              <div className="h-12 w-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                <PlayCircle className="w-6 h-6 text-white" />
-              </div>
+        <div className="rounded-2xl p-5 bg-pastel-sky transition-all duration-300 hover:shadow-glass hover:-translate-y-0.5">
+          <div className="flex items-center justify-between mb-3">
+            <div className="h-10 w-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center">
+              <PlayCircle className="w-5 h-5" />
             </div>
-            <div className="absolute -bottom-4 -right-4 h-24 w-24 rounded-full bg-white/10" />
-          </CardContent>
-        </Card>
+          </div>
+          <p className="text-xs font-medium text-muted-foreground mb-1">Em Execução</p>
+          <p className="text-xl font-bold text-foreground tracking-tight">{activeProjects}</p>
+        </div>
 
-        <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-amber-500 to-amber-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-          <CardContent className="p-5">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-amber-100 text-sm font-medium mb-1">Parados</p>
-                <p className="text-3xl font-bold tracking-tight">{pausedProjects}</p>
-              </div>
-              <div className="h-12 w-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                <PauseCircle className="w-6 h-6 text-white" />
-              </div>
+        <div className="rounded-2xl p-5 bg-pastel-amber transition-all duration-300 hover:shadow-glass hover:-translate-y-0.5">
+          <div className="flex items-center justify-between mb-3">
+            <div className="h-10 w-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center">
+              <PauseCircle className="w-5 h-5" />
             </div>
-            <div className="absolute -bottom-4 -right-4 h-24 w-24 rounded-full bg-white/10" />
-          </CardContent>
-        </Card>
+          </div>
+          <p className="text-xs font-medium text-muted-foreground mb-1">Parados</p>
+          <p className="text-xl font-bold text-foreground tracking-tight">{pausedProjects}</p>
+        </div>
 
-        <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-          <CardContent className="p-5">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-emerald-100 text-sm font-medium mb-1">Concluídos</p>
-                <p className="text-3xl font-bold tracking-tight">{completedProjects}</p>
-              </div>
-              <div className="h-12 w-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                <CheckCircle2 className="w-6 h-6 text-white" />
-              </div>
+        <div className="rounded-2xl p-5 bg-pastel-mint transition-all duration-300 hover:shadow-glass hover:-translate-y-0.5">
+          <div className="flex items-center justify-between mb-3">
+            <div className="h-10 w-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center">
+              <CheckCircle2 className="w-5 h-5" />
             </div>
-            <div className="absolute -bottom-4 -right-4 h-24 w-24 rounded-full bg-white/10" />
-          </CardContent>
-        </Card>
+          </div>
+          <p className="text-xs font-medium text-muted-foreground mb-1">Concluídos</p>
+          <p className="text-xl font-bold text-foreground tracking-tight">{completedProjects}</p>
+        </div>
       </div>
 
       {/* Filters */}
-      <Card className="shadow-lg border-0 mb-6">
+      <Card className="shadow-card border-border/50 rounded-2xl mb-6">
         <CardContent className="p-4">
           <ProjectFilters
             searchQuery={searchQuery}

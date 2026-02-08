@@ -55,7 +55,7 @@ export default function Pricing() {
       />
 
       <Tabs defaultValue="products" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-grid">
+        <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-grid rounded-xl">
           <TabsTrigger value="products" className="gap-2">
             <Package className="w-4 h-4" />
             <span className="hidden sm:inline">Produtos</span>
