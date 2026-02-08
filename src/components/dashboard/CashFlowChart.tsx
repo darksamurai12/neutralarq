@@ -36,8 +36,8 @@ export function CashFlowChart({ data }: CashFlowChartProps) {
             contentStyle={{
               backgroundColor: 'hsl(var(--card))',
               border: '1px solid hsl(var(--border))',
-              borderRadius: '12px',
-              boxShadow: '0 10px 40px -10px rgba(0,0,0,0.2)',
+              borderRadius: '16px',
+              boxShadow: '0 8px 32px -8px rgba(0,0,0,0.12)',
             }}
             labelStyle={{ color: 'hsl(var(--foreground))', fontWeight: 600 }}
             formatter={(value: number) => [formatCurrency(value)]}
@@ -52,14 +52,14 @@ export function CashFlowChart({ data }: CashFlowChartProps) {
           />
           <Bar 
             dataKey="income" 
-            fill="hsl(142, 76%, 36%)" 
-            radius={[6, 6, 0, 0]} 
+            fill="hsl(152, 69%, 45%)" 
+            radius={[8, 8, 0, 0]} 
             name="income"
           />
           <Bar 
             dataKey="expenses" 
-            fill="hsl(0, 84%, 60%)" 
-            radius={[6, 6, 0, 0]} 
+            fill="hsl(340, 65%, 60%)" 
+            radius={[8, 8, 0, 0]} 
             name="expenses"
           />
         </BarChart>

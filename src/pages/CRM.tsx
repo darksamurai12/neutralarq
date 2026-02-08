@@ -264,16 +264,16 @@ export default function CRM() {
 
       {/* Tabs for Clients and Pipeline */}
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'clients' | 'pipeline' | 'calendar')} className="mb-6">
-        <TabsList className="grid w-full max-w-lg grid-cols-3">
-          <TabsTrigger value="clients" className="gap-2">
+        <TabsList className="grid w-full max-w-lg grid-cols-3 rounded-xl">
+          <TabsTrigger value="clients" className="gap-2 rounded-lg">
             <Users className="w-4 h-4" />
             Clientes
           </TabsTrigger>
-          <TabsTrigger value="pipeline" className="gap-2">
+          <TabsTrigger value="pipeline" className="gap-2 rounded-lg">
             <Handshake className="w-4 h-4" />
             Pipeline
           </TabsTrigger>
-          <TabsTrigger value="calendar" className="gap-2">
+          <TabsTrigger value="calendar" className="gap-2 rounded-lg">
             <CalendarDays className="w-4 h-4" />
             Calendário
           </TabsTrigger>
@@ -282,66 +282,51 @@ export default function CRM() {
         <TabsContent value="clients" className="mt-6">
           {/* Stats Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-        <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-          <CardContent className="p-5">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-emerald-100 text-sm font-medium mb-1">Clientes Activos</p>
-                <p className="text-3xl font-bold tracking-tight">{activeClients}</p>
-                <div className="flex items-center gap-1 mt-2 text-emerald-100 text-xs">
-                  <ArrowUpRight className="w-3 h-3" />
-                  <span>Com projectos</span>
-                </div>
-              </div>
-              <div className="h-12 w-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                <UserCheck className="w-6 h-6 text-white" />
-              </div>
+        <div className="rounded-2xl p-5 bg-pastel-mint transition-all duration-300 hover:shadow-glass hover:-translate-y-0.5">
+          <div className="flex items-center justify-between mb-3">
+            <div className="h-10 w-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center">
+              <UserCheck className="w-5 h-5" />
             </div>
-            <div className="absolute -bottom-4 -right-4 h-24 w-24 rounded-full bg-white/10" />
-          </CardContent>
-        </Card>
+          </div>
+          <p className="text-xs font-medium text-muted-foreground mb-1">Clientes Activos</p>
+          <p className="text-xl font-bold text-foreground tracking-tight">{activeClients}</p>
+          <div className="flex items-center gap-1 mt-2 text-xs text-muted-foreground">
+            <ArrowUpRight className="w-3 h-3" />
+            <span>Com projectos</span>
+          </div>
+        </div>
 
-        <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-amber-500 to-amber-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-          <CardContent className="p-5">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-amber-100 text-sm font-medium mb-1">Leads no Funil</p>
-                <p className="text-3xl font-bold tracking-tight">{leadClients}</p>
-                <div className="flex items-center gap-1 mt-2 text-amber-100 text-xs">
-                  <UserPlus className="w-3 h-3" />
-                  <span>Potenciais clientes</span>
-                </div>
-              </div>
-              <div className="h-12 w-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                <UserPlus className="w-6 h-6 text-white" />
-              </div>
+        <div className="rounded-2xl p-5 bg-pastel-amber transition-all duration-300 hover:shadow-glass hover:-translate-y-0.5">
+          <div className="flex items-center justify-between mb-3">
+            <div className="h-10 w-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center">
+              <UserPlus className="w-5 h-5" />
             </div>
-            <div className="absolute -bottom-4 -right-4 h-24 w-24 rounded-full bg-white/10" />
-          </CardContent>
-        </Card>
+          </div>
+          <p className="text-xs font-medium text-muted-foreground mb-1">Leads no Funil</p>
+          <p className="text-xl font-bold text-foreground tracking-tight">{leadClients}</p>
+          <div className="flex items-center gap-1 mt-2 text-xs text-muted-foreground">
+            <UserPlus className="w-3 h-3" />
+            <span>Potenciais clientes</span>
+          </div>
+        </div>
 
-        <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-slate-500 to-slate-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-          <CardContent className="p-5">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-slate-100 text-sm font-medium mb-1">Clientes Inactivos</p>
-                <p className="text-3xl font-bold tracking-tight">{inactiveClients}</p>
-                <div className="flex items-center gap-1 mt-2 text-slate-100 text-xs">
-                  <UserX className="w-3 h-3" />
-                  <span>Sem actividade</span>
-                </div>
-              </div>
-              <div className="h-12 w-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                <UserX className="w-6 h-6 text-white" />
-              </div>
+        <div className="rounded-2xl p-5 bg-pastel-lavender transition-all duration-300 hover:shadow-glass hover:-translate-y-0.5">
+          <div className="flex items-center justify-between mb-3">
+            <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+              <UserX className="w-5 h-5" />
             </div>
-            <div className="absolute -bottom-4 -right-4 h-24 w-24 rounded-full bg-white/10" />
-          </CardContent>
-        </Card>
+          </div>
+          <p className="text-xs font-medium text-muted-foreground mb-1">Clientes Inactivos</p>
+          <p className="text-xl font-bold text-foreground tracking-tight">{inactiveClients}</p>
+          <div className="flex items-center gap-1 mt-2 text-xs text-muted-foreground">
+            <UserX className="w-3 h-3" />
+            <span>Sem actividade</span>
+          </div>
+        </div>
       </div>
 
       {/* Filters */}
-      <Card className="shadow-lg border-0 mb-6">
+      <Card className="shadow-card border-border/50 rounded-2xl mb-6">
         <CardContent className="p-4">
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="flex-1 max-w-md">

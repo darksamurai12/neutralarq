@@ -13,10 +13,10 @@ const statusLabels: Record<ProjectStatus, string> = {
 };
 
 const statusColors: Record<ProjectStatus, string> = {
-  planning: 'hsl(215, 20%, 65%)',
-  in_progress: 'hsl(217, 91%, 60%)',
-  paused: 'hsl(38, 92%, 50%)',
-  completed: 'hsl(142, 76%, 36%)',
+  planning: 'hsl(245, 58%, 70%)',
+  in_progress: 'hsl(210, 60%, 55%)',
+  paused: 'hsl(38, 80%, 55%)',
+  completed: 'hsl(152, 69%, 45%)',
 };
 
 export function ProjectStatusChart({ data }: ProjectStatusChartProps) {
