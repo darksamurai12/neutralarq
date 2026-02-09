@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, FolderKanban, Wallet, Calculator, ChevronLeft, ChevronRight } from 'lucide-react';
+import { LayoutDashboard, Users, FolderKanban, Wallet, Calculator, CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 const navItems = [
   { title: 'Dashboard', url: '/', icon: LayoutDashboard },
   { title: 'CRM', url: '/crm', icon: Users },
+  { title: 'Calendário', url: '/calendario', icon: CalendarDays },
   { title: 'Projetos', url: '/projetos', icon: FolderKanban },
   { title: 'Finanças', url: '/financas', icon: Wallet },
   { title: 'Precificação', url: '/precificacao', icon: Calculator },
