@@ -11,6 +11,7 @@ import CRM from "./pages/CRM";
 import Projects from "./pages/Projects";
 import Finance from "./pages/Finance";
 import Pricing from "./pages/Pricing";
+import CalendarPage from "./pages/Calendar";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -28,6 +29,7 @@ const App = () => (
               <Route path="/auth" element={<Auth />} />
               <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
               <Route path="/crm" element={<ProtectedRoute><CRM /></ProtectedRoute>} />
+              <Route path="/calendario" element={<ProtectedRoute><CalendarPage /></ProtectedRoute>} />
               <Route path="/projetos" element={<ProtectedRoute><Projects /></ProtectedRoute>} />
               <Route path="/financas" element={<ProtectedRoute><Finance /></ProtectedRoute>} />
               <Route path="/precificacao" element={<ProtectedRoute><Pricing /></ProtectedRoute>} />

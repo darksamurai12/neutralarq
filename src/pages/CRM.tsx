@@ -19,7 +19,6 @@ import {
   ArrowUpRight,
   FolderKanban,
   Handshake,
-  CalendarDays
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -59,7 +58,6 @@ import { cn } from '@/lib/utils';
 import { SearchFilter } from '@/components/filters/SearchFilter';
 import { StatusFilter } from '@/components/filters/StatusFilter';
 import { DealPipeline } from '@/components/crm/DealPipeline';
-import { CRMCalendar } from '@/components/crm/CRMCalendar';
 
 const statusConfig: Record<ClientStatus, { label: string; className: string; bgClass: string }> = {
   lead: { label: 'Lead', className: 'bg-amber-500/10 text-amber-600 border-amber-500/20', bgClass: 'from-amber-500 to-amber-600' },
@@ -92,7 +90,7 @@ export default function CRM() {
   const [formData, setFormData] = useState(emptyFormData);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<ClientStatus | 'all'>('all');
-  const [activeTab, setActiveTab] = useState<'clients' | 'pipeline' | 'calendar'>('clients');
+  const [activeTab, setActiveTab] = useState<'clients' | 'pipeline'>('clients');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -263,8 +261,8 @@ export default function CRM() {
       </PageHeader>
 
       {/* Tabs for Clients and Pipeline */}
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'clients' | 'pipeline' | 'calendar')} className="mb-6">
-        <TabsList className="grid w-full max-w-lg grid-cols-3 rounded-xl">
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'clients' | 'pipeline')} className="mb-6">
+        <TabsList className="grid w-full max-w-sm grid-cols-2 rounded-xl">
           <TabsTrigger value="clients" className="gap-2 rounded-lg">
             <Users className="w-4 h-4" />
             Clientes
@@ -272,10 +270,6 @@ export default function CRM() {
           <TabsTrigger value="pipeline" className="gap-2 rounded-lg">
             <Handshake className="w-4 h-4" />
             Pipeline
-          </TabsTrigger>
-          <TabsTrigger value="calendar" className="gap-2 rounded-lg">
-            <CalendarDays className="w-4 h-4" />
-            Calendário
           </TabsTrigger>
         </TabsList>
 
@@ -445,9 +439,6 @@ export default function CRM() {
           <DealPipeline />
         </TabsContent>
 
-        <TabsContent value="calendar" className="mt-6">
-          <CRMCalendar />
-        </TabsContent>
       </Tabs>
 
       {/* Client Detail Sheet */}
