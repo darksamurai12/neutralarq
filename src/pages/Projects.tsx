@@ -62,6 +62,7 @@ import { TaskKanban } from '@/components/projects/TaskKanban';
 import { ProjectKPIs } from '@/components/projects/ProjectKPIs';
 import { ProjectHistory } from '@/components/projects/ProjectHistory';
 import { ProjectFilters } from '@/components/projects/ProjectFilters';
+import { SubprojectsList } from '@/components/projects/SubprojectsList';
 import { formatCurrency } from '@/lib/currency';
 
 const statusConfig: Record<ProjectStatus, { label: string; className: string; bgClass: string; icon: React.ElementType }> = {
@@ -90,7 +91,7 @@ const emptyFormData = {
 };
 
 export default function Projects() {
-  const { projects, clients, addProject, updateProject, deleteProject, getProjectWithDetails, addTask, updateTask, deleteTask } = useApp();
+  const { projects, clients, addProject, updateProject, deleteProject, getProjectWithDetails, addTask, updateTask, deleteTask, getSubprojects } = useApp();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
@@ -104,11 +105,14 @@ export default function Projects() {
 
   const selectedProject = selectedProjectId ? getProjectWithDetails(selectedProjectId) : null;
 
-  // Stats
-  const planningProjects = projects.filter(p => p.status === 'planning').length;
-  const activeProjects = projects.filter(p => p.status === 'in_progress').length;
-  const pausedProjects = projects.filter(p => p.status === 'paused').length;
-  const completedProjects = projects.filter(p => p.status === 'completed').length;
+  // Only show root-level projects (not subprojects) in the main list
+  const rootProjects = projects.filter(p => !p.parentProjectId);
+
+  // Stats (only root projects)
+  const planningProjects = rootProjects.filter(p => p.status === 'planning').length;
+  const activeProjects = rootProjects.filter(p => p.status === 'in_progress').length;
+  const pausedProjects = rootProjects.filter(p => p.status === 'paused').length;
+  const completedProjects = rootProjects.filter(p => p.status === 'completed').length;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -122,6 +126,7 @@ export default function Projects() {
       deadline: new Date(formData.deadline),
       budget: parseFloat(formData.budget),
       status: formData.status,
+      parentProjectId: null as string | null,
     };
 
     if (editingProject) {
@@ -160,7 +165,7 @@ export default function Projects() {
     deleteProject(id);
   };
 
-  const filteredProjects = projects.filter((project) => {
+  const filteredProjects = rootProjects.filter((project) => {
     const client = clients.find((c) => c.id === project.clientId);
     const matchesSearch =
       project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -394,6 +399,7 @@ export default function Projects() {
           const projectDetails = getProjectWithDetails(project.id);
           const progress = projectDetails?.kpis.progressPercentage || 0;
           const StatusIcon = statusConfig[project.status].icon;
+          const subprojectCount = getSubprojects(project.id).length;
           
           return (
             <Card
@@ -473,9 +479,17 @@ export default function Projects() {
                     <StatusIcon className="w-3 h-3" />
                     {statusConfig[project.status].label}
                   </Badge>
-                  <span className="text-xs text-muted-foreground">
-                    {projectDetails?.tasks.length || 0} tarefa{(projectDetails?.tasks.length || 0) !== 1 ? 's' : ''}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    {subprojectCount > 0 && (
+                      <span className="text-xs text-primary font-medium flex items-center gap-1">
+                        <FolderKanban className="w-3 h-3" />
+                        {subprojectCount} sub
+                      </span>
+                    )}
+                    <span className="text-xs text-muted-foreground">
+                      {projectDetails?.tasks.length || 0} tarefa{(projectDetails?.tasks.length || 0) !== 1 ? 's' : ''}
+                    </span>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -501,6 +515,16 @@ export default function Projects() {
         <SheetContent className="sm:max-w-3xl overflow-y-auto">
           {selectedProject && (
             <>
+              {/* Breadcrumb for subprojects */}
+              {selectedProject.parentProjectId && (
+                <button
+                  onClick={() => setSelectedProjectId(selectedProject.parentProjectId)}
+                  className="flex items-center gap-1 text-xs text-primary hover:underline mb-3 transition-colors"
+                >
+                  <ArrowUpRight className="w-3 h-3 rotate-[225deg]" />
+                  Voltar ao projecto principal
+                </button>
+              )}
               <SheetHeader className="mb-6">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
@@ -574,8 +598,16 @@ export default function Projects() {
 
               {/* Tabs */}
               <Tabs defaultValue="kpis" className="w-full">
-                <TabsList className="w-full grid grid-cols-4 mb-4">
+                <TabsList className="w-full grid grid-cols-5 mb-4">
                   <TabsTrigger value="kpis">KPIs</TabsTrigger>
+                  <TabsTrigger value="subprojects" className="gap-1">
+                    Sub
+                    {getSubprojects(selectedProject.id).length > 0 && (
+                      <span className="text-[10px] bg-primary/20 text-primary px-1 rounded-full">
+                        {getSubprojects(selectedProject.id).length}
+                      </span>
+                    )}
+                  </TabsTrigger>
                   <TabsTrigger value="kanban">Tarefas</TabsTrigger>
                   <TabsTrigger value="finance">Finanças</TabsTrigger>
                   <TabsTrigger value="history">Histórico</TabsTrigger>
@@ -583,6 +615,14 @@ export default function Projects() {
 
                 <TabsContent value="kpis">
                   <ProjectKPIs kpis={selectedProject.kpis} budget={selectedProject.budget} />
+                </TabsContent>
+
+                <TabsContent value="subprojects">
+                  <SubprojectsList
+                    parentProject={selectedProject}
+                    subprojects={getSubprojects(selectedProject.id)}
+                    onSelectSubproject={(id) => setSelectedProjectId(id)}
+                  />
                 </TabsContent>
 
                 <TabsContent value="kanban">

@@ -94,6 +94,7 @@ export interface Project {
   status: ProjectStatus;
   createdAt: Date;
   history: ProjectHistory[];
+  parentProjectId: string | null;
 }
 
 // Finance Types
