@@ -35,6 +35,7 @@ const initialProjects: Project[] = [
     budget: 45000000, 
     status: 'in_progress', 
     createdAt: new Date('2025-09-20'),
+    parentProjectId: null,
     history: [
       { id: 'h1', action: 'Criação', description: 'Projecto criado', date: new Date('2025-09-20') },
       { id: 'h2', action: 'Alteração de estado', description: 'De Planeamento para Em Execução', date: new Date('2025-10-01') }
@@ -52,6 +53,7 @@ const initialProjects: Project[] = [
     budget: 12000000, 
     status: 'in_progress', 
     createdAt: new Date('2025-10-01'),
+    parentProjectId: null,
     history: []
   },
   { 
@@ -66,6 +68,7 @@ const initialProjects: Project[] = [
     budget: 25000000, 
     status: 'completed', 
     createdAt: new Date('2025-10-15'),
+    parentProjectId: null,
     history: []
   },
   { 
@@ -80,6 +83,7 @@ const initialProjects: Project[] = [
     budget: 85000000, 
     status: 'planning', 
     createdAt: new Date('2025-12-10'),
+    parentProjectId: null,
     history: []
   },
   { 
@@ -94,6 +98,7 @@ const initialProjects: Project[] = [
     budget: 120000000, 
     status: 'paused', 
     createdAt: new Date('2025-11-01'),
+    parentProjectId: null,
     history: [
       { id: 'h3', action: 'Pausa', description: 'Projecto pausado por questões de licenciamento', date: new Date('2025-12-15') }
     ]
@@ -150,6 +155,7 @@ interface AppContextType {
   addProject: (project: Omit<Project, 'id' | 'createdAt' | 'history'>) => void;
   updateProject: (id: string, project: Partial<Project>) => void;
   deleteProject: (id: string) => void;
+  getSubprojects: (projectId: string) => Project[];
   
   // Transaction operations
   addTransaction: (transaction: Omit<Transaction, 'id' | 'createdAt'>) => void;
@@ -252,8 +258,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const deleteProject = useCallback((id: string) => {
-    setProjects(prev => prev.filter(p => p.id !== id));
+    setProjects(prev => prev.filter(p => p.id !== id && p.parentProjectId !== id));
   }, []);
+
+  const getSubprojects = useCallback((projectId: string) => {
+    return projects.filter(p => p.parentProjectId === projectId);
+  }, [projects]);
 
   // Transaction operations
   const addTransaction = useCallback((transaction: Omit<Transaction, 'id' | 'createdAt'>) => {
@@ -539,6 +549,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     addProject,
     updateProject,
     deleteProject,
+    getSubprojects,
     addTransaction,
     updateTransaction,
     deleteTransaction,
@@ -569,7 +580,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }), [
     clients, projects, transactions, tasks, deals, calendarEvents,
     addClient, updateClient, deleteClient,
-    addProject, updateProject, deleteProject,
+    addProject, updateProject, deleteProject, getSubprojects,
     addTransaction, updateTransaction, deleteTransaction,
     addTask, updateTask, deleteTask, getProjectTasks,
     addDeal, updateDeal, deleteDeal, moveDealToStage, getClientDeals, getDealsByStage, getPipelineMetrics,
