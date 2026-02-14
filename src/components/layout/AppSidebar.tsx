@@ -20,7 +20,7 @@ export function AppSidebar() {
     <aside
       className={cn(
         'flex flex-col h-screen fixed top-0 left-0 z-30 text-sidebar-foreground transition-all duration-300 rounded-2xl overflow-hidden m-2',
-        'bg-sidebar/80 backdrop-blur-xl border border-sidebar-border/30 shadow-2xl shadow-black/25',
+        'bg-sidebar backdrop-blur-2xl border border-white/10 shadow-2xl shadow-primary/10',
         collapsed ? 'w-[72px]' : 'w-64'
       )}
       style={{ height: 'calc(100vh - 1rem)' }}
