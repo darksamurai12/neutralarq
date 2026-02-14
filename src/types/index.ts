@@ -99,12 +99,16 @@ export interface Project {
 
 // Finance Types
 export type TransactionType = 'income' | 'expense';
+export type TransactionDestination = 'project' | 'cashflow';
+export type ExpenseCategory = 'alimentacao' | 'transporte' | 'material' | 'servicos' | 'equipamento' | 'comunicacao' | 'renda' | 'outros';
 
 export interface Transaction {
   id: string;
   description: string;
   value: number;
   type: TransactionType;
+  destination: TransactionDestination;
+  category: ExpenseCategory | null;
   projectId: string | null;
   clientId: string | null;
   date: Date;
