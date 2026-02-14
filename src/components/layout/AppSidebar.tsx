@@ -19,9 +19,11 @@ export function AppSidebar() {
   return (
     <aside
       className={cn(
-        'flex flex-col h-screen bg-sidebar text-sidebar-foreground border-r border-sidebar-border transition-all duration-300 sticky top-0 rounded-2xl overflow-hidden m-2 shadow-xl shadow-black/20',
+        'flex flex-col h-screen fixed top-0 left-0 z-30 text-sidebar-foreground transition-all duration-300 rounded-2xl overflow-hidden m-2',
+        'bg-sidebar/80 backdrop-blur-xl border border-sidebar-border/30 shadow-2xl shadow-black/25',
         collapsed ? 'w-[72px]' : 'w-64'
       )}
+      style={{ height: 'calc(100vh - 1rem)' }}
     >
       {/* Logo */}
       <div className="flex items-center h-16 px-4 border-b border-sidebar-border">
