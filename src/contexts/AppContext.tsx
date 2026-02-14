@@ -106,16 +106,23 @@ const initialProjects: Project[] = [
 ];
 
 const initialTransactions: Transaction[] = [
-  { id: '1', description: 'Entrada - Edifício Talatona (Parcela 1)', value: 15000000, type: 'income', projectId: '1', clientId: '1', date: new Date('2025-09-25'), createdAt: new Date('2025-09-25') },
-  { id: '2', description: 'Material de construção', value: 2500000, type: 'expense', projectId: '1', clientId: '1', date: new Date('2025-10-01'), createdAt: new Date('2025-10-01') },
-  { id: '3', description: 'Entrada - Residência Miramar (Sinal)', value: 4000000, type: 'income', projectId: '2', clientId: '3', date: new Date('2025-10-05'), createdAt: new Date('2025-10-05') },
-  { id: '4', description: 'Mobiliário e decoração', value: 1500000, type: 'expense', projectId: '2', clientId: '3', date: new Date('2025-10-10'), createdAt: new Date('2025-10-10') },
-  { id: '5', description: 'Entrada - Moradia Alvalade (Total)', value: 25000000, type: 'income', projectId: '3', clientId: '1', date: new Date('2025-11-20'), createdAt: new Date('2025-11-20') },
-  { id: '6', description: 'Mão de obra especializada', value: 8000000, type: 'expense', projectId: '3', clientId: '1', date: new Date('2025-11-22'), createdAt: new Date('2025-11-22') },
-  { id: '7', description: 'Entrada - Edifício Talatona (Parcela 2)', value: 15000000, type: 'income', projectId: '1', clientId: '1', date: new Date('2025-12-01'), createdAt: new Date('2025-12-01') },
-  { id: '8', description: 'Equipamentos de construção', value: 5000000, type: 'expense', projectId: '1', clientId: '1', date: new Date('2025-12-15'), createdAt: new Date('2025-12-15') },
-  { id: '9', description: 'Entrada - Residência Miramar (Parcela 2)', value: 4000000, type: 'income', projectId: '2', clientId: '3', date: new Date('2026-01-10'), createdAt: new Date('2026-01-10') },
-  { id: '10', description: 'Iluminação decorativa', value: 800000, type: 'expense', projectId: '2', clientId: '3', date: new Date('2026-01-15'), createdAt: new Date('2026-01-15') },
+  { id: '1', description: 'Entrada - Edifício Talatona (Parcela 1)', value: 15000000, type: 'income', destination: 'project', category: null, projectId: '1', clientId: '1', date: new Date('2025-09-25'), createdAt: new Date('2025-09-25') },
+  { id: '2', description: 'Material de construção', value: 2500000, type: 'expense', destination: 'project', category: 'material', projectId: '1', clientId: '1', date: new Date('2025-10-01'), createdAt: new Date('2025-10-01') },
+  { id: '3', description: 'Entrada - Residência Miramar (Sinal)', value: 4000000, type: 'income', destination: 'project', category: null, projectId: '2', clientId: '3', date: new Date('2025-10-05'), createdAt: new Date('2025-10-05') },
+  { id: '4', description: 'Mobiliário e decoração', value: 1500000, type: 'expense', destination: 'project', category: 'material', projectId: '2', clientId: '3', date: new Date('2025-10-10'), createdAt: new Date('2025-10-10') },
+  { id: '5', description: 'Entrada - Moradia Alvalade (Total)', value: 25000000, type: 'income', destination: 'project', category: null, projectId: '3', clientId: '1', date: new Date('2025-11-20'), createdAt: new Date('2025-11-20') },
+  { id: '6', description: 'Mão de obra especializada', value: 8000000, type: 'expense', destination: 'project', category: 'servicos', projectId: '3', clientId: '1', date: new Date('2025-11-22'), createdAt: new Date('2025-11-22') },
+  { id: '7', description: 'Entrada - Edifício Talatona (Parcela 2)', value: 15000000, type: 'income', destination: 'project', category: null, projectId: '1', clientId: '1', date: new Date('2025-12-01'), createdAt: new Date('2025-12-01') },
+  { id: '8', description: 'Equipamentos de construção', value: 5000000, type: 'expense', destination: 'project', category: 'equipamento', projectId: '1', clientId: '1', date: new Date('2025-12-15'), createdAt: new Date('2025-12-15') },
+  { id: '9', description: 'Entrada - Residência Miramar (Parcela 2)', value: 4000000, type: 'income', destination: 'project', category: null, projectId: '2', clientId: '3', date: new Date('2026-01-10'), createdAt: new Date('2026-01-10') },
+  { id: '10', description: 'Iluminação decorativa', value: 800000, type: 'expense', destination: 'project', category: 'material', projectId: '2', clientId: '3', date: new Date('2026-01-15'), createdAt: new Date('2026-01-15') },
+  // Fluxo de Caixa - Despesas variáveis da empresa
+  { id: '11', description: 'Almoço equipa de obra', value: 45000, type: 'expense', destination: 'cashflow', category: 'alimentacao', projectId: null, clientId: null, date: new Date('2026-01-20'), createdAt: new Date('2026-01-20') },
+  { id: '12', description: 'Combustível viatura empresa', value: 120000, type: 'expense', destination: 'cashflow', category: 'transporte', projectId: null, clientId: null, date: new Date('2026-01-22'), createdAt: new Date('2026-01-22') },
+  { id: '13', description: 'Material de escritório', value: 35000, type: 'expense', destination: 'cashflow', category: 'material', projectId: null, clientId: null, date: new Date('2026-01-25'), createdAt: new Date('2026-01-25') },
+  { id: '14', description: 'Internet e telefone', value: 85000, type: 'expense', destination: 'cashflow', category: 'comunicacao', projectId: null, clientId: null, date: new Date('2026-02-01'), createdAt: new Date('2026-02-01') },
+  { id: '15', description: 'Renda do escritório', value: 350000, type: 'expense', destination: 'cashflow', category: 'renda', projectId: null, clientId: null, date: new Date('2026-02-01'), createdAt: new Date('2026-02-01') },
+  { id: '16', description: 'Táxi para reunião cliente', value: 15000, type: 'expense', destination: 'cashflow', category: 'transporte', projectId: null, clientId: null, date: new Date('2026-02-05'), createdAt: new Date('2026-02-05') },
 ];
 
 const initialTasks: Task[] = [
