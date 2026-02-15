@@ -678,6 +678,66 @@ export default function Finance() {
 
         {/* CASH FLOW TAB */}
         <TabsContent value="cashflow" className="space-y-6">
+          {/* Quick action + balance */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h3 className="text-lg font-semibold text-foreground">Gestão de Saídas</h3>
+              <p className="text-sm text-muted-foreground">Registe e acompanhe todas as despesas variáveis do fluxo de caixa</p>
+            </div>
+            <Button
+              className="gap-2 shadow-lg hover:shadow-xl transition-all duration-300"
+              onClick={() => {
+                setFormData({
+                  description: '',
+                  value: '',
+                  type: 'expense',
+                  destination: 'cashflow',
+                  category: '',
+                  projectId: '',
+                  date: format(new Date(), 'yyyy-MM-dd'),
+                });
+                setEditingTransaction(null);
+                setIsDialogOpen(true);
+              }}
+            >
+              <Plus className="w-4 h-4" />
+              Registar Saída
+            </Button>
+          </div>
+
+          {/* Cash flow balance cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="rounded-2xl p-5 bg-pastel-lavender transition-all duration-300 hover:shadow-glass hover:-translate-y-0.5">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="h-10 w-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center">
+                  <Banknote className="w-5 h-5" />
+                </div>
+              </div>
+              <p className="text-xs font-medium text-muted-foreground mb-1">Total Despesas Fluxo</p>
+              <p className="text-xl font-bold text-foreground tracking-tight">{formatCurrency(cashflowTotal)}</p>
+            </div>
+            <div className="rounded-2xl p-5 bg-pastel-rose transition-all duration-300 hover:shadow-glass hover:-translate-y-0.5">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="h-10 w-10 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center">
+                  <CreditCard className="w-5 h-5" />
+                </div>
+              </div>
+              <p className="text-xs font-medium text-muted-foreground mb-1">Nº de Transações</p>
+              <p className="text-xl font-bold text-foreground tracking-tight">{cashflowTransactions.length}</p>
+            </div>
+            <div className="rounded-2xl p-5 bg-pastel-mint transition-all duration-300 hover:shadow-glass hover:-translate-y-0.5">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="h-10 w-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center">
+                  <PiggyBank className="w-5 h-5" />
+                </div>
+              </div>
+              <p className="text-xs font-medium text-muted-foreground mb-1">Média por Transação</p>
+              <p className="text-xl font-bold text-foreground tracking-tight">
+                {formatCurrency(cashflowTransactions.length > 0 ? cashflowTotal / cashflowTransactions.length : 0)}
+              </p>
+            </div>
+          </div>
+
           {/* Category breakdown chart */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <Card className="lg:col-span-2 shadow-card border-border/50 rounded-2xl">
