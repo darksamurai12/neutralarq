@@ -135,7 +135,7 @@ export default function Finance() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const project = projects.find((p) => p.id === formData.projectId);
-    const destination = formData.type === 'expense' ? formData.destination : 'project';
+    const destination = formData.destination;
     
     const transactionData = {
       description: formData.description,
@@ -206,7 +206,10 @@ export default function Finance() {
   const savingsRate = totalIncome > 0 ? ((balance / totalIncome) * 100).toFixed(1) : '0';
 
   // Cash flow totals
-  const cashflowTotal = cashflowTransactions.reduce((sum, t) => sum + t.value, 0);
+  const cashflowIncome = cashflowTransactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.value, 0);
+  const cashflowExpenses = cashflowTransactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.value, 0);
+  const cashflowBalance = cashflowIncome - cashflowExpenses;
+  const cashflowTotal = cashflowExpenses;
 
   // Cash flow by category
   const cashflowByCategory = Object.entries(categoryLabels).map(([key, label]) => {
@@ -376,7 +379,7 @@ export default function Finance() {
                 <Label htmlFor="type">Tipo</Label>
                 <Select
                   value={formData.type}
-                  onValueChange={(value: TransactionType) => setFormData({ ...formData, type: value, destination: value === 'income' ? 'project' : formData.destination })}
+                  onValueChange={(value: TransactionType) => setFormData({ ...formData, type: value })}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -398,34 +401,32 @@ export default function Finance() {
                 </Select>
               </div>
 
-              {/* Destination selector - only for expenses */}
-              {formData.type === 'expense' && (
-                <div className="space-y-2">
-                  <Label>Destino da Saída</Label>
-                  <Select
-                    value={formData.destination}
-                    onValueChange={(value: TransactionDestination) => setFormData({ ...formData, destination: value, projectId: value === 'cashflow' ? '' : formData.projectId })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="project">
-                        <div className="flex items-center gap-2">
-                          <Receipt className="w-4 h-4 text-primary" />
-                          <span>Projecto</span>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="cashflow">
-                        <div className="flex items-center gap-2">
-                          <Banknote className="w-4 h-4 text-amber-500" />
-                          <span>Fluxo de Caixa (Despesas Variáveis)</span>
-                        </div>
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
+              {/* Destination selector */}
+              <div className="space-y-2">
+                <Label>{formData.type === 'income' ? 'Destino da Entrada' : 'Destino da Saída'}</Label>
+                <Select
+                  value={formData.destination}
+                  onValueChange={(value: TransactionDestination) => setFormData({ ...formData, destination: value, projectId: value === 'cashflow' ? '' : formData.projectId })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="project">
+                      <div className="flex items-center gap-2">
+                        <Receipt className="w-4 h-4 text-primary" />
+                        <span>Projecto</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="cashflow">
+                      <div className="flex items-center gap-2">
+                        <Banknote className="w-4 h-4 text-amber-500" />
+                        <span>{formData.type === 'income' ? 'Transferir para Fluxo de Caixa' : 'Saída do Fluxo de Caixa'}</span>
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
               {/* Category selector - for expenses */}
               {formData.type === 'expense' && (
@@ -681,60 +682,100 @@ export default function Finance() {
           {/* Quick action + balance */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h3 className="text-lg font-semibold text-foreground">Gestão de Saídas</h3>
-              <p className="text-sm text-muted-foreground">Registe e acompanhe todas as despesas variáveis do fluxo de caixa</p>
+              <h3 className="text-lg font-semibold text-foreground">Gestão do Fluxo de Caixa</h3>
+              <p className="text-sm text-muted-foreground">Transfira valores e registe saídas a partir do saldo disponível</p>
             </div>
-            <Button
-              className="gap-2 shadow-lg hover:shadow-xl transition-all duration-300"
-              onClick={() => {
-                setFormData({
-                  description: '',
-                  value: '',
-                  type: 'expense',
-                  destination: 'cashflow',
-                  category: '',
-                  projectId: '',
-                  date: format(new Date(), 'yyyy-MM-dd'),
-                });
-                setEditingTransaction(null);
-                setIsDialogOpen(true);
-              }}
-            >
-              <Plus className="w-4 h-4" />
-              Registar Saída
-            </Button>
+            <div className="flex gap-3">
+              <Button
+                className="gap-2 shadow-lg hover:shadow-xl transition-all duration-300"
+                onClick={() => {
+                  setFormData({
+                    description: '',
+                    value: '',
+                    type: 'income',
+                    destination: 'cashflow',
+                    category: '',
+                    projectId: '',
+                    date: format(new Date(), 'yyyy-MM-dd'),
+                  });
+                  setEditingTransaction(null);
+                  setIsDialogOpen(true);
+                }}
+              >
+                <ArrowUpRight className="w-4 h-4" />
+                Transferir para Caixa
+              </Button>
+              <Button
+                variant="outline"
+                className="gap-2"
+                onClick={() => {
+                  setFormData({
+                    description: '',
+                    value: '',
+                    type: 'expense',
+                    destination: 'cashflow',
+                    category: '',
+                    projectId: '',
+                    date: format(new Date(), 'yyyy-MM-dd'),
+                  });
+                  setEditingTransaction(null);
+                  setIsDialogOpen(true);
+                }}
+              >
+                <ArrowDownRight className="w-4 h-4" />
+                Registar Saída
+              </Button>
+            </div>
           </div>
 
           {/* Cash flow balance cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="rounded-2xl p-5 bg-pastel-lavender transition-all duration-300 hover:shadow-glass hover:-translate-y-0.5">
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+            <div className="rounded-2xl p-5 bg-pastel-mint transition-all duration-300 hover:shadow-glass hover:-translate-y-0.5">
               <div className="flex items-center gap-3 mb-3">
-                <div className="h-10 w-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center">
-                  <Banknote className="w-5 h-5" />
+                <div className="h-10 w-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center">
+                  <ArrowUpRight className="w-5 h-5" />
                 </div>
               </div>
-              <p className="text-xs font-medium text-muted-foreground mb-1">Total Despesas Fluxo</p>
-              <p className="text-xl font-bold text-foreground tracking-tight">{formatCurrency(cashflowTotal)}</p>
+              <p className="text-xs font-medium text-muted-foreground mb-1">Total Transferido</p>
+              <p className="text-xl font-bold text-emerald-600 tracking-tight">{formatCurrency(cashflowIncome)}</p>
             </div>
             <div className="rounded-2xl p-5 bg-pastel-rose transition-all duration-300 hover:shadow-glass hover:-translate-y-0.5">
               <div className="flex items-center gap-3 mb-3">
                 <div className="h-10 w-10 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center">
+                  <ArrowDownRight className="w-5 h-5" />
+                </div>
+              </div>
+              <p className="text-xs font-medium text-muted-foreground mb-1">Total Saídas</p>
+              <p className="text-xl font-bold text-rose-600 tracking-tight">{formatCurrency(cashflowExpenses)}</p>
+            </div>
+            <div className={cn(
+              "rounded-2xl p-5 transition-all duration-300 hover:shadow-glass hover:-translate-y-0.5",
+              cashflowBalance >= 0 ? 'bg-pastel-sky' : 'bg-destructive/10'
+            )}>
+              <div className="flex items-center gap-3 mb-3">
+                <div className={cn(
+                  "h-10 w-10 rounded-xl flex items-center justify-center",
+                  cashflowBalance >= 0 ? 'bg-blue-100 text-blue-600' : 'bg-rose-100 text-rose-600'
+                )}>
+                  <Wallet className="w-5 h-5" />
+                </div>
+              </div>
+              <p className="text-xs font-medium text-muted-foreground mb-1">Saldo Disponível</p>
+              <p className={cn(
+                "text-xl font-bold tracking-tight",
+                cashflowBalance >= 0 ? 'text-blue-600' : 'text-destructive'
+              )}>
+                {formatCurrency(cashflowBalance)}
+              </p>
+            </div>
+            <div className="rounded-2xl p-5 bg-pastel-lavender transition-all duration-300 hover:shadow-glass hover:-translate-y-0.5">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="h-10 w-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center">
                   <CreditCard className="w-5 h-5" />
                 </div>
               </div>
               <p className="text-xs font-medium text-muted-foreground mb-1">Nº de Transações</p>
               <p className="text-xl font-bold text-foreground tracking-tight">{cashflowTransactions.length}</p>
-            </div>
-            <div className="rounded-2xl p-5 bg-pastel-mint transition-all duration-300 hover:shadow-glass hover:-translate-y-0.5">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="h-10 w-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center">
-                  <PiggyBank className="w-5 h-5" />
-                </div>
-              </div>
-              <p className="text-xs font-medium text-muted-foreground mb-1">Média por Transação</p>
-              <p className="text-xl font-bold text-foreground tracking-tight">
-                {formatCurrency(cashflowTransactions.length > 0 ? cashflowTotal / cashflowTransactions.length : 0)}
-              </p>
             </div>
           </div>
 
