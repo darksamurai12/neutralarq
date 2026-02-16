@@ -234,6 +234,7 @@ export interface BudgetItem {
   unitCost: number;
   totalCost: number;
   profit: number;
+  groupName?: string;
 }
 
 export interface Budget {

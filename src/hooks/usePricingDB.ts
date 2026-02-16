@@ -123,6 +123,7 @@ export function usePricingDB() {
           unitCost: Number(item.unit_cost),
           totalCost: Number(item.total_cost),
           profit: Number(item.profit),
+          groupName: (item as any).group_name || undefined,
         }));
 
         return {
@@ -422,6 +423,7 @@ export function usePricingDB() {
       unit_cost: item.unitCost,
       total_cost: item.totalCost,
       profit: item.profit,
+      group_name: item.groupName || null,
     }));
 
     const { error: itemsError } = await supabase
@@ -534,6 +536,7 @@ export function usePricingDB() {
       unitCost,
       totalCost,
       profit: totalPrice - totalCost,
+      groupName: undefined,
     };
   }, [products, labor, transport]);
 

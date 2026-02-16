@@ -1,0 +1,1 @@
+ALTER TABLE public.budget_items ADD COLUMN group_name text DEFAULT NULL;
