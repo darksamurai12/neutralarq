@@ -18,6 +18,7 @@ export type Database = {
         Row: {
           budget_id: string
           created_at: string
+          group_name: string | null
           id: string
           item_id: string | null
           name: string
@@ -32,6 +33,7 @@ export type Database = {
         Insert: {
           budget_id: string
           created_at?: string
+          group_name?: string | null
           id?: string
           item_id?: string | null
           name: string
@@ -46,6 +48,7 @@ export type Database = {
         Update: {
           budget_id?: string
           created_at?: string
+          group_name?: string | null
           id?: string
           item_id?: string | null
           name?: string

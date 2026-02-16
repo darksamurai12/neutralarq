@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Trash2, FileText, DollarSign, TrendingUp, ChevronDown, ChevronUp, Package, Users, Truck, Edit, Copy, Download, Banknote, PercentCircle } from 'lucide-react';
+import { Plus, Trash2, FileText, DollarSign, TrendingUp, ChevronDown, ChevronUp, Package, Users, Truck, Edit, Copy, Download, Banknote, PercentCircle, FolderPlus, Folder } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -62,6 +62,25 @@ interface BudgetTabProps {
   createBudgetItem: (type: 'product' | 'labor' | 'transport', itemId: string, quantity: number) => BudgetItem | null;
 }
 
+// Helper to group items
+function groupItems(items: BudgetItem[]): { groupName: string; items: BudgetItem[] }[] {
+  const groups: Record<string, BudgetItem[]> = {};
+  items.forEach(item => {
+    const key = item.groupName || '__ungrouped__';
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(item);
+  });
+  // Put ungrouped last
+  const result: { groupName: string; items: BudgetItem[] }[] = [];
+  Object.entries(groups).forEach(([key, items]) => {
+    if (key !== '__ungrouped__') result.push({ groupName: key, items });
+  });
+  if (groups['__ungrouped__']) {
+    result.push({ groupName: '', items: groups['__ungrouped__'] });
+  }
+  return result;
+}
+
 export function BudgetTab({
   budgets,
   products,
@@ -88,6 +107,12 @@ export function BudgetTab({
   const [selectedItemId, setSelectedItemId] = useState('');
   const [itemQuantity, setItemQuantity] = useState('1');
 
+  // Group management
+  const [budgetGroups, setBudgetGroups] = useState<string[]>([]);
+  const [selectedGroup, setSelectedGroup] = useState<string>('');
+  const [newGroupName, setNewGroupName] = useState('');
+  const [showNewGroupInput, setShowNewGroupInput] = useState(false);
+
   const resetForm = () => {
     setBudgetName('');
     setBudgetNotes('');
@@ -97,15 +122,30 @@ export function BudgetTab({
     setSelectedItemType('product');
     setSelectedItemId('');
     setItemQuantity('1');
+    setBudgetGroups([]);
+    setSelectedGroup('');
+    setNewGroupName('');
+    setShowNewGroupInput(false);
     setIsDialogOpen(false);
     setIsEditMode(false);
     setEditingBudgetId(null);
+  };
+
+  const addGroup = () => {
+    const name = newGroupName.trim();
+    if (!name || budgetGroups.includes(name)) return;
+    setBudgetGroups(prev => [...prev, name]);
+    setSelectedGroup(name);
+    setNewGroupName('');
+    setShowNewGroupInput(false);
+    toast.success(`Grupo "${name}" criado`);
   };
 
   const addItemToBudget = () => {
     if (!selectedItemId || !itemQuantity) return;
     const newItem = createBudgetItem(selectedItemType, selectedItemId, parseInt(itemQuantity));
     if (newItem) {
+      newItem.groupName = selectedGroup || undefined;
       setBudgetItems(prev => [...prev, newItem]);
       setSelectedItemId('');
       setItemQuantity('1');
@@ -143,6 +183,9 @@ export function BudgetTab({
     setBudgetItems([...budget.items]);
     setSelectedClientId(budget.clientId || '');
     setSelectedProjectId(budget.projectId || '');
+    // Reconstruct groups from items
+    const existingGroups = [...new Set(budget.items.map(i => i.groupName).filter(Boolean))] as string[];
+    setBudgetGroups(existingGroups);
     setIsDialogOpen(true);
   };
 
@@ -153,6 +196,8 @@ export function BudgetTab({
     setBudgetItems(budget.items.map(item => ({ ...item, id: crypto.randomUUID() })));
     setSelectedClientId(budget.clientId || '');
     setSelectedProjectId(budget.projectId || '');
+    const existingGroups = [...new Set(budget.items.map(i => i.groupName).filter(Boolean))] as string[];
+    setBudgetGroups(existingGroups);
     setIsDialogOpen(true);
     toast.success('Orçamento clonado — edite e guarde.');
   };
@@ -175,7 +220,6 @@ export function BudgetTab({
     const statusLabels: Record<string, string> = { draft: 'Rascunho', sent: 'Enviado', approved: 'Aprovado', rejected: 'Rejeitado' };
     doc.text(`Estado: ${statusLabels[budget.status] || budget.status}`, 14, 42);
 
-    // Budget info
     doc.setFontSize(12);
     doc.setTextColor(33, 37, 41);
     doc.text(budget.name, 14, 54);
@@ -196,37 +240,49 @@ export function BudgetTab({
 
     yPos += 4;
 
-    // Items table
+    // Group items for PDF
+    const grouped = groupItems(budget.items);
     const typeLabels: Record<string, string> = { product: 'Produto', labor: 'Mão de Obra', transport: 'Transporte' };
-    const tableData = budget.items.map(item => [
-      item.name,
-      typeLabels[item.type] || item.type,
-      item.quantity.toString(),
-      formatCurrency(item.unitCost),
-      formatCurrency(item.unitPrice),
-      formatCurrency(item.totalPrice),
-      formatCurrency(item.profit),
-    ]);
 
-    autoTable(doc, {
-      startY: yPos,
-      head: [['Item', 'Tipo', 'Qtd', 'Custo Unit.', 'Preço Unit.', 'Total', 'Lucro']],
-      body: tableData,
-      theme: 'striped',
-      headStyles: { fillColor: [79, 70, 229], textColor: 255, fontSize: 9 },
-      bodyStyles: { fontSize: 8 },
-      columnStyles: {
-        2: { halign: 'center' },
-        3: { halign: 'right' },
-        4: { halign: 'right' },
-        5: { halign: 'right' },
-        6: { halign: 'right' },
-      },
+    grouped.forEach((group) => {
+      if (group.groupName) {
+        doc.setFontSize(11);
+        doc.setTextColor(79, 70, 229);
+        doc.text(`▸ ${group.groupName}`, 14, yPos);
+        yPos += 6;
+      }
+
+      const tableData = group.items.map(item => [
+        item.name,
+        typeLabels[item.type] || item.type,
+        item.quantity.toString(),
+        formatCurrency(item.unitCost),
+        formatCurrency(item.unitPrice),
+        formatCurrency(item.totalPrice),
+        formatCurrency(item.profit),
+      ]);
+
+      autoTable(doc, {
+        startY: yPos,
+        head: [['Item', 'Tipo', 'Qtd', 'Custo Unit.', 'Preço Unit.', 'Total', 'Lucro']],
+        body: tableData,
+        theme: 'striped',
+        headStyles: { fillColor: [79, 70, 229], textColor: 255, fontSize: 9 },
+        bodyStyles: { fontSize: 8 },
+        columnStyles: {
+          2: { halign: 'center' },
+          3: { halign: 'right' },
+          4: { halign: 'right' },
+          5: { halign: 'right' },
+          6: { halign: 'right' },
+        },
+      });
+
+      yPos = (doc as any).lastAutoTable?.finalY + 8 || yPos + 40;
     });
 
     // Summary
-    const finalY = (doc as any).lastAutoTable?.finalY || yPos + 40;
-    const summaryY = finalY + 12;
+    const summaryY = yPos + 4;
 
     doc.setDrawColor(200, 200, 200);
     doc.setFillColor(248, 249, 250);
@@ -297,6 +353,90 @@ export function BudgetTab({
       case 'labor': return 'Mão de Obra';
       case 'transport': return 'Transporte';
     }
+  };
+
+  // Render items table (used in both dialog and history)
+  const renderItemsTable = (items: BudgetItem[], showDelete = false) => (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>Item</TableHead>
+          <TableHead className="text-center">Tipo</TableHead>
+          <TableHead className="text-center">Qtd</TableHead>
+          <TableHead className="text-right">Custo Unit.</TableHead>
+          <TableHead className="text-right">Preço Unit.</TableHead>
+          <TableHead className="text-right">Total</TableHead>
+          <TableHead className="text-right text-emerald-600">Lucro</TableHead>
+          {showDelete && <TableHead className="w-[50px]"></TableHead>}
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {items.map((item) => (
+          <TableRow key={item.id}>
+            <TableCell>
+              <div className="flex items-center gap-2">
+                {getItemIcon(item.type)}
+                <span className="font-medium">{item.name}</span>
+              </div>
+            </TableCell>
+            <TableCell className="text-center text-xs text-muted-foreground">{getTypeLabel(item.type)}</TableCell>
+            <TableCell className="text-center">{item.quantity}</TableCell>
+            <TableCell className="text-right text-muted-foreground">{formatCurrency(item.unitCost)}</TableCell>
+            <TableCell className="text-right">{formatCurrency(item.unitPrice)}</TableCell>
+            <TableCell className="text-right font-medium">{formatCurrency(item.totalPrice)}</TableCell>
+            <TableCell className="text-right text-emerald-600 font-medium">{formatCurrency(item.profit)}</TableCell>
+            {showDelete && (
+              <TableCell>
+                <Button variant="ghost" size="icon" onClick={() => removeItemFromBudget(item.id)} className="text-destructive h-8 w-8">
+                  <Trash2 className="w-3.5 h-3.5" />
+                </Button>
+              </TableCell>
+            )}
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  );
+
+  // Render grouped items
+  const renderGroupedItems = (items: BudgetItem[], showDelete = false) => {
+    const grouped = groupItems(items);
+    if (grouped.length === 1 && !grouped[0].groupName) {
+      // No groups, render flat
+      return renderItemsTable(items, showDelete);
+    }
+    return (
+      <div className="space-y-4">
+        {grouped.map((group, idx) => {
+          const groupTotal = group.items.reduce((s, i) => s + i.totalPrice, 0);
+          const groupProfit = group.items.reduce((s, i) => s + i.profit, 0);
+          return (
+            <div key={idx}>
+              {group.groupName && (
+                <div className="flex items-center justify-between px-2 py-2 bg-primary/5 rounded-lg mb-2">
+                  <div className="flex items-center gap-2">
+                    <Folder className="w-4 h-4 text-primary" />
+                    <span className="font-semibold text-sm">{group.groupName}</span>
+                    <Badge variant="secondary" className="text-xs">{group.items.length} itens</Badge>
+                  </div>
+                  <div className="flex gap-4 text-xs">
+                    <span className="text-muted-foreground">Total: <strong className="text-foreground">{formatCurrency(groupTotal)}</strong></span>
+                    <span className="text-muted-foreground">Lucro: <strong className="text-emerald-600">{formatCurrency(groupProfit)}</strong></span>
+                  </div>
+                </div>
+              )}
+              {!group.groupName && grouped.length > 1 && (
+                <div className="flex items-center gap-2 px-2 py-2 bg-muted/50 rounded-lg mb-2">
+                  <span className="font-medium text-sm text-muted-foreground">Sem grupo</span>
+                  <Badge variant="secondary" className="text-xs">{group.items.length} itens</Badge>
+                </div>
+              )}
+              {renderItemsTable(group.items, showDelete)}
+            </div>
+          );
+        })}
+      </div>
+    );
   };
 
   return (
@@ -435,7 +575,59 @@ export function BudgetTab({
                   <div className="h-6 w-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold">2</div>
                   Adicionar Itens
                 </div>
-                <div className="pl-8">
+                <div className="pl-8 space-y-3">
+                  {/* Group selector */}
+                  <Card className="border border-primary/20 bg-primary/5">
+                    <CardContent className="p-3">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Folder className="w-4 h-4 text-primary" />
+                        <Label className="text-xs font-medium">Grupo (opcional)</Label>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge
+                          variant={selectedGroup === '' ? 'default' : 'outline'}
+                          className="cursor-pointer"
+                          onClick={() => setSelectedGroup('')}
+                        >
+                          Sem grupo
+                        </Badge>
+                        {budgetGroups.map(g => (
+                          <Badge
+                            key={g}
+                            variant={selectedGroup === g ? 'default' : 'outline'}
+                            className="cursor-pointer"
+                            onClick={() => setSelectedGroup(g)}
+                          >
+                            {g}
+                          </Badge>
+                        ))}
+                        {showNewGroupInput ? (
+                          <div className="flex items-center gap-1">
+                            <Input
+                              value={newGroupName}
+                              onChange={(e) => setNewGroupName(e.target.value)}
+                              placeholder="Nome do grupo"
+                              className="h-7 text-xs w-36"
+                              onKeyDown={(e) => e.key === 'Enter' && addGroup()}
+                              autoFocus
+                            />
+                            <Button size="sm" variant="ghost" className="h-7 px-2" onClick={addGroup}>
+                              <Plus className="w-3 h-3" />
+                            </Button>
+                            <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => setShowNewGroupInput(false)}>
+                              ✕
+                            </Button>
+                          </div>
+                        ) : (
+                          <Button size="sm" variant="outline" className="h-7 gap-1 text-xs" onClick={() => setShowNewGroupInput(true)}>
+                            <FolderPlus className="w-3 h-3" /> Novo Grupo
+                          </Button>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Item selector */}
                   <Card className="border-dashed border-2">
                     <CardContent className="p-4">
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -490,6 +682,11 @@ export function BudgetTab({
                           </Button>
                         </div>
                       </div>
+                      {selectedGroup && (
+                        <p className="text-xs text-muted-foreground mt-2">
+                          Item será adicionado ao grupo: <strong className="text-primary">{selectedGroup}</strong>
+                        </p>
+                      )}
                     </CardContent>
                   </Card>
                 </div>
@@ -506,42 +703,8 @@ export function BudgetTab({
                     </div>
                     <div className="pl-8">
                       <Card>
-                        <CardContent className="p-0">
-                          <Table>
-                            <TableHeader>
-                              <TableRow>
-                                <TableHead>Item</TableHead>
-                                <TableHead className="text-center">Tipo</TableHead>
-                                <TableHead className="text-center">Qtd</TableHead>
-                                <TableHead className="text-right">Preço Unit.</TableHead>
-                                <TableHead className="text-right">Total</TableHead>
-                                <TableHead className="text-right text-emerald-600">Lucro</TableHead>
-                                <TableHead className="w-[50px]"></TableHead>
-                              </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                              {budgetItems.map((item) => (
-                                <TableRow key={item.id}>
-                                  <TableCell>
-                                    <div className="flex items-center gap-2">
-                                      {getItemIcon(item.type)}
-                                      <span className="font-medium">{item.name}</span>
-                                    </div>
-                                  </TableCell>
-                                  <TableCell className="text-center text-xs text-muted-foreground">{getTypeLabel(item.type)}</TableCell>
-                                  <TableCell className="text-center">{item.quantity}</TableCell>
-                                  <TableCell className="text-right">{formatCurrency(item.unitPrice)}</TableCell>
-                                  <TableCell className="text-right font-medium">{formatCurrency(item.totalPrice)}</TableCell>
-                                  <TableCell className="text-right text-emerald-600 font-medium">{formatCurrency(item.profit)}</TableCell>
-                                  <TableCell>
-                                    <Button variant="ghost" size="icon" onClick={() => removeItemFromBudget(item.id)} className="text-destructive h-8 w-8">
-                                      <Trash2 className="w-3.5 h-3.5" />
-                                    </Button>
-                                  </TableCell>
-                                </TableRow>
-                              ))}
-                            </TableBody>
-                          </Table>
+                        <CardContent className="p-0 overflow-x-auto">
+                          {renderGroupedItems(budgetItems, true)}
                         </CardContent>
                       </Card>
 
@@ -633,35 +796,8 @@ export function BudgetTab({
                     </div>
                   </CollapsibleTrigger>
                   <CollapsibleContent>
-                    <div className="border-t px-4 pb-4">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Item</TableHead>
-                            <TableHead className="text-center">Tipo</TableHead>
-                            <TableHead className="text-center">Qtd</TableHead>
-                            <TableHead className="text-right">Custo Unit.</TableHead>
-                            <TableHead className="text-right">Preço Unit.</TableHead>
-                            <TableHead className="text-right">Total</TableHead>
-                            <TableHead className="text-right text-emerald-600">Lucro</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {budget.items.map((item) => (
-                            <TableRow key={item.id}>
-                              <TableCell className="font-medium">{item.name}</TableCell>
-                              <TableCell className="text-center">
-                                <div className="flex justify-center">{getItemIcon(item.type)}</div>
-                              </TableCell>
-                              <TableCell className="text-center">{item.quantity}</TableCell>
-                              <TableCell className="text-right text-muted-foreground">{formatCurrency(item.unitCost)}</TableCell>
-                              <TableCell className="text-right">{formatCurrency(item.unitPrice)}</TableCell>
-                              <TableCell className="text-right font-medium">{formatCurrency(item.totalPrice)}</TableCell>
-                              <TableCell className="text-right text-emerald-600 font-medium">{formatCurrency(item.profit)}</TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
+                    <div className="border-t px-4 pb-4 pt-4">
+                      {renderGroupedItems(budget.items)}
 
                       {/* Budget Summary */}
                       <Card className="mt-4 border-primary/20 bg-primary/5">
