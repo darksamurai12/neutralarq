@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
-import { Client, Project, Transaction, Task, ProjectWithDetails, DashboardMetrics, MonthlyFlow, TaskStatus, ProjectStatus, ProjectKPIs, Deal, DealStage, DealStageConfig, CalendarEvent, CalendarEventType } from '@/types';
+import { Client, Project, Transaction, Task, ProjectWithDetails, DashboardMetrics, MonthlyFlow, TaskStatus, ProjectStatus, ProjectKPIs, Deal, DealStage, DealStageConfig, CalendarEvent, CalendarEventType, ClientInteraction, InteractionType } from '@/types';
 import { format, subMonths, isWithinInterval, startOfMonth, endOfMonth, differenceInDays, isPast, isFuture, addDays, isSameDay, startOfWeek, endOfWeek } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -15,11 +15,17 @@ export const dealStageConfig: DealStageConfig[] = [
 
 // Initial mock data
 const initialClients: Client[] = [
-  { id: '1', name: 'Tech Solutions Ltda', email: 'contato@techsolutions.com', phone: '+244 923 456 789', company: 'Tech Solutions', position: 'CEO', address: 'Rua da Inovação, 123, Luanda', notes: 'Cliente premium desde 2024', status: 'active', createdAt: new Date('2025-09-15') },
-  { id: '2', name: 'Carlos Startup', email: 'ola@startupdigital.io', phone: '+244 912 345 678', company: 'Startup Digital', position: 'Fundador', address: 'Av. Marginal, 456, Luanda', notes: 'Interessado em app mobile', status: 'lead', createdAt: new Date('2025-10-20') },
-  { id: '3', name: 'Maria Express', email: 'vendas@comercioexpress.com.br', phone: '+244 934 567 890', company: 'Comércio Express', position: 'Directora Comercial', address: 'Bairro Maculusso, Luanda', notes: 'Projecto e-commerce em andamento', status: 'active', createdAt: new Date('2025-11-10') },
-  { id: '4', name: 'João Criativo', email: 'projetos@agenciacriativa.com', phone: '+244 945 678 901', company: 'Agência Criativa', position: 'Director Criativo', address: 'Talatona, Luanda Sul', notes: 'Projecto anterior concluído com sucesso', status: 'inactive', createdAt: new Date('2025-07-05') },
-  { id: '5', name: 'Ana Fintech', email: 'dev@fintechbrasil.com', phone: '+244 956 789 012', company: 'Fintech Angola', position: 'CTO', address: 'Ilha de Luanda', notes: 'Novo lead via referência', status: 'lead', createdAt: new Date('2025-12-01') },
+  { id: '1', name: 'Tech Solutions Ltda', email: 'contato@techsolutions.com', phone: '+244 923 456 789', company: 'Tech Solutions', position: 'CEO', address: 'Rua da Inovação, 123, Luanda', notes: 'Cliente premium desde 2024', status: 'active', createdAt: new Date('2025-09-15'), interactions: [
+    { id: 'i1', clientId: '1', type: 'meeting', description: 'Reunião inicial para apresentação da empresa', date: new Date('2025-09-15'), createdAt: new Date('2025-09-15') },
+    { id: 'i2', clientId: '1', type: 'call', description: 'Chamada de acompanhamento do projecto Talatona', date: new Date('2025-11-10'), createdAt: new Date('2025-11-10') },
+    { id: 'i3', clientId: '1', type: 'email', description: 'Envio de proposta actualizada com novos valores', date: new Date('2026-01-05'), createdAt: new Date('2026-01-05') },
+  ] },
+  { id: '2', name: 'Carlos Startup', email: 'ola@startupdigital.io', phone: '+244 912 345 678', company: 'Startup Digital', position: 'Fundador', address: 'Av. Marginal, 456, Luanda', notes: 'Interessado em app mobile', status: 'lead', createdAt: new Date('2025-10-20'), interactions: [
+    { id: 'i4', clientId: '2', type: 'whatsapp', description: 'Primeiro contacto via WhatsApp', date: new Date('2025-10-20'), createdAt: new Date('2025-10-20') },
+  ] },
+  { id: '3', name: 'Maria Express', email: 'vendas@comercioexpress.com.br', phone: '+244 934 567 890', company: 'Comércio Express', position: 'Directora Comercial', address: 'Bairro Maculusso, Luanda', notes: 'Projecto e-commerce em andamento', status: 'active', createdAt: new Date('2025-11-10'), interactions: [] },
+  { id: '4', name: 'João Criativo', email: 'projetos@agenciacriativa.com', phone: '+244 945 678 901', company: 'Agência Criativa', position: 'Director Criativo', address: 'Talatona, Luanda Sul', notes: 'Projecto anterior concluído com sucesso', status: 'inactive', createdAt: new Date('2025-07-05'), interactions: [] },
+  { id: '5', name: 'Ana Fintech', email: 'dev@fintechbrasil.com', phone: '+244 956 789 012', company: 'Fintech Angola', position: 'CTO', address: 'Ilha de Luanda', notes: 'Novo lead via referência', status: 'lead', createdAt: new Date('2025-12-01'), interactions: [] },
 ];
 
 const initialProjects: Project[] = [
@@ -154,9 +160,12 @@ interface AppContextType {
   calendarEvents: CalendarEvent[];
   
   // Client operations
-  addClient: (client: Omit<Client, 'id' | 'createdAt'>) => void;
+  addClient: (client: Omit<Client, 'id' | 'createdAt' | 'interactions'>) => void;
   updateClient: (id: string, client: Partial<Client>) => void;
   deleteClient: (id: string) => void;
+  addInteraction: (clientId: string, interaction: Omit<ClientInteraction, 'id' | 'createdAt' | 'clientId'>) => void;
+  deleteInteraction: (clientId: string, interactionId: string) => void;
+  getClientInteractions: (clientId: string) => ClientInteraction[];
   
   // Project operations
   addProject: (project: Omit<Project, 'id' | 'createdAt' | 'history'>) => void;
@@ -218,11 +227,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   ]);
 
   // Client operations
-  const addClient = useCallback((client: Omit<Client, 'id' | 'createdAt'>) => {
+  const addClient = useCallback((client: Omit<Client, 'id' | 'createdAt' | 'interactions'>) => {
     const newClient: Client = {
       ...client,
       id: crypto.randomUUID(),
       createdAt: new Date(),
+      interactions: [],
     };
     setClients(prev => [...prev, newClient]);
   }, []);
@@ -234,6 +244,33 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const deleteClient = useCallback((id: string) => {
     setClients(prev => prev.filter(c => c.id !== id));
   }, []);
+
+  const addInteraction = useCallback((clientId: string, interaction: Omit<ClientInteraction, 'id' | 'createdAt' | 'clientId'>) => {
+    const newInteraction: ClientInteraction = {
+      ...interaction,
+      id: crypto.randomUUID(),
+      clientId,
+      createdAt: new Date(),
+    };
+    setClients(prev => prev.map(c => 
+      c.id === clientId 
+        ? { ...c, interactions: [newInteraction, ...c.interactions] }
+        : c
+    ));
+  }, []);
+
+  const deleteInteraction = useCallback((clientId: string, interactionId: string) => {
+    setClients(prev => prev.map(c => 
+      c.id === clientId 
+        ? { ...c, interactions: c.interactions.filter(i => i.id !== interactionId) }
+        : c
+    ));
+  }, []);
+
+  const getClientInteractions = useCallback((clientId: string) => {
+    const client = clients.find(c => c.id === clientId);
+    return client?.interactions || [];
+  }, [clients]);
 
   // Project operations
   const addProject = useCallback((project: Omit<Project, 'id' | 'createdAt' | 'history'>) => {
@@ -553,6 +590,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     addClient,
     updateClient,
     deleteClient,
+    addInteraction,
+    deleteInteraction,
+    getClientInteractions,
     addProject,
     updateProject,
     deleteProject,
@@ -586,7 +626,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     getProjectKPIs,
   }), [
     clients, projects, transactions, tasks, deals, calendarEvents,
-    addClient, updateClient, deleteClient,
+    addClient, updateClient, deleteClient, addInteraction, deleteInteraction, getClientInteractions,
     addProject, updateProject, deleteProject, getSubprojects,
     addTransaction, updateTransaction, deleteTransaction,
     addTask, updateTask, deleteTask, getProjectTasks,

@@ -19,6 +19,12 @@ import {
   ArrowUpRight,
   FolderKanban,
   Handshake,
+  MessageSquare,
+  PhoneCall,
+  Video,
+  StickyNote,
+  Send,
+  Clock,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -53,7 +59,7 @@ import {
 } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Client, ClientStatus } from '@/types';
+import { Client, ClientStatus, InteractionType } from '@/types';
 import { cn } from '@/lib/utils';
 import { SearchFilter } from '@/components/filters/SearchFilter';
 import { StatusFilter } from '@/components/filters/StatusFilter';
@@ -83,7 +89,7 @@ const emptyFormData = {
 };
 
 export default function CRM() {
-  const { clients, addClient, updateClient, deleteClient, getClientProjects } = useApp();
+  const { clients, addClient, updateClient, deleteClient, getClientProjects, addInteraction, deleteInteraction } = useApp();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
@@ -91,6 +97,8 @@ export default function CRM() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<ClientStatus | 'all'>('all');
   const [activeTab, setActiveTab] = useState<'clients' | 'pipeline'>('clients');
+  const [interactionType, setInteractionType] = useState<InteractionType>('call');
+  const [interactionDesc, setInteractionDesc] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -538,6 +546,134 @@ export default function CRM() {
                           <p className="text-xs text-muted-foreground mt-1 capitalize">{project.status.replace('_', ' ')}</p>
                         </div>
                       ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Interactions Section */}
+                <div className="pt-4 border-t border-border">
+                  <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                    <MessageSquare className="w-4 h-4 text-primary" />
+                    Interações
+                  </h4>
+
+                  {/* Add Interaction Form */}
+                  <div className="p-3 rounded-xl bg-muted/30 border border-border/50 mb-3 space-y-2">
+                    <div className="flex gap-2">
+                      <Select
+                        value={interactionType}
+                        onValueChange={(v: InteractionType) => setInteractionType(v)}
+                      >
+                        <SelectTrigger className="w-[130px] h-9 text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="call">
+                            <span className="flex items-center gap-1.5"><PhoneCall className="w-3 h-3" /> Chamada</span>
+                          </SelectItem>
+                          <SelectItem value="meeting">
+                            <span className="flex items-center gap-1.5"><Video className="w-3 h-3" /> Reunião</span>
+                          </SelectItem>
+                          <SelectItem value="email">
+                            <span className="flex items-center gap-1.5"><Mail className="w-3 h-3" /> Email</span>
+                          </SelectItem>
+                          <SelectItem value="whatsapp">
+                            <span className="flex items-center gap-1.5"><MessageSquare className="w-3 h-3" /> WhatsApp</span>
+                          </SelectItem>
+                          <SelectItem value="note">
+                            <span className="flex items-center gap-1.5"><StickyNote className="w-3 h-3" /> Nota</span>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Descrever a interação..."
+                        value={interactionDesc}
+                        onChange={(e) => setInteractionDesc(e.target.value)}
+                        className="h-9 text-sm"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && interactionDesc.trim()) {
+                            addInteraction(selectedClient.id, {
+                              type: interactionType,
+                              description: interactionDesc.trim(),
+                              date: new Date(),
+                            });
+                            setInteractionDesc('');
+                          }
+                        }}
+                      />
+                      <Button
+                        size="sm"
+                        className="h-9 px-3"
+                        disabled={!interactionDesc.trim()}
+                        onClick={() => {
+                          addInteraction(selectedClient.id, {
+                            type: interactionType,
+                            description: interactionDesc.trim(),
+                            date: new Date(),
+                          });
+                          setInteractionDesc('');
+                        }}
+                      >
+                        <Send className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Interactions List */}
+                  {selectedClient.interactions.length === 0 ? (
+                    <div className="text-center py-6 rounded-xl bg-muted/30 border border-dashed border-border">
+                      <p className="text-sm text-muted-foreground">Sem interações registadas</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2 max-h-64 overflow-y-auto">
+                      {selectedClient.interactions.map((interaction) => {
+                        const iconMap: Record<InteractionType, React.ReactNode> = {
+                          call: <PhoneCall className="w-3.5 h-3.5" />,
+                          meeting: <Video className="w-3.5 h-3.5" />,
+                          email: <Mail className="w-3.5 h-3.5" />,
+                          whatsapp: <MessageSquare className="w-3.5 h-3.5" />,
+                          note: <StickyNote className="w-3.5 h-3.5" />,
+                        };
+                        const labelMap: Record<InteractionType, string> = {
+                          call: 'Chamada',
+                          meeting: 'Reunião',
+                          email: 'Email',
+                          whatsapp: 'WhatsApp',
+                          note: 'Nota',
+                        };
+                        return (
+                          <div
+                            key={interaction.id}
+                            className="group/int flex items-start gap-3 p-3 rounded-xl border border-border/50 bg-card hover:border-primary/20 transition-colors"
+                          >
+                            <div className="h-8 w-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center flex-shrink-0 mt-0.5">
+                              {iconMap[interaction.type]}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                                  {labelMap[interaction.type]}
+                                </Badge>
+                                <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                                  <Clock className="w-2.5 h-2.5" />
+                                  {new Date(interaction.date).toLocaleDateString('pt-PT', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                </span>
+                              </div>
+                              <p className="text-xs text-foreground mt-1">{interaction.description}</p>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 opacity-0 group-hover/int:opacity-100 transition-opacity flex-shrink-0"
+                              onClick={() => deleteInteraction(selectedClient.id, interaction.id)}
+                            >
+                              <Trash2 className="w-3 h-3 text-destructive" />
+                            </Button>
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
