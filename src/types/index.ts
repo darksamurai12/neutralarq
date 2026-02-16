@@ -12,6 +12,19 @@ export interface Client {
   notes: string;
   status: ClientStatus;
   createdAt: Date;
+  interactions: ClientInteraction[];
+}
+
+// Client Interaction Types
+export type InteractionType = 'call' | 'meeting' | 'email' | 'note' | 'whatsapp';
+
+export interface ClientInteraction {
+  id: string;
+  clientId: string;
+  type: InteractionType;
+  description: string;
+  date: Date;
+  createdAt: Date;
 }
 
 // Deal/Pipeline Types
