@@ -115,6 +115,36 @@ export type Database = {
         }
         Relationships: []
       }
+      client_interactions: {
+        Row: {
+          client_id: string
+          created_at: string
+          date: string
+          description: string
+          id: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          date?: string
+          description: string
+          id?: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          date?: string
+          description?: string
+          id?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       pricing_labor: {
         Row: {
           created_at: string

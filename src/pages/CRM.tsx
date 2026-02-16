@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { useApp } from '@/contexts/AppContext';
+import { useInteractions } from '@/hooks/useInteractions';
 import { 
   Users, 
   Plus, 
@@ -89,7 +90,8 @@ const emptyFormData = {
 };
 
 export default function CRM() {
-  const { clients, addClient, updateClient, deleteClient, getClientProjects, addInteraction, deleteInteraction } = useApp();
+  const { clients, addClient, updateClient, deleteClient, getClientProjects } = useApp();
+  const { addInteraction, deleteInteraction, getClientInteractions } = useInteractions();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
@@ -622,13 +624,13 @@ export default function CRM() {
                   </div>
 
                   {/* Interactions List */}
-                  {selectedClient.interactions.length === 0 ? (
+                  {getClientInteractions(selectedClient.id).length === 0 ? (
                     <div className="text-center py-6 rounded-xl bg-muted/30 border border-dashed border-border">
                       <p className="text-sm text-muted-foreground">Sem interações registadas</p>
                     </div>
                   ) : (
                     <div className="space-y-2 max-h-64 overflow-y-auto">
-                      {selectedClient.interactions.map((interaction) => {
+                      {getClientInteractions(selectedClient.id).map((interaction) => {
                         const iconMap: Record<InteractionType, React.ReactNode> = {
                           call: <PhoneCall className="w-3.5 h-3.5" />,
                           meeting: <Video className="w-3.5 h-3.5" />,
@@ -667,7 +669,7 @@ export default function CRM() {
                               variant="ghost"
                               size="icon"
                               className="h-6 w-6 opacity-0 group-hover/int:opacity-100 transition-opacity flex-shrink-0"
-                              onClick={() => deleteInteraction(selectedClient.id, interaction.id)}
+                              onClick={() => deleteInteraction(interaction.id)}
                             >
                               <Trash2 className="w-3 h-3 text-destructive" />
                             </Button>
