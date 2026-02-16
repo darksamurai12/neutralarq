@@ -1,8 +1,26 @@
-import { LayoutDashboard, Users, FolderKanban, Wallet, Calculator, CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react';
+import { LayoutDashboard, Users, FolderKanban, Wallet, Calculator, CalendarDays, ChevronLeft, ChevronRight, LogOut } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { ThemeToggle } from './ThemeToggle';
+import { AlertCenter } from '@/components/alerts/AlertCenter';
+import { useAuth } from '@/hooks/useAuth';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 const navItems = [
   { title: 'Dashboard', url: '/', icon: LayoutDashboard },
@@ -15,6 +33,23 @@ const navItems = [
 
 export function AppSidebar() {
   const [collapsed, setCollapsed] = useState(false);
+  const { user, profile, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/auth');
+  };
+
+  const getInitials = () => {
+    if (profile?.full_name) {
+      return profile.full_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+    }
+    if (user?.email) {
+      return user.email[0].toUpperCase();
+    }
+    return 'U';
+  };
 
   return (
     <aside
@@ -59,16 +94,70 @@ export function AppSidebar() {
         </ul>
       </nav>
 
-      {/* Collapse Toggle */}
-      <div className="p-3 border-t border-sidebar-border">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setCollapsed(!collapsed)}
-          className="w-full justify-center text-sidebar-muted hover:text-white hover:bg-sidebar-accent rounded-xl"
-        >
-          {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
-        </Button>
+      {/* Bottom Section: Actions + User */}
+      <div className="p-3 border-t border-sidebar-border space-y-3">
+        {/* Quick Actions Row */}
+        <div className={cn('flex items-center', collapsed ? 'flex-col gap-2' : 'justify-between')}>
+          <div className={cn('flex items-center', collapsed ? 'flex-col gap-2' : 'gap-1')}>
+            <ThemeToggle />
+            <AlertCenter />
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setCollapsed(!collapsed)}
+            className="text-sidebar-muted hover:text-white hover:bg-sidebar-accent rounded-xl h-8 w-8 p-0"
+          >
+            {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+          </Button>
+        </div>
+
+        {/* User Profile */}
+        {user && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                className={cn(
+                  'flex items-center gap-3 w-full rounded-xl p-2 transition-all duration-200',
+                  'hover:bg-sidebar-accent cursor-pointer text-left'
+                )}
+              >
+                <Avatar className="h-9 w-9 ring-2 ring-sidebar-border flex-shrink-0">
+                  <AvatarFallback className="bg-gradient-to-br from-primary to-purple-400 text-primary-foreground text-xs font-semibold">
+                    {getInitials()}
+                  </AvatarFallback>
+                </Avatar>
+                {!collapsed && (
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-white truncate">
+                      {profile?.full_name || 'Utilizador'}
+                    </p>
+                    <p className="text-[11px] text-sidebar-muted truncate">
+                      {user.email}
+                    </p>
+                  </div>
+                )}
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-56 rounded-xl shadow-lg border-border/50" align="end" side="right" sideOffset={8}>
+              <DropdownMenuLabel className="font-normal">
+                <div className="flex flex-col space-y-1">
+                  <p className="text-sm font-semibold leading-none">
+                    {profile?.full_name || 'Utilizador'}
+                  </p>
+                  <p className="text-xs leading-none text-muted-foreground">
+                    {user.email}
+                  </p>
+                </div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleSignOut} className="text-destructive cursor-pointer rounded-lg">
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>Terminar Sessão</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
       </div>
     </aside>
   );
