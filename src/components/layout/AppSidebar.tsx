@@ -20,11 +20,16 @@ export function AppSidebar() {
     <aside
       className={cn(
         'flex flex-col h-screen fixed top-0 left-0 z-30 text-sidebar-foreground transition-all duration-300 rounded-2xl overflow-hidden m-2',
-        'bg-sidebar backdrop-blur-2xl border border-white/10 shadow-2xl shadow-primary/10',
+        'bg-sidebar/80 backdrop-blur-2xl border border-white/10 shadow-2xl shadow-primary/20',
         collapsed ? 'w-[72px]' : 'w-64'
       )}
       style={{ height: 'calc(100vh - 1rem)' }}
     >
+      {/* Sidebar inner glow blobs */}
+      <div className="absolute inset-0 -z-10 overflow-hidden pointer-events-none">
+        <div className="absolute -top-16 -left-16 w-40 h-40 rounded-full bg-primary/25 blur-[60px]" />
+        <div className="absolute bottom-10 -right-10 w-32 h-32 rounded-full bg-purple-400/20 blur-[50px]" />
+      </div>
       {/* Logo */}
       <div className="flex items-center h-16 px-4 border-b border-sidebar-border">
         <div className="flex items-center gap-3">
