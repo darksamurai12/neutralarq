@@ -1,7 +1,9 @@
-import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
+import React, { createContext, useContext, useState, useCallback, useMemo, useEffect } from 'react';
 import { Client, Project, Transaction, Task, ProjectWithDetails, DashboardMetrics, MonthlyFlow, TaskStatus, ProjectStatus, ProjectKPIs, Deal, DealStage, DealStageConfig, CalendarEvent, CalendarEventType, ClientInteraction, InteractionType } from '@/types';
 import { format, subMonths, isWithinInterval, startOfMonth, endOfMonth, differenceInDays, isPast, isFuture, addDays, isSameDay, startOfWeek, endOfWeek } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 
 // Deal stage configuration with probabilities
 export const dealStageConfig: DealStageConfig[] = [
@@ -13,143 +15,6 @@ export const dealStageConfig: DealStageConfig[] = [
   { id: 'lost', label: 'Perdeu', probability: 0, color: 'from-rose-500 to-rose-600' },
 ];
 
-// Initial mock data
-const initialClients: Client[] = [
-  { id: '1', name: 'Tech Solutions Ltda', email: 'contato@techsolutions.com', phone: '+244 923 456 789', company: 'Tech Solutions', position: 'CEO', address: 'Rua da Inovação, 123, Luanda', notes: 'Cliente premium desde 2024', status: 'active', createdAt: new Date('2025-09-15'), interactions: [
-    { id: 'i1', clientId: '1', type: 'meeting', description: 'Reunião inicial para apresentação da empresa', date: new Date('2025-09-15'), createdAt: new Date('2025-09-15') },
-    { id: 'i2', clientId: '1', type: 'call', description: 'Chamada de acompanhamento do projecto Talatona', date: new Date('2025-11-10'), createdAt: new Date('2025-11-10') },
-    { id: 'i3', clientId: '1', type: 'email', description: 'Envio de proposta actualizada com novos valores', date: new Date('2026-01-05'), createdAt: new Date('2026-01-05') },
-  ] },
-  { id: '2', name: 'Carlos Startup', email: 'ola@startupdigital.io', phone: '+244 912 345 678', company: 'Startup Digital', position: 'Fundador', address: 'Av. Marginal, 456, Luanda', notes: 'Interessado em app mobile', status: 'lead', createdAt: new Date('2025-10-20'), interactions: [
-    { id: 'i4', clientId: '2', type: 'whatsapp', description: 'Primeiro contacto via WhatsApp', date: new Date('2025-10-20'), createdAt: new Date('2025-10-20') },
-  ] },
-  { id: '3', name: 'Maria Express', email: 'vendas@comercioexpress.com.br', phone: '+244 934 567 890', company: 'Comércio Express', position: 'Directora Comercial', address: 'Bairro Maculusso, Luanda', notes: 'Projecto e-commerce em andamento', status: 'active', createdAt: new Date('2025-11-10'), interactions: [] },
-  { id: '4', name: 'João Criativo', email: 'projetos@agenciacriativa.com', phone: '+244 945 678 901', company: 'Agência Criativa', position: 'Director Criativo', address: 'Talatona, Luanda Sul', notes: 'Projecto anterior concluído com sucesso', status: 'inactive', createdAt: new Date('2025-07-05'), interactions: [] },
-  { id: '5', name: 'Ana Fintech', email: 'dev@fintechbrasil.com', phone: '+244 956 789 012', company: 'Fintech Angola', position: 'CTO', address: 'Ilha de Luanda', notes: 'Novo lead via referência', status: 'lead', createdAt: new Date('2025-12-01'), interactions: [] },
-];
-
-const initialProjects: Project[] = [
-  { 
-    id: '1', 
-    name: 'Edifício Comercial Talatona', 
-    clientId: '1', 
-    type: 'architecture',
-    location: 'Talatona, Luanda Sul',
-    description: 'Projecto arquitectónico de edifício comercial de 8 andares com estacionamento subterrâneo',
-    startDate: new Date('2025-09-20'),
-    deadline: new Date('2026-06-30'), 
-    budget: 45000000, 
-    status: 'in_progress', 
-    createdAt: new Date('2025-09-20'),
-    parentProjectId: null,
-    history: [
-      { id: 'h1', action: 'Criação', description: 'Projecto criado', date: new Date('2025-09-20') },
-      { id: 'h2', action: 'Alteração de estado', description: 'De Planeamento para Em Execução', date: new Date('2025-10-01') }
-    ]
-  },
-  { 
-    id: '2', 
-    name: 'Residência Miramar', 
-    clientId: '3', 
-    type: 'interior_design',
-    location: 'Miramar, Luanda',
-    description: 'Design de interiores para moradia de luxo com 4 quartos e áreas sociais',
-    startDate: new Date('2025-10-01'),
-    deadline: new Date('2026-02-15'), 
-    budget: 12000000, 
-    status: 'in_progress', 
-    createdAt: new Date('2025-10-01'),
-    parentProjectId: null,
-    history: []
-  },
-  { 
-    id: '3', 
-    name: 'Moradia Alvalade', 
-    clientId: '1', 
-    type: 'construction',
-    location: 'Alvalade, Luanda',
-    description: 'Construção civil de moradia unifamiliar T4 com piscina',
-    startDate: new Date('2025-10-15'),
-    deadline: new Date('2025-12-30'), 
-    budget: 25000000, 
-    status: 'completed', 
-    createdAt: new Date('2025-10-15'),
-    parentProjectId: null,
-    history: []
-  },
-  { 
-    id: '4', 
-    name: 'Centro de Convenções Viana', 
-    clientId: '3', 
-    type: 'architecture',
-    location: 'Viana, Luanda',
-    description: 'Projecto de centro de convenções com capacidade para 500 pessoas',
-    startDate: new Date('2025-12-10'),
-    deadline: new Date('2026-12-20'), 
-    budget: 85000000, 
-    status: 'planning', 
-    createdAt: new Date('2025-12-10'),
-    parentProjectId: null,
-    history: []
-  },
-  { 
-    id: '5', 
-    name: 'Reabilitação Hotel Marginal', 
-    clientId: '1', 
-    type: 'construction',
-    location: 'Marginal, Luanda',
-    description: 'Reabilitação completa de hotel histórico na marginal',
-    startDate: new Date('2025-11-01'),
-    deadline: new Date('2026-08-01'), 
-    budget: 120000000, 
-    status: 'paused', 
-    createdAt: new Date('2025-11-01'),
-    parentProjectId: null,
-    history: [
-      { id: 'h3', action: 'Pausa', description: 'Projecto pausado por questões de licenciamento', date: new Date('2025-12-15') }
-    ]
-  },
-];
-
-const initialTransactions: Transaction[] = [
-  { id: '1', description: 'Entrada - Edifício Talatona (Parcela 1)', value: 15000000, type: 'income', destination: 'project', category: null, projectId: '1', clientId: '1', date: new Date('2025-09-25'), createdAt: new Date('2025-09-25') },
-  { id: '2', description: 'Material de construção', value: 2500000, type: 'expense', destination: 'project', category: 'material', projectId: '1', clientId: '1', date: new Date('2025-10-01'), createdAt: new Date('2025-10-01') },
-  { id: '3', description: 'Entrada - Residência Miramar (Sinal)', value: 4000000, type: 'income', destination: 'project', category: null, projectId: '2', clientId: '3', date: new Date('2025-10-05'), createdAt: new Date('2025-10-05') },
-  { id: '4', description: 'Mobiliário e decoração', value: 1500000, type: 'expense', destination: 'project', category: 'material', projectId: '2', clientId: '3', date: new Date('2025-10-10'), createdAt: new Date('2025-10-10') },
-  { id: '5', description: 'Entrada - Moradia Alvalade (Total)', value: 25000000, type: 'income', destination: 'project', category: null, projectId: '3', clientId: '1', date: new Date('2025-11-20'), createdAt: new Date('2025-11-20') },
-  { id: '6', description: 'Mão de obra especializada', value: 8000000, type: 'expense', destination: 'project', category: 'servicos', projectId: '3', clientId: '1', date: new Date('2025-11-22'), createdAt: new Date('2025-11-22') },
-  { id: '7', description: 'Entrada - Edifício Talatona (Parcela 2)', value: 15000000, type: 'income', destination: 'project', category: null, projectId: '1', clientId: '1', date: new Date('2025-12-01'), createdAt: new Date('2025-12-01') },
-  { id: '8', description: 'Equipamentos de construção', value: 5000000, type: 'expense', destination: 'project', category: 'equipamento', projectId: '1', clientId: '1', date: new Date('2025-12-15'), createdAt: new Date('2025-12-15') },
-  { id: '9', description: 'Entrada - Residência Miramar (Parcela 2)', value: 4000000, type: 'income', destination: 'project', category: null, projectId: '2', clientId: '3', date: new Date('2026-01-10'), createdAt: new Date('2026-01-10') },
-  { id: '10', description: 'Iluminação decorativa', value: 800000, type: 'expense', destination: 'project', category: 'material', projectId: '2', clientId: '3', date: new Date('2026-01-15'), createdAt: new Date('2026-01-15') },
-  // Fluxo de Caixa - Despesas variáveis da empresa
-  { id: '11', description: 'Almoço equipa de obra', value: 45000, type: 'expense', destination: 'cashflow', category: 'alimentacao', projectId: null, clientId: null, date: new Date('2026-01-20'), createdAt: new Date('2026-01-20') },
-  { id: '12', description: 'Combustível viatura empresa', value: 120000, type: 'expense', destination: 'cashflow', category: 'transporte', projectId: null, clientId: null, date: new Date('2026-01-22'), createdAt: new Date('2026-01-22') },
-  { id: '13', description: 'Material de escritório', value: 35000, type: 'expense', destination: 'cashflow', category: 'material', projectId: null, clientId: null, date: new Date('2026-01-25'), createdAt: new Date('2026-01-25') },
-  { id: '14', description: 'Internet e telefone', value: 85000, type: 'expense', destination: 'cashflow', category: 'comunicacao', projectId: null, clientId: null, date: new Date('2026-02-01'), createdAt: new Date('2026-02-01') },
-  { id: '15', description: 'Renda do escritório', value: 350000, type: 'expense', destination: 'cashflow', category: 'renda', projectId: null, clientId: null, date: new Date('2026-02-01'), createdAt: new Date('2026-02-01') },
-  { id: '16', description: 'Táxi para reunião cliente', value: 15000, type: 'expense', destination: 'cashflow', category: 'transporte', projectId: null, clientId: null, date: new Date('2026-02-05'), createdAt: new Date('2026-02-05') },
-];
-
-const initialTasks: Task[] = [
-  { id: '1', projectId: '1', title: 'Levantamento topográfico', description: 'Realizar levantamento topográfico completo do terreno', responsible: 'João Silva', deadline: new Date('2025-10-01'), status: 'done', priority: 'high', phase: 'projeto', completionPercentage: 100, subtasks: [{ id: 's1', title: 'Contratação de topógrafo', completed: true }, { id: 's2', title: 'Entrega do relatório', completed: true }], comments: [], createdAt: new Date('2025-09-20') },
-  { id: '2', projectId: '1', title: 'Projecto de fundações', description: 'Desenvolver projecto estrutural de fundações', responsible: 'Maria Santos', deadline: new Date('2026-01-15'), status: 'doing', priority: 'critical', phase: 'projeto', completionPercentage: 60, subtasks: [{ id: 's3', title: 'Estudo geotécnico', completed: true }, { id: 's4', title: 'Cálculo estrutural', completed: false }], comments: [], createdAt: new Date('2025-10-01') },
-  { id: '3', projectId: '1', title: 'Aprovação camarária', description: 'Submeter projecto para aprovação municipal', responsible: 'Pedro Costa', deadline: new Date('2026-02-01'), status: 'todo', priority: 'high', phase: 'projeto', completionPercentage: 0, subtasks: [], comments: [], createdAt: new Date('2025-11-01') },
-  { id: '4', projectId: '1', title: 'Revisão arquitectónica', description: 'Revisão final do projecto arquitectónico', responsible: 'Ana Lima', deadline: new Date('2026-01-30'), status: 'review', priority: 'medium', phase: 'projeto', completionPercentage: 80, subtasks: [], comments: [], createdAt: new Date('2025-12-01') },
-  { id: '5', projectId: '2', title: 'Moodboard e conceito', description: 'Criar moodboard com conceito de design', responsible: 'Ana Lima', deadline: new Date('2025-11-15'), status: 'done', priority: 'high', phase: 'projeto', completionPercentage: 100, subtasks: [], comments: [], createdAt: new Date('2025-10-05') },
-  { id: '6', projectId: '2', title: 'Selecção de mobiliário', description: 'Definir peças de mobiliário para todos os ambientes', responsible: 'João Silva', deadline: new Date('2026-01-20'), status: 'doing', priority: 'medium', phase: 'acabamento', completionPercentage: 40, subtasks: [], comments: [], createdAt: new Date('2025-11-20') },
-  { id: '7', projectId: '2', title: 'Instalação decorativa', description: 'Coordenar instalação de elementos decorativos', responsible: 'Pedro Costa', deadline: new Date('2026-02-10'), status: 'todo', priority: 'low', phase: 'acabamento', completionPercentage: 0, subtasks: [], comments: [], createdAt: new Date('2025-12-01') },
-];
-
-const initialDeals: Deal[] = [
-  { id: '1', title: 'Projecto Escritórios Kinaxixi', clientId: '2', value: 35000000, stage: 'lead', probability: 10, expectedCloseDate: new Date('2026-03-15'), notes: 'Contacto inicial via website', createdAt: new Date('2026-01-10') },
-  { id: '2', title: 'Renovação Moradia Maianga', clientId: '5', value: 18000000, stage: 'qualification', probability: 25, expectedCloseDate: new Date('2026-02-28'), notes: 'Reunião agendada para próxima semana', createdAt: new Date('2026-01-05') },
-  { id: '3', title: 'Centro Comercial Cacuaco', clientId: '2', value: 150000000, stage: 'proposal', probability: 50, expectedCloseDate: new Date('2026-06-01'), notes: 'Proposta enviada, aguardando feedback', createdAt: new Date('2025-12-20') },
-  { id: '4', title: 'Condomínio Residencial Talatona', clientId: '1', value: 280000000, stage: 'negotiation', probability: 75, expectedCloseDate: new Date('2026-04-15'), notes: 'Em negociação de valores finais', createdAt: new Date('2025-11-15') },
-  { id: '5', title: 'Edifício Comercial Maculusso', clientId: '3', value: 45000000, stage: 'won', probability: 100, expectedCloseDate: new Date('2026-01-20'), notes: 'Contrato assinado!', createdAt: new Date('2025-10-01') },
-  { id: '6', title: 'Armazém Industrial Viana', clientId: '4', value: 25000000, stage: 'lost', probability: 0, expectedCloseDate: null, notes: 'Cliente optou por outro fornecedor', createdAt: new Date('2025-09-15') },
-];
-
 interface AppContextType {
   // Data
   clients: Client[];
@@ -158,45 +23,46 @@ interface AppContextType {
   tasks: Task[];
   deals: Deal[];
   calendarEvents: CalendarEvent[];
+  loading: boolean;
   
   // Client operations
-  addClient: (client: Omit<Client, 'id' | 'createdAt' | 'interactions'>) => void;
-  updateClient: (id: string, client: Partial<Client>) => void;
-  deleteClient: (id: string) => void;
-  addInteraction: (clientId: string, interaction: Omit<ClientInteraction, 'id' | 'createdAt' | 'clientId'>) => void;
-  deleteInteraction: (clientId: string, interactionId: string) => void;
+  addClient: (client: Omit<Client, 'id' | 'createdAt' | 'interactions'>) => Promise<void>;
+  updateClient: (id: string, client: Partial<Client>) => Promise<void>;
+  deleteClient: (id: string) => Promise<void>;
+  addInteraction: (clientId: string, interaction: Omit<ClientInteraction, 'id' | 'createdAt' | 'clientId'>) => Promise<void>;
+  deleteInteraction: (clientId: string, interactionId: string) => Promise<void>;
   getClientInteractions: (clientId: string) => ClientInteraction[];
   
   // Project operations
-  addProject: (project: Omit<Project, 'id' | 'createdAt' | 'history'>) => void;
-  updateProject: (id: string, project: Partial<Project>) => void;
-  deleteProject: (id: string) => void;
+  addProject: (project: Omit<Project, 'id' | 'createdAt' | 'history'>) => Promise<void>;
+  updateProject: (id: string, project: Partial<Project>) => Promise<void>;
+  deleteProject: (id: string) => Promise<void>;
   getSubprojects: (projectId: string) => Project[];
   
   // Transaction operations
-  addTransaction: (transaction: Omit<Transaction, 'id' | 'createdAt'>) => void;
-  updateTransaction: (id: string, transaction: Partial<Transaction>) => void;
-  deleteTransaction: (id: string) => void;
+  addTransaction: (transaction: Omit<Transaction, 'id' | 'createdAt'>) => Promise<void>;
+  updateTransaction: (id: string, transaction: Partial<Transaction>) => Promise<void>;
+  deleteTransaction: (id: string) => Promise<void>;
   
   // Task operations
-  addTask: (task: Omit<Task, 'id' | 'createdAt'>) => void;
-  updateTask: (id: string, task: Partial<Task>) => void;
-  deleteTask: (id: string) => void;
+  addTask: (task: Omit<Task, 'id' | 'createdAt'>) => Promise<void>;
+  updateTask: (id: string, task: Partial<Task>) => Promise<void>;
+  deleteTask: (id: string) => Promise<void>;
   getProjectTasks: (projectId: string) => Task[];
   
   // Deal operations
-  addDeal: (deal: Omit<Deal, 'id' | 'createdAt'>) => void;
-  updateDeal: (id: string, deal: Partial<Deal>) => void;
-  deleteDeal: (id: string) => void;
-  moveDealToStage: (dealId: string, newStage: DealStage) => void;
+  addDeal: (deal: Omit<Deal, 'id' | 'createdAt'>) => Promise<void>;
+  updateDeal: (id: string, deal: Partial<Deal>) => Promise<void>;
+  deleteDeal: (id: string) => Promise<void>;
+  moveDealToStage: (dealId: string, newStage: DealStage) => Promise<void>;
   getClientDeals: (clientId: string) => Deal[];
   getDealsByStage: (stage: DealStage) => Deal[];
   getPipelineMetrics: () => { totalValue: number; weightedValue: number; dealsByStage: Record<DealStage, number>; stageValues: Record<DealStage, number> };
   
   // Calendar operations
-  addCalendarEvent: (event: Omit<CalendarEvent, 'id' | 'createdAt'>) => void;
-  updateCalendarEvent: (id: string, event: Partial<CalendarEvent>) => void;
-  deleteCalendarEvent: (id: string) => void;
+  addCalendarEvent: (event: Omit<CalendarEvent, 'id' | 'createdAt'>) => Promise<void>;
+  updateCalendarEvent: (id: string, event: Partial<CalendarEvent>) => Promise<void>;
+  deleteCalendarEvent: (id: string) => Promise<void>;
   getEventsForDay: (date: Date) => CalendarEvent[];
   getEventsForWeek: (date: Date) => CalendarEvent[];
   getEventsForMonth: (date: Date) => CalendarEvent[];
@@ -213,168 +79,519 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
-  const [clients, setClients] = useState<Client[]>(initialClients);
-  const [projects, setProjects] = useState<Project[]>(initialProjects);
-  const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions);
-  const [tasks, setTasks] = useState<Task[]>(initialTasks);
-  const [deals, setDeals] = useState<Deal[]>(initialDeals);
-  const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([
-    { id: '1', title: 'Reunião com Tech Solutions', description: 'Discutir andamento do projecto Talatona', type: 'meeting', startDate: new Date('2026-01-27T10:00:00'), endDate: new Date('2026-01-27T11:30:00'), allDay: false, clientId: '1', dealId: '4', reminder: 30, completed: false, createdAt: new Date() },
-    { id: '2', title: 'Chamada de acompanhamento - Fintech', description: 'Follow-up da proposta enviada', type: 'call', startDate: new Date('2026-01-25T14:00:00'), endDate: new Date('2026-01-25T14:30:00'), allDay: false, clientId: '5', dealId: '2', reminder: 15, completed: false, createdAt: new Date() },
-    { id: '3', title: 'Deadline Proposta Centro Comercial', description: 'Prazo para envio da proposta final', type: 'deadline', startDate: new Date('2026-01-28T00:00:00'), endDate: new Date('2026-01-28T23:59:00'), allDay: true, clientId: '2', dealId: '3', reminder: 1440, completed: false, createdAt: new Date() },
-    { id: '4', title: 'Visita ao terreno Viana', description: 'Visita técnica para levantamento', type: 'follow_up', startDate: new Date('2026-01-29T09:00:00'), endDate: new Date('2026-01-29T12:00:00'), allDay: false, clientId: '3', dealId: null, reminder: 60, completed: false, createdAt: new Date() },
-    { id: '5', title: 'Apresentação Projecto Miramar', description: 'Apresentação do design de interiores ao cliente', type: 'meeting', startDate: new Date('2026-01-30T15:00:00'), endDate: new Date('2026-01-30T17:00:00'), allDay: false, clientId: '3', dealId: null, reminder: 60, completed: false, createdAt: new Date() },
-  ]);
+  const { user } = useAuth();
+  const [clients, setClients] = useState<Client[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [deals, setDeals] = useState<Deal[]>([]);
+  const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
+  const [projectHistories, setProjectHistories] = useState<Record<string, Project['history']>>({});
+  const [loading, setLoading] = useState(true);
 
-  // Client operations
-  const addClient = useCallback((client: Omit<Client, 'id' | 'createdAt' | 'interactions'>) => {
-    const newClient: Client = {
-      ...client,
-      id: crypto.randomUUID(),
-      createdAt: new Date(),
-      interactions: [],
+  // ==================== FETCH ALL DATA ====================
+  useEffect(() => {
+    if (!user) {
+      setClients([]);
+      setProjects([]);
+      setTransactions([]);
+      setTasks([]);
+      setDeals([]);
+      setCalendarEvents([]);
+      setProjectHistories({});
+      setLoading(false);
+      return;
+    }
+
+    const fetchAll = async () => {
+      setLoading(true);
+      try {
+        const [clientsRes, projectsRes, transactionsRes, tasksRes, dealsRes, eventsRes, historyRes, interactionsRes] = await Promise.all([
+          supabase.from('clients').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
+          supabase.from('projects').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
+          supabase.from('transactions').select('*').eq('user_id', user.id).order('date', { ascending: false }),
+          supabase.from('tasks').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
+          supabase.from('deals').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
+          supabase.from('calendar_events').select('*').eq('user_id', user.id).order('start_date', { ascending: true }),
+          supabase.from('project_history').select('*').eq('user_id', user.id).order('date', { ascending: true }),
+          supabase.from('client_interactions').select('*').eq('user_id', user.id).order('date', { ascending: false }),
+        ]);
+
+        // Build interactions map by client_id
+        const interactionsMap: Record<string, ClientInteraction[]> = {};
+        (interactionsRes.data || []).forEach((row: any) => {
+          const interaction: ClientInteraction = {
+            id: row.id,
+            clientId: row.client_id,
+            type: row.type as InteractionType,
+            description: row.description,
+            date: new Date(row.date),
+            createdAt: new Date(row.created_at),
+          };
+          if (!interactionsMap[row.client_id]) interactionsMap[row.client_id] = [];
+          interactionsMap[row.client_id].push(interaction);
+        });
+
+        // Map clients
+        setClients((clientsRes.data || []).map((row: any) => ({
+          id: row.id,
+          name: row.name,
+          email: row.email,
+          phone: row.phone,
+          company: row.company,
+          position: row.position,
+          address: row.address,
+          notes: row.notes,
+          status: row.status as Client['status'],
+          createdAt: new Date(row.created_at),
+          interactions: interactionsMap[row.id] || [],
+        })));
+
+        // Build history map
+        const histMap: Record<string, Project['history']> = {};
+        (historyRes.data || []).forEach((row: any) => {
+          if (!histMap[row.project_id]) histMap[row.project_id] = [];
+          histMap[row.project_id].push({
+            id: row.id,
+            action: row.action,
+            description: row.description,
+            date: new Date(row.date),
+          });
+        });
+        setProjectHistories(histMap);
+
+        // Map projects
+        setProjects((projectsRes.data || []).map((row: any) => ({
+          id: row.id,
+          name: row.name,
+          clientId: row.client_id || '',
+          type: row.type as Project['type'],
+          location: row.location,
+          description: row.description,
+          startDate: new Date(row.start_date),
+          deadline: new Date(row.deadline),
+          budget: Number(row.budget),
+          status: row.status as ProjectStatus,
+          createdAt: new Date(row.created_at),
+          history: histMap[row.id] || [],
+          parentProjectId: row.parent_project_id || null,
+        })));
+
+        // Map transactions
+        setTransactions((transactionsRes.data || []).map((row: any) => ({
+          id: row.id,
+          description: row.description,
+          value: Number(row.value),
+          type: row.type as Transaction['type'],
+          destination: row.destination as Transaction['destination'],
+          category: row.category as Transaction['category'],
+          projectId: row.project_id || null,
+          clientId: row.client_id || null,
+          date: new Date(row.date),
+          createdAt: new Date(row.created_at),
+        })));
+
+        // Map tasks
+        setTasks((tasksRes.data || []).map((row: any) => ({
+          id: row.id,
+          projectId: row.project_id,
+          title: row.title,
+          description: row.description,
+          responsible: row.responsible,
+          deadline: row.deadline ? new Date(row.deadline) : null,
+          status: row.status as TaskStatus,
+          priority: row.priority as Task['priority'],
+          phase: row.phase as Task['phase'],
+          completionPercentage: Number(row.completion_percentage),
+          subtasks: Array.isArray(row.subtasks) ? row.subtasks : [],
+          comments: Array.isArray(row.comments) ? row.comments : [],
+          createdAt: new Date(row.created_at),
+        })));
+
+        // Map deals
+        setDeals((dealsRes.data || []).map((row: any) => ({
+          id: row.id,
+          title: row.title,
+          clientId: row.client_id || '',
+          value: Number(row.value),
+          stage: row.stage as DealStage,
+          probability: Number(row.probability),
+          expectedCloseDate: row.expected_close_date ? new Date(row.expected_close_date) : null,
+          notes: row.notes,
+          createdAt: new Date(row.created_at),
+        })));
+
+        // Map calendar events
+        setCalendarEvents((eventsRes.data || []).map((row: any) => ({
+          id: row.id,
+          title: row.title,
+          description: row.description,
+          type: row.type as CalendarEventType,
+          startDate: new Date(row.start_date),
+          endDate: new Date(row.end_date),
+          allDay: row.all_day,
+          clientId: row.client_id || null,
+          dealId: row.deal_id || null,
+          reminder: row.reminder,
+          completed: row.completed,
+          createdAt: new Date(row.created_at),
+        })));
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      } finally {
+        setLoading(false);
+      }
     };
-    setClients(prev => [...prev, newClient]);
-  }, []);
 
-  const updateClient = useCallback((id: string, updates: Partial<Client>) => {
+    fetchAll();
+  }, [user]);
+
+  // ==================== CLIENT OPERATIONS ====================
+  const addClient = useCallback(async (client: Omit<Client, 'id' | 'createdAt' | 'interactions'>) => {
+    if (!user) return;
+    const { data, error } = await supabase.from('clients').insert({
+      user_id: user.id,
+      name: client.name,
+      email: client.email,
+      phone: client.phone,
+      company: client.company,
+      position: client.position,
+      address: client.address,
+      notes: client.notes,
+      status: client.status,
+    }).select().single();
+    if (error) { console.error('Error adding client:', error); return; }
+    if (data) {
+      setClients(prev => [{
+        id: data.id, name: data.name, email: data.email, phone: data.phone,
+        company: data.company, position: data.position, address: data.address,
+        notes: data.notes, status: data.status as Client['status'],
+        createdAt: new Date(data.created_at), interactions: [],
+      }, ...prev]);
+    }
+  }, [user]);
+
+  const updateClient = useCallback(async (id: string, updates: Partial<Client>) => {
+    if (!user) return;
+    const dbUpdates: any = {};
+    if (updates.name !== undefined) dbUpdates.name = updates.name;
+    if (updates.email !== undefined) dbUpdates.email = updates.email;
+    if (updates.phone !== undefined) dbUpdates.phone = updates.phone;
+    if (updates.company !== undefined) dbUpdates.company = updates.company;
+    if (updates.position !== undefined) dbUpdates.position = updates.position;
+    if (updates.address !== undefined) dbUpdates.address = updates.address;
+    if (updates.notes !== undefined) dbUpdates.notes = updates.notes;
+    if (updates.status !== undefined) dbUpdates.status = updates.status;
+    
+    const { error } = await supabase.from('clients').update(dbUpdates).eq('id', id);
+    if (error) { console.error('Error updating client:', error); return; }
     setClients(prev => prev.map(c => c.id === id ? { ...c, ...updates } : c));
-  }, []);
+  }, [user]);
 
-  const deleteClient = useCallback((id: string) => {
+  const deleteClient = useCallback(async (id: string) => {
+    if (!user) return;
+    const { error } = await supabase.from('clients').delete().eq('id', id);
+    if (error) { console.error('Error deleting client:', error); return; }
     setClients(prev => prev.filter(c => c.id !== id));
-  }, []);
+  }, [user]);
 
-  const addInteraction = useCallback((clientId: string, interaction: Omit<ClientInteraction, 'id' | 'createdAt' | 'clientId'>) => {
-    const newInteraction: ClientInteraction = {
-      ...interaction,
-      id: crypto.randomUUID(),
-      clientId,
-      createdAt: new Date(),
-    };
-    setClients(prev => prev.map(c => 
-      c.id === clientId 
-        ? { ...c, interactions: [newInteraction, ...c.interactions] }
-        : c
-    ));
-  }, []);
+  const addInteraction = useCallback(async (clientId: string, interaction: Omit<ClientInteraction, 'id' | 'createdAt' | 'clientId'>) => {
+    if (!user) return;
+    const { data, error } = await supabase.from('client_interactions').insert({
+      user_id: user.id,
+      client_id: clientId,
+      type: interaction.type,
+      description: interaction.description,
+      date: interaction.date.toISOString(),
+    }).select().single();
+    if (error) { console.error('Error adding interaction:', error); return; }
+    if (data) {
+      const newInteraction: ClientInteraction = {
+        id: data.id, clientId: data.client_id, type: data.type as InteractionType,
+        description: data.description, date: new Date(data.date), createdAt: new Date(data.created_at),
+      };
+      setClients(prev => prev.map(c =>
+        c.id === clientId ? { ...c, interactions: [newInteraction, ...c.interactions] } : c
+      ));
+    }
+  }, [user]);
 
-  const deleteInteraction = useCallback((clientId: string, interactionId: string) => {
-    setClients(prev => prev.map(c => 
-      c.id === clientId 
-        ? { ...c, interactions: c.interactions.filter(i => i.id !== interactionId) }
-        : c
+  const deleteInteraction = useCallback(async (clientId: string, interactionId: string) => {
+    if (!user) return;
+    const { error } = await supabase.from('client_interactions').delete().eq('id', interactionId);
+    if (error) { console.error('Error deleting interaction:', error); return; }
+    setClients(prev => prev.map(c =>
+      c.id === clientId ? { ...c, interactions: c.interactions.filter(i => i.id !== interactionId) } : c
     ));
-  }, []);
+  }, [user]);
 
   const getClientInteractions = useCallback((clientId: string) => {
     const client = clients.find(c => c.id === clientId);
     return client?.interactions || [];
   }, [clients]);
 
-  // Project operations
-  const addProject = useCallback((project: Omit<Project, 'id' | 'createdAt' | 'history'>) => {
-    const newProject: Project = {
-      ...project,
-      id: crypto.randomUUID(),
-      createdAt: new Date(),
-      history: [{ id: crypto.randomUUID(), action: 'Criação', description: 'Projecto criado', date: new Date() }],
-    };
-    setProjects(prev => [...prev, newProject]);
-  }, []);
+  // ==================== PROJECT OPERATIONS ====================
+  const addProject = useCallback(async (project: Omit<Project, 'id' | 'createdAt' | 'history'>) => {
+    if (!user) return;
+    const { data, error } = await supabase.from('projects').insert({
+      user_id: user.id,
+      name: project.name,
+      client_id: project.clientId || null,
+      type: project.type,
+      location: project.location,
+      description: project.description,
+      start_date: project.startDate.toISOString(),
+      deadline: project.deadline.toISOString(),
+      budget: project.budget,
+      status: project.status,
+      parent_project_id: project.parentProjectId || null,
+    }).select().single();
+    if (error) { console.error('Error adding project:', error); return; }
+    if (data) {
+      // Add initial history entry
+      const { data: histData } = await supabase.from('project_history').insert({
+        project_id: data.id,
+        user_id: user.id,
+        action: 'Criação',
+        description: 'Projecto criado',
+      }).select().single();
 
-  const updateProject = useCallback((id: string, updates: Partial<Project>) => {
-    setProjects(prev => prev.map(p => {
-      if (p.id === id) {
-        const newHistory = [...p.history];
-        if (updates.status && updates.status !== p.status) {
-          newHistory.push({
-            id: crypto.randomUUID(),
-            action: 'Alteração de estado',
-            description: `De ${p.status} para ${updates.status}`,
-            date: new Date(),
-          });
-        }
-        return { ...p, ...updates, history: newHistory };
+      const history = histData ? [{ id: histData.id, action: histData.action, description: histData.description, date: new Date(histData.date) }] : [];
+      
+      setProjects(prev => [{
+        id: data.id, name: data.name, clientId: data.client_id || '',
+        type: data.type as Project['type'], location: data.location, description: data.description,
+        startDate: new Date(data.start_date), deadline: new Date(data.deadline),
+        budget: Number(data.budget), status: data.status as ProjectStatus,
+        createdAt: new Date(data.created_at), history, parentProjectId: data.parent_project_id || null,
+      }, ...prev]);
+    }
+  }, [user]);
+
+  const updateProject = useCallback(async (id: string, updates: Partial<Project>) => {
+    if (!user) return;
+    const dbUpdates: any = {};
+    if (updates.name !== undefined) dbUpdates.name = updates.name;
+    if (updates.clientId !== undefined) dbUpdates.client_id = updates.clientId || null;
+    if (updates.type !== undefined) dbUpdates.type = updates.type;
+    if (updates.location !== undefined) dbUpdates.location = updates.location;
+    if (updates.description !== undefined) dbUpdates.description = updates.description;
+    if (updates.startDate !== undefined) dbUpdates.start_date = updates.startDate.toISOString();
+    if (updates.deadline !== undefined) dbUpdates.deadline = updates.deadline.toISOString();
+    if (updates.budget !== undefined) dbUpdates.budget = updates.budget;
+    if (updates.status !== undefined) dbUpdates.status = updates.status;
+    if (updates.parentProjectId !== undefined) dbUpdates.parent_project_id = updates.parentProjectId || null;
+
+    const { error } = await supabase.from('projects').update(dbUpdates).eq('id', id);
+    if (error) { console.error('Error updating project:', error); return; }
+
+    // Add history for status changes
+    const currentProject = projects.find(p => p.id === id);
+    if (updates.status && currentProject && updates.status !== currentProject.status) {
+      const { data: histData } = await supabase.from('project_history').insert({
+        project_id: id,
+        user_id: user.id,
+        action: 'Alteração de estado',
+        description: `De ${currentProject.status} para ${updates.status}`,
+      }).select().single();
+
+      if (histData) {
+        setProjects(prev => prev.map(p => {
+          if (p.id === id) {
+            const newHistory = [...p.history, { id: histData.id, action: histData.action, description: histData.description, date: new Date(histData.date) }];
+            return { ...p, ...updates, history: newHistory };
+          }
+          return p;
+        }));
+        return;
       }
-      return p;
-    }));
-  }, []);
+    }
 
-  const deleteProject = useCallback((id: string) => {
+    setProjects(prev => prev.map(p => p.id === id ? { ...p, ...updates } : p));
+  }, [user, projects]);
+
+  const deleteProject = useCallback(async (id: string) => {
+    if (!user) return;
+    const { error } = await supabase.from('projects').delete().eq('id', id);
+    if (error) { console.error('Error deleting project:', error); return; }
     setProjects(prev => prev.filter(p => p.id !== id && p.parentProjectId !== id));
-  }, []);
+  }, [user]);
 
   const getSubprojects = useCallback((projectId: string) => {
     return projects.filter(p => p.parentProjectId === projectId);
   }, [projects]);
 
-  // Transaction operations
-  const addTransaction = useCallback((transaction: Omit<Transaction, 'id' | 'createdAt'>) => {
-    const newTransaction: Transaction = {
-      ...transaction,
-      id: crypto.randomUUID(),
-      createdAt: new Date(),
-    };
-    setTransactions(prev => [...prev, newTransaction]);
-  }, []);
+  // ==================== TRANSACTION OPERATIONS ====================
+  const addTransaction = useCallback(async (transaction: Omit<Transaction, 'id' | 'createdAt'>) => {
+    if (!user) return;
+    const { data, error } = await supabase.from('transactions').insert({
+      user_id: user.id,
+      description: transaction.description,
+      value: transaction.value,
+      type: transaction.type,
+      destination: transaction.destination,
+      category: transaction.category,
+      project_id: transaction.projectId || null,
+      client_id: transaction.clientId || null,
+      date: transaction.date.toISOString(),
+    }).select().single();
+    if (error) { console.error('Error adding transaction:', error); return; }
+    if (data) {
+      setTransactions(prev => [{
+        id: data.id, description: data.description, value: Number(data.value),
+        type: data.type as Transaction['type'], destination: data.destination as Transaction['destination'],
+        category: data.category as Transaction['category'],
+        projectId: data.project_id || null, clientId: data.client_id || null,
+        date: new Date(data.date), createdAt: new Date(data.created_at),
+      }, ...prev]);
+    }
+  }, [user]);
 
-  const updateTransaction = useCallback((id: string, updates: Partial<Transaction>) => {
+  const updateTransaction = useCallback(async (id: string, updates: Partial<Transaction>) => {
+    if (!user) return;
+    const dbUpdates: any = {};
+    if (updates.description !== undefined) dbUpdates.description = updates.description;
+    if (updates.value !== undefined) dbUpdates.value = updates.value;
+    if (updates.type !== undefined) dbUpdates.type = updates.type;
+    if (updates.destination !== undefined) dbUpdates.destination = updates.destination;
+    if (updates.category !== undefined) dbUpdates.category = updates.category;
+    if (updates.projectId !== undefined) dbUpdates.project_id = updates.projectId;
+    if (updates.clientId !== undefined) dbUpdates.client_id = updates.clientId;
+    if (updates.date !== undefined) dbUpdates.date = updates.date.toISOString();
+
+    const { error } = await supabase.from('transactions').update(dbUpdates).eq('id', id);
+    if (error) { console.error('Error updating transaction:', error); return; }
     setTransactions(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
-  }, []);
+  }, [user]);
 
-  const deleteTransaction = useCallback((id: string) => {
+  const deleteTransaction = useCallback(async (id: string) => {
+    if (!user) return;
+    const { error } = await supabase.from('transactions').delete().eq('id', id);
+    if (error) { console.error('Error deleting transaction:', error); return; }
     setTransactions(prev => prev.filter(t => t.id !== id));
-  }, []);
+  }, [user]);
 
-  // Task operations
-  const addTask = useCallback((task: Omit<Task, 'id' | 'createdAt'>) => {
-    const newTask: Task = {
-      ...task,
-      id: crypto.randomUUID(),
-      createdAt: new Date(),
-    };
-    setTasks(prev => [...prev, newTask]);
-  }, []);
+  // ==================== TASK OPERATIONS ====================
+  const addTask = useCallback(async (task: Omit<Task, 'id' | 'createdAt'>) => {
+    if (!user) return;
+    const { data, error } = await supabase.from('tasks').insert({
+      user_id: user.id,
+      project_id: task.projectId,
+      title: task.title,
+      description: task.description,
+      responsible: task.responsible,
+      deadline: task.deadline ? task.deadline.toISOString() : null,
+      status: task.status,
+      priority: task.priority,
+      phase: task.phase,
+      completion_percentage: task.completionPercentage,
+      subtasks: task.subtasks as any,
+      comments: task.comments as any,
+    }).select().single();
+    if (error) { console.error('Error adding task:', error); return; }
+    if (data) {
+      setTasks(prev => [{
+        id: data.id, projectId: data.project_id, title: data.title,
+        description: data.description, responsible: data.responsible,
+        deadline: data.deadline ? new Date(data.deadline) : null,
+        status: data.status as TaskStatus, priority: data.priority as Task['priority'],
+        phase: data.phase as Task['phase'], completionPercentage: Number(data.completion_percentage),
+        subtasks: Array.isArray(data.subtasks) ? data.subtasks as any : [],
+        comments: Array.isArray(data.comments) ? data.comments as any : [],
+        createdAt: new Date(data.created_at),
+      }, ...prev]);
+    }
+  }, [user]);
 
-  const updateTask = useCallback((id: string, updates: Partial<Task>) => {
+  const updateTask = useCallback(async (id: string, updates: Partial<Task>) => {
+    if (!user) return;
+    const dbUpdates: any = {};
+    if (updates.title !== undefined) dbUpdates.title = updates.title;
+    if (updates.description !== undefined) dbUpdates.description = updates.description;
+    if (updates.responsible !== undefined) dbUpdates.responsible = updates.responsible;
+    if (updates.deadline !== undefined) dbUpdates.deadline = updates.deadline ? updates.deadline.toISOString() : null;
+    if (updates.status !== undefined) dbUpdates.status = updates.status;
+    if (updates.priority !== undefined) dbUpdates.priority = updates.priority;
+    if (updates.phase !== undefined) dbUpdates.phase = updates.phase;
+    if (updates.completionPercentage !== undefined) dbUpdates.completion_percentage = updates.completionPercentage;
+    if (updates.subtasks !== undefined) dbUpdates.subtasks = updates.subtasks;
+    if (updates.comments !== undefined) dbUpdates.comments = updates.comments;
+
+    const { error } = await supabase.from('tasks').update(dbUpdates).eq('id', id);
+    if (error) { console.error('Error updating task:', error); return; }
     setTasks(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
-  }, []);
+  }, [user]);
 
-  const deleteTask = useCallback((id: string) => {
+  const deleteTask = useCallback(async (id: string) => {
+    if (!user) return;
+    const { error } = await supabase.from('tasks').delete().eq('id', id);
+    if (error) { console.error('Error deleting task:', error); return; }
     setTasks(prev => prev.filter(t => t.id !== id));
-  }, []);
+  }, [user]);
 
   const getProjectTasks = useCallback((projectId: string) => {
     return tasks.filter(t => t.projectId === projectId);
   }, [tasks]);
 
-  // Deal operations
-  const addDeal = useCallback((deal: Omit<Deal, 'id' | 'createdAt'>) => {
-    const newDeal: Deal = {
-      ...deal,
-      id: crypto.randomUUID(),
-      createdAt: new Date(),
-    };
-    setDeals(prev => [...prev, newDeal]);
-  }, []);
+  // ==================== DEAL OPERATIONS ====================
+  const addDeal = useCallback(async (deal: Omit<Deal, 'id' | 'createdAt'>) => {
+    if (!user) return;
+    const { data, error } = await supabase.from('deals').insert({
+      user_id: user.id,
+      title: deal.title,
+      client_id: deal.clientId || null,
+      value: deal.value,
+      stage: deal.stage,
+      probability: deal.probability,
+      expected_close_date: deal.expectedCloseDate ? deal.expectedCloseDate.toISOString() : null,
+      notes: deal.notes,
+    }).select().single();
+    if (error) { console.error('Error adding deal:', error); return; }
+    if (data) {
+      setDeals(prev => [{
+        id: data.id, title: data.title, clientId: data.client_id || '',
+        value: Number(data.value), stage: data.stage as DealStage,
+        probability: Number(data.probability),
+        expectedCloseDate: data.expected_close_date ? new Date(data.expected_close_date) : null,
+        notes: data.notes, createdAt: new Date(data.created_at),
+      }, ...prev]);
+    }
+  }, [user]);
 
-  const updateDeal = useCallback((id: string, updates: Partial<Deal>) => {
+  const updateDeal = useCallback(async (id: string, updates: Partial<Deal>) => {
+    if (!user) return;
+    const dbUpdates: any = {};
+    if (updates.title !== undefined) dbUpdates.title = updates.title;
+    if (updates.clientId !== undefined) dbUpdates.client_id = updates.clientId || null;
+    if (updates.value !== undefined) dbUpdates.value = updates.value;
+    if (updates.stage !== undefined) dbUpdates.stage = updates.stage;
+    if (updates.probability !== undefined) dbUpdates.probability = updates.probability;
+    if (updates.expectedCloseDate !== undefined) dbUpdates.expected_close_date = updates.expectedCloseDate ? updates.expectedCloseDate.toISOString() : null;
+    if (updates.notes !== undefined) dbUpdates.notes = updates.notes;
+
+    const { error } = await supabase.from('deals').update(dbUpdates).eq('id', id);
+    if (error) { console.error('Error updating deal:', error); return; }
     setDeals(prev => prev.map(d => d.id === id ? { ...d, ...updates } : d));
-  }, []);
+  }, [user]);
 
-  const deleteDeal = useCallback((id: string) => {
+  const deleteDeal = useCallback(async (id: string) => {
+    if (!user) return;
+    const { error } = await supabase.from('deals').delete().eq('id', id);
+    if (error) { console.error('Error deleting deal:', error); return; }
     setDeals(prev => prev.filter(d => d.id !== id));
-  }, []);
+  }, [user]);
 
-  const moveDealToStage = useCallback((dealId: string, newStage: DealStage) => {
+  const moveDealToStage = useCallback(async (dealId: string, newStage: DealStage) => {
     const stageConfig = dealStageConfig.find(s => s.id === newStage);
-    setDeals(prev => prev.map(d => 
-      d.id === dealId 
-        ? { ...d, stage: newStage, probability: stageConfig?.probability || d.probability }
-        : d
+    const probability = stageConfig?.probability || 0;
+    
+    if (!user) return;
+    const { error } = await supabase.from('deals').update({ stage: newStage, probability }).eq('id', dealId);
+    if (error) { console.error('Error moving deal:', error); return; }
+    setDeals(prev => prev.map(d =>
+      d.id === dealId ? { ...d, stage: newStage, probability } : d
     ));
-  }, []);
+  }, [user]);
 
   const getClientDeals = useCallback((clientId: string) => {
     return deals.filter(d => d.clientId === clientId);
@@ -410,23 +627,59 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return { totalValue, weightedValue, dealsByStage, stageValues };
   }, [deals]);
 
-  // Calendar operations
-  const addCalendarEvent = useCallback((event: Omit<CalendarEvent, 'id' | 'createdAt'>) => {
-    const newEvent: CalendarEvent = {
-      ...event,
-      id: crypto.randomUUID(),
-      createdAt: new Date(),
-    };
-    setCalendarEvents(prev => [...prev, newEvent]);
-  }, []);
+  // ==================== CALENDAR OPERATIONS ====================
+  const addCalendarEvent = useCallback(async (event: Omit<CalendarEvent, 'id' | 'createdAt'>) => {
+    if (!user) return;
+    const { data, error } = await supabase.from('calendar_events').insert({
+      user_id: user.id,
+      title: event.title,
+      description: event.description,
+      type: event.type,
+      start_date: event.startDate.toISOString(),
+      end_date: event.endDate.toISOString(),
+      all_day: event.allDay,
+      client_id: event.clientId || null,
+      deal_id: event.dealId || null,
+      reminder: event.reminder,
+      completed: event.completed,
+    }).select().single();
+    if (error) { console.error('Error adding calendar event:', error); return; }
+    if (data) {
+      setCalendarEvents(prev => [...prev, {
+        id: data.id, title: data.title, description: data.description,
+        type: data.type as CalendarEventType,
+        startDate: new Date(data.start_date), endDate: new Date(data.end_date),
+        allDay: data.all_day, clientId: data.client_id || null, dealId: data.deal_id || null,
+        reminder: data.reminder, completed: data.completed, createdAt: new Date(data.created_at),
+      }]);
+    }
+  }, [user]);
 
-  const updateCalendarEvent = useCallback((id: string, updates: Partial<CalendarEvent>) => {
+  const updateCalendarEvent = useCallback(async (id: string, updates: Partial<CalendarEvent>) => {
+    if (!user) return;
+    const dbUpdates: any = {};
+    if (updates.title !== undefined) dbUpdates.title = updates.title;
+    if (updates.description !== undefined) dbUpdates.description = updates.description;
+    if (updates.type !== undefined) dbUpdates.type = updates.type;
+    if (updates.startDate !== undefined) dbUpdates.start_date = updates.startDate.toISOString();
+    if (updates.endDate !== undefined) dbUpdates.end_date = updates.endDate.toISOString();
+    if (updates.allDay !== undefined) dbUpdates.all_day = updates.allDay;
+    if (updates.clientId !== undefined) dbUpdates.client_id = updates.clientId;
+    if (updates.dealId !== undefined) dbUpdates.deal_id = updates.dealId;
+    if (updates.reminder !== undefined) dbUpdates.reminder = updates.reminder;
+    if (updates.completed !== undefined) dbUpdates.completed = updates.completed;
+
+    const { error } = await supabase.from('calendar_events').update(dbUpdates).eq('id', id);
+    if (error) { console.error('Error updating calendar event:', error); return; }
     setCalendarEvents(prev => prev.map(e => e.id === id ? { ...e, ...updates } : e));
-  }, []);
+  }, [user]);
 
-  const deleteCalendarEvent = useCallback((id: string) => {
+  const deleteCalendarEvent = useCallback(async (id: string) => {
+    if (!user) return;
+    const { error } = await supabase.from('calendar_events').delete().eq('id', id);
+    if (error) { console.error('Error deleting calendar event:', error); return; }
     setCalendarEvents(prev => prev.filter(e => e.id !== id));
-  }, []);
+  }, [user]);
 
   const getEventsForDay = useCallback((date: Date) => {
     return calendarEvents.filter(e => isSameDay(new Date(e.startDate), date));
@@ -457,6 +710,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
       .slice(0, limit);
   }, [calendarEvents]);
+
+  // ==================== COMPUTED DATA ====================
   const getProjectTransactions = useCallback((projectId: string) => {
     return transactions.filter(t => t.projectId === projectId);
   }, [transactions]);
@@ -481,7 +736,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       done: projectTasks.filter(t => t.status === 'done').length,
     };
 
-    const overdueTasks = projectTasks.filter(t => 
+    const overdueTasks = projectTasks.filter(t =>
       t.deadline && isPast(new Date(t.deadline)) && t.status !== 'done'
     ).length;
 
@@ -489,7 +744,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       ? Math.round(projectTasks.reduce((sum, t) => sum + t.completionPercentage, 0) / projectTasks.length)
       : 0;
 
-    const deadlineDeviation = project 
+    const deadlineDeviation = project
       ? differenceInDays(new Date(), new Date(project.deadline))
       : 0;
 
@@ -545,7 +800,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
       .slice(0, 5);
 
-    // Calculate monthly flow for last 6 months
     const monthlyFlow: MonthlyFlow[] = [];
     const now = new Date();
     
@@ -554,7 +808,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const monthStart = startOfMonth(monthDate);
       const monthEnd = endOfMonth(monthDate);
       
-      const monthTransactions = transactions.filter(t => 
+      const monthTransactions = transactions.filter(t =>
         isWithinInterval(new Date(t.date), { start: monthStart, end: monthEnd })
       );
       
@@ -587,6 +841,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     transactions,
     tasks,
     deals,
+    loading,
     addClient,
     updateClient,
     deleteClient,
@@ -625,7 +880,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     getDashboardMetrics,
     getProjectKPIs,
   }), [
-    clients, projects, transactions, tasks, deals, calendarEvents,
+    clients, projects, transactions, tasks, deals, calendarEvents, loading,
     addClient, updateClient, deleteClient, addInteraction, deleteInteraction, getClientInteractions,
     addProject, updateProject, deleteProject, getSubprojects,
     addTransaction, updateTransaction, deleteTransaction,

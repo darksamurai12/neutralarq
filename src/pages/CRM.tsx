@@ -2,8 +2,7 @@ import { useState } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { useApp } from '@/contexts/AppContext';
-import { useInteractions } from '@/hooks/useInteractions';
-import { 
+import {
   Users, 
   Plus, 
   Mail, 
@@ -90,8 +89,7 @@ const emptyFormData = {
 };
 
 export default function CRM() {
-  const { clients, addClient, updateClient, deleteClient, getClientProjects } = useApp();
-  const { addInteraction, deleteInteraction, getClientInteractions } = useInteractions();
+  const { clients, addClient, updateClient, deleteClient, getClientProjects, addInteraction, deleteInteraction, getClientInteractions } = useApp();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
@@ -669,7 +667,7 @@ export default function CRM() {
                               variant="ghost"
                               size="icon"
                               className="h-6 w-6 opacity-0 group-hover/int:opacity-100 transition-opacity flex-shrink-0"
-                              onClick={() => deleteInteraction(interaction.id)}
+                              onClick={() => deleteInteraction(selectedClient!.id, interaction.id)}
                             >
                               <Trash2 className="w-3 h-3 text-destructive" />
                             </Button>
