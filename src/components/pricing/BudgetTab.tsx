@@ -206,43 +206,163 @@ export function BudgetTab({
     const doc = new jsPDF();
     const client = clients.find(c => c.id === budget.clientId);
     const project = projects.find(p => p.id === budget.projectId);
-
-    // Header
-    doc.setFontSize(20);
-    doc.setTextColor(33, 37, 41);
-    doc.text('ORÇAMENTO', 14, 22);
-
-    doc.setFontSize(10);
-    doc.setTextColor(108, 117, 125);
-    doc.text(`Nº: ${budget.id.slice(0, 8).toUpperCase()}`, 14, 30);
-    doc.text(`Data: ${format(new Date(budget.createdAt), "dd/MM/yyyy", { locale: pt })}`, 14, 36);
-
-    const statusLabels: Record<string, string> = { draft: 'Rascunho', sent: 'Enviado', approved: 'Aprovado', rejected: 'Rejeitado' };
-    doc.text(`Estado: ${statusLabels[budget.status] || budget.status}`, 14, 42);
-
-    doc.setFontSize(12);
-    doc.setTextColor(33, 37, 41);
-    doc.text(budget.name, 14, 54);
-
-    let yPos = 62;
-    if (client) {
-      doc.setFontSize(10);
-      doc.setTextColor(108, 117, 125);
-      doc.text(`Cliente: ${client.name}`, 14, yPos);
-      yPos += 6;
-    }
-    if (project) {
-      doc.setFontSize(10);
-      doc.setTextColor(108, 117, 125);
-      doc.text(`Projecto: ${project.name}`, 14, yPos);
-      yPos += 6;
-    }
-
-    yPos += 4;
-
-    // Group items for PDF
     const grouped = groupItems(budget.items);
     const typeLabels: Record<string, string> = { product: 'Produto', labor: 'Mão de Obra', transport: 'Transporte' };
+    const statusLabels: Record<string, string> = { draft: 'Rascunho', sent: 'Enviado', approved: 'Aprovado', rejected: 'Rejeitado' };
+
+    const addHeader = (doc: jsPDF, title: string, subtitle: string) => {
+      doc.setFontSize(20);
+      doc.setTextColor(33, 37, 41);
+      doc.text(title, 14, 22);
+
+      doc.setFontSize(10);
+      doc.setTextColor(108, 117, 125);
+      doc.text(`Nº: ${budget.id.slice(0, 8).toUpperCase()}`, 14, 30);
+      doc.text(`Data: ${format(new Date(budget.createdAt), "dd/MM/yyyy", { locale: pt })}`, 14, 36);
+      doc.text(`Estado: ${statusLabels[budget.status] || budget.status}`, 14, 42);
+
+      doc.setFontSize(12);
+      doc.setTextColor(33, 37, 41);
+      doc.text(budget.name, 14, 54);
+
+      doc.setFontSize(9);
+      doc.setTextColor(108, 117, 125);
+      doc.text(subtitle, 14, 60);
+
+      let yPos = 68;
+      if (client) {
+        doc.setFontSize(10);
+        doc.setTextColor(108, 117, 125);
+        doc.text(`Cliente: ${client.name}`, 14, yPos);
+        yPos += 6;
+      }
+      if (project) {
+        doc.setFontSize(10);
+        doc.setTextColor(108, 117, 125);
+        doc.text(`Projecto: ${project.name}`, 14, yPos);
+        yPos += 6;
+      }
+      return yPos + 4;
+    };
+
+    // ===== PAGE 1: Client version (only prices, no costs/margins) =====
+    let yPos = addHeader(doc, 'ORÇAMENTO', 'Proposta para cliente');
+
+    grouped.forEach((group) => {
+      if (group.groupName) {
+        doc.setFontSize(11);
+        doc.setTextColor(79, 70, 229);
+        doc.text(`▸ ${group.groupName}`, 14, yPos);
+        yPos += 6;
+      }
+
+      const tableData = group.items.map(item => [
+        item.name,
+        typeLabels[item.type] || item.type,
+        item.quantity.toString(),
+        formatCurrency(item.unitPrice),
+        formatCurrency(item.totalPrice),
+      ]);
+
+      autoTable(doc, {
+        startY: yPos,
+        head: [['Item', 'Tipo', 'Qtd', 'Preço Unit.', 'Total']],
+        body: tableData,
+        theme: 'striped',
+        headStyles: { fillColor: [79, 70, 229], textColor: 255, fontSize: 9 },
+        bodyStyles: { fontSize: 8 },
+        columnStyles: {
+          2: { halign: 'center' },
+          3: { halign: 'right' },
+          4: { halign: 'right' },
+        },
+      });
+
+      yPos = (doc as any).lastAutoTable?.finalY + 8 || yPos + 40;
+    });
+
+    // Client summary - only total value
+    const summaryY1 = yPos + 4;
+    doc.setDrawColor(200, 200, 200);
+    doc.setFillColor(248, 249, 250);
+    doc.roundedRect(14, summaryY1 - 4, 182, 20, 3, 3, 'FD');
+    doc.setFontSize(10);
+    doc.setTextColor(108, 117, 125);
+    doc.text('Valor Total:', 20, summaryY1 + 6);
+    doc.setFontSize(14);
+    doc.setTextColor(37, 99, 235);
+    doc.text(formatCurrency(budget.totalValue), 60, summaryY1 + 6);
+
+    // ===== PAGE 2: With margins (%) =====
+    doc.addPage();
+    yPos = addHeader(doc, 'ORÇAMENTO — ANÁLISE DE MARGENS', 'Documento interno — com percentagens de margem');
+
+    grouped.forEach((group) => {
+      if (group.groupName) {
+        doc.setFontSize(11);
+        doc.setTextColor(79, 70, 229);
+        doc.text(`▸ ${group.groupName}`, 14, yPos);
+        yPos += 6;
+      }
+
+      const tableData = group.items.map(item => {
+        const margin = item.unitCost > 0 ? (((item.unitPrice - item.unitCost) / item.unitCost) * 100).toFixed(1) + '%' : '—';
+        return [
+          item.name,
+          typeLabels[item.type] || item.type,
+          item.quantity.toString(),
+          formatCurrency(item.unitCost),
+          margin,
+          formatCurrency(item.unitPrice),
+          formatCurrency(item.totalPrice),
+          formatCurrency(item.profit),
+        ];
+      });
+
+      autoTable(doc, {
+        startY: yPos,
+        head: [['Item', 'Tipo', 'Qtd', 'Custo Unit.', 'Margem %', 'Preço Unit.', 'Total', 'Lucro']],
+        body: tableData,
+        theme: 'striped',
+        headStyles: { fillColor: [124, 58, 237], textColor: 255, fontSize: 8 },
+        bodyStyles: { fontSize: 7 },
+        columnStyles: {
+          2: { halign: 'center' },
+          3: { halign: 'right' },
+          4: { halign: 'center' },
+          5: { halign: 'right' },
+          6: { halign: 'right' },
+          7: { halign: 'right' },
+        },
+      });
+
+      yPos = (doc as any).lastAutoTable?.finalY + 8 || yPos + 40;
+    });
+
+    // Summary with margins
+    const summaryY2 = yPos + 4;
+    doc.setDrawColor(200, 200, 200);
+    doc.setFillColor(248, 249, 250);
+    doc.roundedRect(14, summaryY2 - 4, 182, 28, 3, 3, 'FD');
+    doc.setFontSize(10);
+    doc.setTextColor(108, 117, 125);
+    doc.text('Custo Total:', 20, summaryY2 + 4);
+    doc.text('Valor Cliente:', 70, summaryY2 + 4);
+    doc.text('Lucro:', 120, summaryY2 + 4);
+    doc.text('Margem:', 166, summaryY2 + 4);
+    doc.setFontSize(11);
+    doc.setTextColor(33, 37, 41);
+    doc.text(formatCurrency(budget.totalCost), 20, summaryY2 + 14);
+    doc.setTextColor(37, 99, 235);
+    doc.text(formatCurrency(budget.totalValue), 70, summaryY2 + 14);
+    doc.setTextColor(5, 150, 105);
+    doc.text(formatCurrency(budget.totalProfit), 120, summaryY2 + 14);
+    doc.setTextColor(124, 58, 237);
+    doc.text(`${budget.marginPercent.toFixed(1)}%`, 166, summaryY2 + 14);
+
+    // ===== PAGE 3: Real costs (no margins) =====
+    doc.addPage();
+    yPos = addHeader(doc, 'ORÇAMENTO — CUSTOS REAIS', 'Documento interno — valores reais sem margem');
 
     grouped.forEach((group) => {
       if (group.groupName) {
@@ -257,53 +377,37 @@ export function BudgetTab({
         typeLabels[item.type] || item.type,
         item.quantity.toString(),
         formatCurrency(item.unitCost),
-        formatCurrency(item.unitPrice),
-        formatCurrency(item.totalPrice),
-        formatCurrency(item.profit),
+        formatCurrency(item.totalCost),
       ]);
 
       autoTable(doc, {
         startY: yPos,
-        head: [['Item', 'Tipo', 'Qtd', 'Custo Unit.', 'Preço Unit.', 'Total', 'Lucro']],
+        head: [['Item', 'Tipo', 'Qtd', 'Custo Unit.', 'Custo Total']],
         body: tableData,
         theme: 'striped',
-        headStyles: { fillColor: [79, 70, 229], textColor: 255, fontSize: 9 },
+        headStyles: { fillColor: [220, 38, 38], textColor: 255, fontSize: 9 },
         bodyStyles: { fontSize: 8 },
         columnStyles: {
           2: { halign: 'center' },
           3: { halign: 'right' },
           4: { halign: 'right' },
-          5: { halign: 'right' },
-          6: { halign: 'right' },
         },
       });
 
       yPos = (doc as any).lastAutoTable?.finalY + 8 || yPos + 40;
     });
 
-    // Summary
-    const summaryY = yPos + 4;
-
+    // Summary - costs only
+    const summaryY3 = yPos + 4;
     doc.setDrawColor(200, 200, 200);
     doc.setFillColor(248, 249, 250);
-    doc.roundedRect(14, summaryY - 4, 182, 28, 3, 3, 'FD');
-
+    doc.roundedRect(14, summaryY3 - 4, 182, 20, 3, 3, 'FD');
     doc.setFontSize(10);
     doc.setTextColor(108, 117, 125);
-    doc.text('Custo Total:', 20, summaryY + 4);
-    doc.text('Valor Cliente:', 70, summaryY + 4);
-    doc.text('Lucro Empresa:', 120, summaryY + 4);
-    doc.text('Margem:', 166, summaryY + 4);
-
-    doc.setFontSize(11);
-    doc.setTextColor(33, 37, 41);
-    doc.text(formatCurrency(budget.totalCost), 20, summaryY + 14);
-    doc.setTextColor(37, 99, 235);
-    doc.text(formatCurrency(budget.totalValue), 70, summaryY + 14);
-    doc.setTextColor(5, 150, 105);
-    doc.text(formatCurrency(budget.totalProfit), 120, summaryY + 14);
-    doc.setTextColor(124, 58, 237);
-    doc.text(`${budget.marginPercent.toFixed(1)}%`, 166, summaryY + 14);
+    doc.text('Custo Total Real:', 20, summaryY3 + 6);
+    doc.setFontSize(14);
+    doc.setTextColor(220, 38, 38);
+    doc.text(formatCurrency(budget.totalCost), 70, summaryY3 + 6);
 
     doc.save(`orcamento-${budget.name.replace(/\s+/g, '-').toLowerCase()}.pdf`);
     toast.success('PDF exportado com sucesso!');
