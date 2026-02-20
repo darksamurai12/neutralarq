@@ -20,10 +20,10 @@ export default {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
-        background: "#F8FAFC", // Cinza ultra claro da imagem
+        background: "#F8FAFC",
         foreground: "#1E293B",
         primary: {
-          DEFAULT: "#2563EB", // Azul vibrante da imagem
+          DEFAULT: "#2563EB",
           foreground: "#FFFFFF",
         },
         secondary: {
@@ -36,6 +36,16 @@ export default {
           accent: "#F1F5F9",
           border: "#E2E8F0",
         },
+        // Cores Pastel para o design system
+        pastel: {
+          lavender: "#F3F0FF",
+          peach: "#FFF4E6",
+          mint: "#EBFBEE",
+          sky: "#E7F5FF",
+          amber: "#FFF9DB",
+          rose: "#FFF0F6",
+          slate: "#F8FAFC",
+        }
       },
       borderRadius: {
         lg: "1rem",

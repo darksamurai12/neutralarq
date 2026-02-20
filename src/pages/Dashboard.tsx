@@ -92,10 +92,10 @@ export default function Dashboard() {
 
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        <Card className="shadow-card border-border/50 rounded-2xl">
+        <Card className="shadow-card border-none rounded-2xl bg-pastel-lavender/30">
           <CardHeader className="pb-2">
             <CardTitle className="text-base font-semibold flex items-center gap-3">
-              <div className="h-9 w-9 rounded-xl bg-pastel-lavender flex items-center justify-center">
+              <div className="h-9 w-9 rounded-xl bg-white flex items-center justify-center shadow-sm">
                 <FolderKanban className="w-4 h-4 text-primary" />
               </div>
               Distribuição de Projectos
@@ -106,10 +106,10 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="shadow-card border-border/50 rounded-2xl">
+        <Card className="shadow-card border-none rounded-2xl bg-pastel-mint/30">
           <CardHeader className="pb-2">
             <CardTitle className="text-base font-semibold flex items-center gap-3">
-              <div className="h-9 w-9 rounded-xl bg-pastel-mint flex items-center justify-center">
+              <div className="h-9 w-9 rounded-xl bg-white flex items-center justify-center shadow-sm">
                 <TrendingUp className="w-4 h-4 text-emerald-600" />
               </div>
               Fluxo de Caixa Mensal
@@ -122,10 +122,10 @@ export default function Dashboard() {
       </div>
 
       {/* Recent Projects */}
-      <Card className="shadow-card border-border/50 rounded-2xl">
+      <Card className="shadow-card border-none rounded-2xl bg-pastel-slate">
         <CardHeader className="pb-2">
           <CardTitle className="text-base font-semibold flex items-center gap-3">
-            <div className="h-9 w-9 rounded-xl bg-pastel-peach flex items-center justify-center">
+            <div className="h-9 w-9 rounded-xl bg-white flex items-center justify-center shadow-sm">
               <Briefcase className="w-4 h-4 text-orange-600" />
             </div>
             Projectos Recentes
