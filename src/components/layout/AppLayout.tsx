@@ -20,8 +20,8 @@ export function AppLayout({ children }: AppLayoutProps) {
     <div className="flex h-screen w-full bg-[#F8FAFC] overflow-hidden">
       <AppSidebar />
       
-      {/* Main Content Area as a Rounded Card - Only top corners rounded */}
-      <div className="flex-1 flex flex-col min-w-0 bg-white rounded-t-[1.5rem] shadow-glass mt-2 overflow-hidden">
+      {/* Main Content Area - Only top-left corner rounded */}
+      <div className="flex-1 flex flex-col min-w-0 bg-white rounded-tl-[1.5rem] shadow-glass mt-2 overflow-hidden">
         {/* Top Header */}
         <header className="h-20 px-8 flex items-center justify-between bg-white/50 backdrop-blur-sm border-b border-slate-50">
           {/* Search Bar */}
