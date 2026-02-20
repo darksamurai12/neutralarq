@@ -7,13 +7,11 @@ import {
   Wallet, 
   Calculator, 
   CalendarDays, 
-  Plus,
   ChevronDown,
 } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useAuth } from '@/hooks/useAuth';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
 
 const menuItems = [
   { title: 'Dashboard', url: '/', icon: LayoutDashboard },
@@ -108,14 +106,6 @@ export function AppSidebar() {
           </ul>
         </div>
       </nav>
-
-      {/* Bottom Action Button */}
-      <div className="p-4">
-        <Button className="w-full h-12 rounded-2xl bg-primary hover:bg-primary/90 text-white font-bold shadow-lg shadow-primary/20 gap-2">
-          <Plus className="w-5 h-5" />
-          Novo Projeto
-        </Button>
-      </div>
     </aside>
   );
 }
