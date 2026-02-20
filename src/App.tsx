@@ -12,6 +12,7 @@ import Projects from "./pages/Projects";
 import Finance from "./pages/Finance";
 import Pricing from "./pages/Pricing";
 import CalendarPage from "./pages/Calendar";
+import Inventory from "./pages/Inventory";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -32,6 +33,7 @@ const App = () => (
               <Route path="/calendario" element={<ProtectedRoute><CalendarPage /></ProtectedRoute>} />
               <Route path="/projetos" element={<ProtectedRoute><Projects /></ProtectedRoute>} />
               <Route path="/financas" element={<ProtectedRoute><Finance /></ProtectedRoute>} />
+              <Route path="/inventario" element={<ProtectedRoute><Inventory /></ProtectedRoute>} />
               <Route path="/precificacao" element={<ProtectedRoute><Pricing /></ProtectedRoute>} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />

@@ -8,6 +8,7 @@ import {
   Calculator, 
   CalendarDays, 
   ChevronDown,
+  Package,
 } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useAuth } from '@/hooks/useAuth';
@@ -22,6 +23,7 @@ const menuItems = [
 const managementItems = [
   { title: 'Projetos', url: '/projetos', icon: FolderKanban },
   { title: 'Finanças', url: '/financas', icon: Wallet },
+  { title: 'Inventário', url: '/inventario', icon: Package },
   { title: 'Precificação', url: '/precificacao', icon: Calculator },
 ];
 
