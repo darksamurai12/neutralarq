@@ -1,12 +1,11 @@
 import { AppLayout } from '@/components/layout/AppLayout';
-import { PageHeader } from '@/components/layout/PageHeader';
 import { CashFlowChart } from '@/components/dashboard/CashFlowChart';
 import { ProjectStatusChart } from '@/components/dashboard/ProjectStatusChart';
 import { RecentProjects } from '@/components/dashboard/RecentProjects';
 import { DashboardStatCard } from '@/components/dashboard/DashboardStatCard';
 import { useApp } from '@/contexts/AppContext';
+import { useAuth } from '@/hooks/useAuth';
 import { 
-  LayoutDashboard, 
   Users, 
   FolderKanban, 
   Wallet, 
@@ -15,22 +14,57 @@ import {
   ArrowUpRight,
   Target,
   Briefcase,
-  DollarSign
+  DollarSign,
+  Calendar as CalendarIcon
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/currency';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 export default function Dashboard() {
   const { getDashboardMetrics } = useApp();
+  const { profile, user } = useAuth();
   const metrics = getDashboardMetrics();
+
+  const firstName = profile?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || 'Utilizador';
+  const currentDate = format(new Date(), "EEEE, d 'de' MMMM", { locale: ptBR });
+
+  const getInitials = () => {
+    if (profile?.full_name) return profile.full_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+    return user?.email?.[0].toUpperCase() || 'U';
+  };
 
   return (
     <AppLayout>
-      <PageHeader
-        title="Dashboard"
-        description="Visão geral do seu negócio"
-        icon={LayoutDashboard}
-      />
+      {/* Welcome Section */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+        <div className="flex items-center gap-4">
+          <Avatar className="h-16 w-16 rounded-2xl border-4 border-white shadow-glass">
+            <AvatarImage src="" /> {/* Adicionar URL da foto se disponível no perfil futuramente */}
+            <AvatarFallback className="bg-primary/10 text-primary text-xl font-bold">
+              {getInitials()}
+            </AvatarFallback>
+          </Avatar>
+          <div>
+            <h1 className="text-2xl font-bold text-slate-800 tracking-tight">
+              Olá, {firstName}! 👋
+            </h1>
+            <p className="text-slate-500 text-sm flex items-center gap-2 mt-1">
+              <CalendarIcon className="w-4 h-4 text-primary/60" />
+              <span className="capitalize">{currentDate}</span>
+            </p>
+          </div>
+        </div>
+        <div className="hidden md:block text-right">
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Estado do Sistema</p>
+          <div className="flex items-center gap-2 text-emerald-500 bg-emerald-50 px-3 py-1 rounded-full text-xs font-semibold border border-emerald-100">
+            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            Tudo em dia
+          </div>
+        </div>
+      </div>
 
       {/* Stats Grid - Pastel Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
