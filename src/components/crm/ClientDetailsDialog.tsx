@@ -67,7 +67,7 @@ export function ClientDetailsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto border-none shadow-2xl">
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto border-none shadow-2xl custom-scrollbar">
         <DialogHeader className="mb-6">
           <div className="flex items-center gap-4">
             <div className={cn(
