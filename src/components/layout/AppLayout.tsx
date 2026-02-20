@@ -19,33 +19,34 @@ export function AppLayout({ children }: AppLayoutProps) {
   const { theme, setTheme } = useTheme();
 
   return (
-    <div className="flex min-h-screen w-full bg-[#F8FAFC]">
+    <div className="flex h-screen w-full bg-[#F8FAFC] overflow-hidden">
       <AppSidebar />
       
-      <div className="flex-1 flex flex-col min-w-0">
-        {/* Top Header - Conforme imagem */}
-        <header className="h-20 px-8 flex items-center justify-between bg-transparent">
+      {/* Main Content Area as a Rounded Card */}
+      <div className="flex-1 flex flex-col min-w-0 bg-white rounded-l-[2.5rem] shadow-glass my-2 overflow-hidden">
+        {/* Top Header */}
+        <header className="h-20 px-8 flex items-center justify-between bg-white/50 backdrop-blur-sm border-b border-slate-50">
           {/* Search Bar */}
           <div className="relative w-full max-w-md">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <Input 
               placeholder="Pesquisar..." 
-              className="pl-11 h-11 bg-white border-none rounded-2xl shadow-sm focus-visible:ring-primary/20 text-sm"
+              className="pl-11 h-11 bg-slate-50/50 border-none rounded-2xl focus-visible:ring-primary/20 text-sm"
             />
           </div>
 
           {/* Actions */}
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" className="h-11 w-11 rounded-2xl bg-white shadow-sm hover:bg-slate-50">
+            <Button variant="ghost" size="icon" className="h-11 w-11 rounded-2xl hover:bg-slate-50">
               <Bell className="w-5 h-5 text-slate-500" />
             </Button>
             
-            <div className="flex items-center bg-white rounded-2xl p-1 shadow-sm">
+            <div className="flex items-center bg-slate-50 rounded-2xl p-1">
               <Button 
                 variant="ghost" 
                 size="icon" 
                 onClick={() => setTheme('light')}
-                className={cn("h-9 w-9 rounded-xl", theme === 'light' && "bg-primary text-white shadow-md shadow-primary/20")}
+                className={cn("h-9 w-9 rounded-xl", theme === 'light' && "bg-white text-primary shadow-sm")}
               >
                 <Sun className="w-4 h-4" />
               </Button>
@@ -53,13 +54,13 @@ export function AppLayout({ children }: AppLayoutProps) {
                 variant="ghost" 
                 size="icon" 
                 onClick={() => setTheme('dark')}
-                className={cn("h-9 w-9 rounded-xl", theme === 'dark' && "bg-primary text-white shadow-md shadow-primary/20")}
+                className={cn("h-9 w-9 rounded-xl", theme === 'dark' && "bg-white text-primary shadow-sm")}
               >
                 <Moon className="w-4 h-4" />
               </Button>
             </div>
 
-            <Button variant="ghost" size="icon" className="h-11 w-11 rounded-2xl bg-white shadow-sm hover:bg-slate-50 overflow-hidden border-2 border-white">
+            <Button variant="ghost" size="icon" className="h-11 w-11 rounded-2xl hover:bg-slate-50 overflow-hidden border-2 border-white shadow-sm">
               <div className="w-full h-full bg-slate-100 flex items-center justify-center">
                 <User className="w-5 h-5 text-slate-400" />
               </div>
@@ -67,8 +68,8 @@ export function AppLayout({ children }: AppLayoutProps) {
           </div>
         </header>
 
-        {/* Main Content */}
-        <main className="flex-1 overflow-auto">
+        {/* Content Scroll Area */}
+        <main className="flex-1 overflow-auto custom-scrollbar">
           <AnimatePresence mode="wait">
             <motion.div
               key={location.pathname}
@@ -76,7 +77,7 @@ export function AppLayout({ children }: AppLayoutProps) {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.3, ease: 'easeOut' }}
-              className="p-8 pt-2"
+              className="p-8"
             >
               {children}
             </motion.div>
