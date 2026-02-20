@@ -35,12 +35,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -510,9 +504,9 @@ export default function Projects() {
         )}
       </div>
 
-      {/* Project Detail Sheet */}
-      <Sheet open={!!selectedProject} onOpenChange={() => setSelectedProjectId(null)}>
-        <SheetContent className="sm:max-w-3xl overflow-y-auto">
+      {/* Project Detail Dialog - Centralized */}
+      <Dialog open={!!selectedProject} onOpenChange={(open) => !open && setSelectedProjectId(null)}>
+        <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto border-none shadow-2xl custom-scrollbar">
           {selectedProject && (
             <>
               {/* Breadcrumb for subprojects */}
@@ -525,17 +519,17 @@ export default function Projects() {
                   Voltar ao projecto principal
                 </button>
               )}
-              <SheetHeader className="mb-6">
+              <DialogHeader className="mb-6">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <div className={cn(
-                      'h-14 w-14 rounded-xl flex items-center justify-center text-2xl bg-gradient-to-br',
+                      'h-14 w-14 rounded-xl flex items-center justify-center text-2xl bg-gradient-to-br shadow-lg',
                       typeConfig[selectedProject.type].color
                     )}>
                       {typeConfig[selectedProject.type].icon}
                     </div>
-                    <div>
-                      <SheetTitle className="text-xl">{selectedProject.name}</SheetTitle>
+                    <div className="text-left">
+                      <DialogTitle className="text-2xl font-bold text-slate-800">{selectedProject.name}</DialogTitle>
                       <p className="text-sm text-muted-foreground">{typeConfig[selectedProject.type].label}</p>
                     </div>
                   </div>
@@ -543,6 +537,7 @@ export default function Projects() {
                     <Button
                       variant="outline"
                       size="icon"
+                      className="rounded-xl"
                       onClick={() => {
                         handleEdit(selectedProject);
                         setSelectedProjectId(null);
@@ -553,6 +548,7 @@ export default function Projects() {
                     <Button
                       variant="destructive"
                       size="icon"
+                      className="rounded-xl"
                       onClick={() => {
                         deleteProject(selectedProject.id);
                         setSelectedProjectId(null);
@@ -562,62 +558,62 @@ export default function Projects() {
                     </Button>
                   </div>
                 </div>
-                <Badge variant="outline" className={cn('w-fit mt-3 gap-1', statusConfig[selectedProject.status].className)}>
+                <Badge variant="outline" className={cn('w-fit mt-3 gap-1 px-3 py-0.5 rounded-full border-none', statusConfig[selectedProject.status].className)}>
                   {React.createElement(statusConfig[selectedProject.status].icon, { className: 'w-3 h-3' })}
                   {statusConfig[selectedProject.status].label}
                 </Badge>
-              </SheetHeader>
+              </DialogHeader>
 
               {/* Project Info */}
-              <div className="mb-6 p-4 rounded-xl bg-gradient-to-r from-muted/50 to-muted/30 border border-border/50 space-y-4">
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="text-muted-foreground">Cliente</span>
-                    <p className="font-medium text-foreground">{selectedProject.client?.name || 'N/A'}</p>
+              <div className="mb-6 p-5 rounded-2xl bg-slate-50/50 border border-slate-100/50 space-y-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                  <div className="p-3 rounded-xl bg-white shadow-sm">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Cliente</span>
+                    <p className="font-bold text-slate-700 truncate">{selectedProject.client?.name || 'N/A'}</p>
                   </div>
-                  <div>
-                    <span className="text-muted-foreground">Local</span>
-                    <p className="font-medium text-foreground">{selectedProject.location}</p>
+                  <div className="p-3 rounded-xl bg-white shadow-sm">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Local</span>
+                    <p className="font-bold text-slate-700 truncate">{selectedProject.location}</p>
                   </div>
-                  <div>
-                    <span className="text-muted-foreground">Data de Início</span>
-                    <p className="font-medium text-foreground">{format(new Date(selectedProject.startDate), "dd/MM/yyyy")}</p>
+                  <div className="p-3 rounded-xl bg-white shadow-sm">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Início</span>
+                    <p className="font-bold text-slate-700">{format(new Date(selectedProject.startDate), "dd/MM/yyyy")}</p>
                   </div>
-                  <div>
-                    <span className="text-muted-foreground">Prazo Previsto</span>
-                    <p className="font-medium text-foreground">{format(new Date(selectedProject.deadline), "dd/MM/yyyy")}</p>
+                  <div className="p-3 rounded-xl bg-white shadow-sm">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Prazo</span>
+                    <p className="font-bold text-slate-700">{format(new Date(selectedProject.deadline), "dd/MM/yyyy")}</p>
                   </div>
                 </div>
                 {selectedProject.description && (
-                  <div>
-                    <span className="text-sm text-muted-foreground">Descrição</span>
-                    <p className="text-sm text-foreground mt-1">{selectedProject.description}</p>
+                  <div className="p-4 rounded-xl bg-pastel-lavender/30 border border-pastel-lavender/50">
+                    <span className="text-[10px] font-bold text-primary uppercase tracking-wider">Descrição</span>
+                    <p className="text-sm text-slate-600 mt-1 leading-relaxed">{selectedProject.description}</p>
                   </div>
                 )}
               </div>
 
               {/* Tabs */}
               <Tabs defaultValue="kpis" className="w-full">
-                <TabsList className="w-full grid grid-cols-5 mb-4">
-                  <TabsTrigger value="kpis">KPIs</TabsTrigger>
-                  <TabsTrigger value="subprojects" className="gap-1">
+                <TabsList className="w-full grid grid-cols-5 mb-6 bg-slate-100/50 p-1 rounded-2xl">
+                  <TabsTrigger value="kpis" className="rounded-xl data-[state=active]:shadow-sm">KPIs</TabsTrigger>
+                  <TabsTrigger value="subprojects" className="rounded-xl data-[state=active]:shadow-sm gap-1">
                     Sub
                     {getSubprojects(selectedProject.id).length > 0 && (
-                      <span className="text-[10px] bg-primary/20 text-primary px-1 rounded-full">
+                      <span className="text-[10px] bg-primary/20 text-primary px-1.5 rounded-full">
                         {getSubprojects(selectedProject.id).length}
                       </span>
                     )}
                   </TabsTrigger>
-                  <TabsTrigger value="kanban">Tarefas</TabsTrigger>
-                  <TabsTrigger value="finance">Finanças</TabsTrigger>
-                  <TabsTrigger value="history">Histórico</TabsTrigger>
+                  <TabsTrigger value="kanban" className="rounded-xl data-[state=active]:shadow-sm">Tarefas</TabsTrigger>
+                  <TabsTrigger value="finance" className="rounded-xl data-[state=active]:shadow-sm">Finanças</TabsTrigger>
+                  <TabsTrigger value="history" className="rounded-xl data-[state=active]:shadow-sm">Histórico</TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="kpis">
+                <TabsContent value="kpis" className="mt-0">
                   <ProjectKPIs kpis={selectedProject.kpis} budget={selectedProject.budget} />
                 </TabsContent>
 
-                <TabsContent value="subprojects">
+                <TabsContent value="subprojects" className="mt-0">
                   <SubprojectsList
                     parentProject={selectedProject}
                     subprojects={getSubprojects(selectedProject.id)}
@@ -625,7 +621,7 @@ export default function Projects() {
                   />
                 </TabsContent>
 
-                <TabsContent value="kanban">
+                <TabsContent value="kanban" className="mt-0">
                   <TaskKanban
                     tasks={selectedProject.tasks}
                     onAddTask={addTask}
@@ -635,31 +631,31 @@ export default function Projects() {
                   />
                 </TabsContent>
 
-                <TabsContent value="finance">
+                <TabsContent value="finance" className="mt-0">
                   <div className="space-y-4">
-                    <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                    <h4 className="text-sm font-bold text-slate-800 flex items-center gap-2">
                       <DollarSign className="w-4 h-4 text-primary" />
                       Extrato Financeiro
                     </h4>
                     {selectedProject.transactions.length === 0 ? (
-                      <div className="text-center py-12 rounded-xl bg-muted/30 border border-dashed border-border">
-                        <p className="text-sm text-muted-foreground">Nenhuma transação registada</p>
+                      <div className="text-center py-12 rounded-2xl bg-slate-50 border border-dashed border-slate-200">
+                        <p className="text-sm text-slate-400">Nenhuma transação registada</p>
                       </div>
                     ) : (
                       <div className="space-y-2">
                         {selectedProject.transactions.map((transaction) => (
                           <div
                             key={transaction.id}
-                            className="flex items-center justify-between p-4 rounded-xl border border-border bg-card hover:border-primary/30 transition-colors"
+                            className="flex items-center justify-between p-4 rounded-2xl border border-slate-100 bg-white hover:border-primary/20 hover:shadow-md transition-all"
                           >
                             <div>
-                              <p className="text-sm font-medium text-foreground">{transaction.description}</p>
-                              <p className="text-xs text-muted-foreground">
+                              <p className="text-sm font-bold text-slate-700">{transaction.description}</p>
+                              <p className="text-[11px] text-slate-400">
                                 {format(new Date(transaction.date), "dd/MM/yyyy")}
                               </p>
                             </div>
                             <span className={cn(
-                              'font-bold',
+                              'font-bold text-sm',
                               transaction.type === 'income' ? 'text-emerald-600' : 'text-rose-600'
                             )}>
                               {transaction.type === 'income' ? '+' : '-'} {formatCurrency(transaction.value)}
@@ -671,14 +667,14 @@ export default function Projects() {
                   </div>
                 </TabsContent>
 
-                <TabsContent value="history">
+                <TabsContent value="history" className="mt-0">
                   <ProjectHistory history={selectedProject.history} />
                 </TabsContent>
               </Tabs>
             </>
           )}
-        </SheetContent>
-      </Sheet>
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   );
 }
