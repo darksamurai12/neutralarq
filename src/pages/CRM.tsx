@@ -25,6 +25,7 @@ import {
   StickyNote,
   Send,
   Clock,
+  X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -41,12 +42,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -284,177 +279,176 @@ export default function CRM() {
         <TabsContent value="clients" className="mt-6">
           {/* Stats Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-        <div className="rounded-2xl p-5 bg-pastel-mint transition-all duration-300 hover:shadow-glass hover:-translate-y-0.5">
-          <div className="flex items-center justify-between mb-3">
-            <div className="h-10 w-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center">
-              <UserCheck className="w-5 h-5" />
+            <div className="rounded-2xl p-5 bg-pastel-mint transition-all duration-300 hover:shadow-glass hover:-translate-y-0.5">
+              <div className="flex items-center justify-between mb-3">
+                <div className="h-10 w-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center">
+                  <UserCheck className="w-5 h-5" />
+                </div>
+              </div>
+              <p className="text-xs font-medium text-muted-foreground mb-1">Clientes Activos</p>
+              <p className="text-xl font-bold text-foreground tracking-tight">{activeClients}</p>
+              <div className="flex items-center gap-1 mt-2 text-xs text-muted-foreground">
+                <ArrowUpRight className="w-3 h-3" />
+                <span>Com projectos</span>
+              </div>
+            </div>
+
+            <div className="rounded-2xl p-5 bg-pastel-amber transition-all duration-300 hover:shadow-glass hover:-translate-y-0.5">
+              <div className="flex items-center justify-between mb-3">
+                <div className="h-10 w-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center">
+                  <UserPlus className="w-5 h-5" />
+                </div>
+              </div>
+              <p className="text-xs font-medium text-muted-foreground mb-1">Leads no Funil</p>
+              <p className="text-xl font-bold text-foreground tracking-tight">{leadClients}</p>
+              <div className="flex items-center gap-1 mt-2 text-xs text-muted-foreground">
+                <UserPlus className="w-3 h-3" />
+                <span>Potenciais clientes</span>
+              </div>
+            </div>
+
+            <div className="rounded-2xl p-5 bg-pastel-lavender transition-all duration-300 hover:shadow-glass hover:-translate-y-0.5">
+              <div className="flex items-center justify-between mb-3">
+                <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                  <UserX className="w-5 h-5" />
+                </div>
+              </div>
+              <p className="text-xs font-medium text-muted-foreground mb-1">Clientes Inactivos</p>
+              <p className="text-xl font-bold text-foreground tracking-tight">{inactiveClients}</p>
+              <div className="flex items-center gap-1 mt-2 text-xs text-muted-foreground">
+                <UserX className="w-3 h-3" />
+                <span>Sem actividade</span>
+              </div>
             </div>
           </div>
-          <p className="text-xs font-medium text-muted-foreground mb-1">Clientes Activos</p>
-          <p className="text-xl font-bold text-foreground tracking-tight">{activeClients}</p>
-          <div className="flex items-center gap-1 mt-2 text-xs text-muted-foreground">
-            <ArrowUpRight className="w-3 h-3" />
-            <span>Com projectos</span>
-          </div>
-        </div>
 
-        <div className="rounded-2xl p-5 bg-pastel-amber transition-all duration-300 hover:shadow-glass hover:-translate-y-0.5">
-          <div className="flex items-center justify-between mb-3">
-            <div className="h-10 w-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center">
-              <UserPlus className="w-5 h-5" />
-            </div>
-          </div>
-          <p className="text-xs font-medium text-muted-foreground mb-1">Leads no Funil</p>
-          <p className="text-xl font-bold text-foreground tracking-tight">{leadClients}</p>
-          <div className="flex items-center gap-1 mt-2 text-xs text-muted-foreground">
-            <UserPlus className="w-3 h-3" />
-            <span>Potenciais clientes</span>
-          </div>
-        </div>
-
-        <div className="rounded-2xl p-5 bg-pastel-lavender transition-all duration-300 hover:shadow-glass hover:-translate-y-0.5">
-          <div className="flex items-center justify-between mb-3">
-            <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
-              <UserX className="w-5 h-5" />
-            </div>
-          </div>
-          <p className="text-xs font-medium text-muted-foreground mb-1">Clientes Inactivos</p>
-          <p className="text-xl font-bold text-foreground tracking-tight">{inactiveClients}</p>
-          <div className="flex items-center gap-1 mt-2 text-xs text-muted-foreground">
-            <UserX className="w-3 h-3" />
-            <span>Sem actividade</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Filters */}
-      <Card className="shadow-card border-border/50 rounded-2xl mb-6">
-        <CardContent className="p-4">
-          <div className="flex flex-col sm:flex-row gap-3">
-            <div className="flex-1 max-w-md">
-              <SearchFilter
-                value={searchQuery}
-                onChange={setSearchQuery}
-                placeholder="Pesquisar clientes por nome, email ou empresa..."
-              />
-            </div>
-            <StatusFilter<ClientStatus>
-              value={statusFilter}
-              onChange={(v) => setStatusFilter(v)}
-              options={statusOptions}
-              placeholder="Filtrar por status"
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Client Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredClients.map((client) => {
-          const clientProjects = getClientProjects(client.id);
-          return (
-            <Card 
-              key={client.id}
-              className="group cursor-pointer shadow-lg border-0 bg-card hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
-              onClick={() => setSelectedClient(client)}
-            >
-              <CardContent className="p-5">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className={cn(
-                      'h-12 w-12 rounded-full flex items-center justify-center text-white font-bold text-lg bg-gradient-to-br',
-                      statusConfig[client.status].bgClass
-                    )}>
-                      {client.name.charAt(0).toUpperCase()}
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">
-                        {client.name}
-                      </h3>
-                      <p className="text-sm text-muted-foreground">{client.company || 'Sem empresa'}</p>
-                    </div>
-                  </div>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <MoreHorizontal className="w-4 h-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleEdit(client); }}>
-                        <Pencil className="w-4 h-4 mr-2" />
-                        Editar
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        className="text-destructive focus:text-destructive"
-                        onClick={(e) => { e.stopPropagation(); deleteClient(client.id); }}
-                      >
-                        <Trash2 className="w-4 h-4 mr-2" />
-                        Excluir
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+          {/* Filters */}
+          <Card className="shadow-card border-border/50 rounded-2xl mb-6">
+            <CardContent className="p-4">
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="flex-1 max-w-md">
+                  <SearchFilter
+                    value={searchQuery}
+                    onChange={setSearchQuery}
+                    placeholder="Pesquisar clientes por nome, email ou empresa..."
+                  />
                 </div>
+                <StatusFilter<ClientStatus>
+                  value={statusFilter}
+                  onChange={(v) => setStatusFilter(v)}
+                  options={statusOptions}
+                  placeholder="Filtrar por status"
+                />
+              </div>
+            </CardContent>
+          </Card>
 
-                <div className="space-y-2 text-sm">
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Mail className="w-4 h-4 flex-shrink-0" />
-                    <span className="truncate">{client.email}</span>
-                  </div>
-                  {client.phone && (
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Phone className="w-4 h-4 flex-shrink-0" />
-                      <span>{client.phone}</span>
+          {/* Client Cards Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredClients.map((client) => {
+              const clientProjects = getClientProjects(client.id);
+              return (
+                <Card 
+                  key={client.id}
+                  className="group cursor-pointer shadow-lg border-0 bg-card hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+                  onClick={() => setSelectedClient(client)}
+                >
+                  <CardContent className="p-5">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        <div className={cn(
+                          'h-12 w-12 rounded-full flex items-center justify-center text-white font-bold text-lg bg-gradient-to-br',
+                          statusConfig[client.status].bgClass
+                        )}>
+                          {client.name.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">
+                            {client.name}
+                          </h3>
+                          <p className="text-sm text-muted-foreground">{client.company || 'Sem empresa'}</p>
+                        </div>
+                      </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <MoreHorizontal className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleEdit(client); }}>
+                            <Pencil className="w-4 h-4 mr-2" />
+                            Editar
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="text-destructive focus:text-destructive"
+                            onClick={(e) => { e.stopPropagation(); deleteClient(client.id); }}
+                          >
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Excluir
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
-                  )}
-                  {client.position && (
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Building className="w-4 h-4 flex-shrink-0" />
-                      <span>{client.position}</span>
-                    </div>
-                  )}
-                </div>
 
-                <div className="flex items-center justify-between mt-4 pt-4 border-t border-border/50">
-                  <Badge variant="outline" className={cn('font-medium', statusConfig[client.status].className)}>
-                    {statusConfig[client.status].label}
-                  </Badge>
-                  <span className="text-xs text-muted-foreground">
-                    {clientProjects.length} projecto{clientProjects.length !== 1 ? 's' : ''}
-                  </span>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
-        {filteredClients.length === 0 && (
-          <div className="col-span-full">
-            <Card className="shadow-lg border-0">
-              <CardContent className="py-16 text-center">
-                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted/50 flex items-center justify-center">
-                  <Users className="w-8 h-8 text-muted-foreground" />
-                </div>
-                <p className="text-muted-foreground font-medium">Nenhum cliente encontrado</p>
-                <p className="text-sm text-muted-foreground mt-1">Ajuste os filtros ou adicione um novo cliente</p>
-              </CardContent>
-            </Card>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Mail className="w-4 h-4 flex-shrink-0" />
+                        <span className="truncate">{client.email}</span>
+                      </div>
+                      {client.phone && (
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <Phone className="w-4 h-4 flex-shrink-0" />
+                          <span>{client.phone}</span>
+                        </div>
+                      )}
+                      {client.position && (
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <Building className="w-4 h-4 flex-shrink-0" />
+                          <span>{client.position}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex items-center justify-between mt-4 pt-4 border-t border-border/50">
+                      <Badge variant="outline" className={cn('font-medium', statusConfig[client.status].className)}>
+                        {statusConfig[client.status].label}
+                      </Badge>
+                      <span className="text-xs text-muted-foreground">
+                        {clientProjects.length} projecto{clientProjects.length !== 1 ? 's' : ''}
+                      </span>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+            {filteredClients.length === 0 && (
+              <div className="col-span-full">
+                <Card className="shadow-lg border-0">
+                  <CardContent className="py-16 text-center">
+                    <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted/50 flex items-center justify-center">
+                      <Users className="w-8 h-8 text-muted-foreground" />
+                    </div>
+                    <p className="text-muted-foreground font-medium">Nenhum cliente encontrado</p>
+                    <p className="text-sm text-muted-foreground mt-1">Ajuste os filtros ou adicione um novo cliente</p>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
           </div>
-        )}
-      </div>
         </TabsContent>
 
         <TabsContent value="pipeline" className="mt-6">
           <DealPipeline />
         </TabsContent>
-
       </Tabs>
 
-      {/* Client Detail Sheet */}
-      <Sheet open={!!selectedClient} onOpenChange={() => setSelectedClient(null)}>
-        <SheetContent className="sm:max-w-md overflow-y-auto">
+      {/* Client Detail Dialog - Centralized */}
+      <Dialog open={!!selectedClient} onOpenChange={() => setSelectedClient(null)}>
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
           {selectedClient && (
             <>
-              <SheetHeader className="mb-6">
+              <DialogHeader className="mb-6">
                 <div className="flex items-center gap-4">
                   <div className={cn(
                     'h-16 w-16 rounded-full flex items-center justify-center text-white font-bold text-2xl bg-gradient-to-br',
@@ -462,23 +456,23 @@ export default function CRM() {
                   )}>
                     {selectedClient.name.charAt(0).toUpperCase()}
                   </div>
-                  <div>
-                    <SheetTitle className="text-xl">{selectedClient.name}</SheetTitle>
+                  <div className="text-left">
+                    <DialogTitle className="text-xl">{selectedClient.name}</DialogTitle>
                     <Badge variant="outline" className={cn('mt-1', statusConfig[selectedClient.status].className)}>
                       {statusConfig[selectedClient.status].label}
                     </Badge>
                   </div>
                 </div>
-              </SheetHeader>
+              </DialogHeader>
 
-              <div className="space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <div className="flex items-center gap-3 p-4 rounded-xl bg-gradient-to-r from-muted/50 to-muted/30 border border-border/50">
                   <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
                     <Mail className="w-5 h-5 text-primary" />
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground">Email</p>
-                    <p className="text-sm font-medium text-foreground">{selectedClient.email}</p>
+                    <p className="text-sm font-medium text-foreground truncate max-w-[180px]">{selectedClient.email}</p>
                   </div>
                 </div>
 
@@ -513,52 +507,35 @@ export default function CRM() {
                     <p className="text-sm font-medium text-foreground">{selectedClient.address || '-'}</p>
                   </div>
                 </div>
+              </div>
 
-                {selectedClient.notes && (
-                  <div className="flex items-start gap-3 p-4 rounded-xl bg-gradient-to-r from-muted/50 to-muted/30 border border-border/50">
-                    <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center mt-0.5">
-                      <FileText className="w-5 h-5 text-primary" />
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Notas</p>
-                      <p className="text-sm text-foreground">{selectedClient.notes}</p>
-                    </div>
+              {selectedClient.notes && (
+                <div className="flex items-start gap-3 p-4 rounded-xl bg-gradient-to-r from-muted/50 to-muted/30 border border-border/50 mb-6">
+                  <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center mt-0.5">
+                    <FileText className="w-5 h-5 text-primary" />
                   </div>
-                )}
-
-                <div className="pt-4 border-t border-border">
-                  <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-                    <FolderKanban className="w-4 h-4 text-primary" />
-                    Projectos Associados
-                  </h4>
-                  {getClientProjects(selectedClient.id).length === 0 ? (
-                    <div className="text-center py-8 rounded-xl bg-muted/30 border border-dashed border-border">
-                      <p className="text-sm text-muted-foreground">Nenhum projecto associado</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {getClientProjects(selectedClient.id).map((project) => (
-                        <div
-                          key={project.id}
-                          className="p-4 rounded-xl border border-border bg-card hover:border-primary/30 transition-colors"
-                        >
-                          <p className="text-sm font-medium text-foreground">{project.name}</p>
-                          <p className="text-xs text-muted-foreground mt-1 capitalize">{project.status.replace('_', ' ')}</p>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                  <div>
+                    <p className="text-xs text-muted-foreground">Notas</p>
+                    <p className="text-sm text-foreground">{selectedClient.notes}</p>
+                  </div>
                 </div>
+              )}
 
-                {/* Interactions Section */}
-                <div className="pt-4 border-t border-border">
-                  <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-                    <MessageSquare className="w-4 h-4 text-primary" />
+              <Tabs defaultValue="interactions" className="w-full">
+                <TabsList className="grid w-full grid-cols-2 mb-4">
+                  <TabsTrigger value="interactions" className="gap-2">
+                    <MessageSquare className="w-4 h-4" />
                     Interações
-                  </h4>
+                  </TabsTrigger>
+                  <TabsTrigger value="projects" className="gap-2">
+                    <FolderKanban className="w-4 h-4" />
+                    Projectos
+                  </TabsTrigger>
+                </TabsList>
 
+                <TabsContent value="interactions" className="space-y-4">
                   {/* Add Interaction Form */}
-                  <div className="p-3 rounded-xl bg-muted/30 border border-border/50 mb-3 space-y-2">
+                  <div className="p-3 rounded-xl bg-muted/30 border border-border/50 space-y-2">
                     <div className="flex gap-2">
                       <Select
                         value={interactionType}
@@ -585,13 +562,11 @@ export default function CRM() {
                           </SelectItem>
                         </SelectContent>
                       </Select>
-                    </div>
-                    <div className="flex gap-2">
                       <Input
                         placeholder="Descrever a interação..."
                         value={interactionDesc}
                         onChange={(e) => setInteractionDesc(e.target.value)}
-                        className="h-9 text-sm"
+                        className="h-9 text-sm flex-1"
                         onKeyDown={(e) => {
                           if (e.key === 'Enter' && interactionDesc.trim()) {
                             addInteraction(selectedClient.id, {
@@ -622,13 +597,13 @@ export default function CRM() {
                   </div>
 
                   {/* Interactions List */}
-                  {getClientInteractions(selectedClient.id).length === 0 ? (
-                    <div className="text-center py-6 rounded-xl bg-muted/30 border border-dashed border-border">
-                      <p className="text-sm text-muted-foreground">Sem interações registadas</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-2 max-h-64 overflow-y-auto">
-                      {getClientInteractions(selectedClient.id).map((interaction) => {
+                  <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+                    {getClientInteractions(selectedClient.id).length === 0 ? (
+                      <div className="text-center py-6 rounded-xl bg-muted/30 border border-dashed border-border">
+                        <p className="text-sm text-muted-foreground">Sem interações registadas</p>
+                      </div>
+                    ) : (
+                      getClientInteractions(selectedClient.id).map((interaction) => {
                         const iconMap: Record<InteractionType, React.ReactNode> = {
                           call: <PhoneCall className="w-3.5 h-3.5" />,
                           meeting: <Video className="w-3.5 h-3.5" />,
@@ -673,11 +648,32 @@ export default function CRM() {
                             </Button>
                           </div>
                         );
-                      })}
+                      })
+                    )}
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="projects" className="space-y-2">
+                  {getClientProjects(selectedClient.id).length === 0 ? (
+                    <div className="text-center py-8 rounded-xl bg-muted/30 border border-dashed border-border">
+                      <p className="text-sm text-muted-foreground">Nenhum projecto associado</p>
                     </div>
+                  ) : (
+                    getClientProjects(selectedClient.id).map((project) => (
+                      <div
+                        key={project.id}
+                        className="p-4 rounded-xl border border-border bg-card hover:border-primary/30 transition-colors flex items-center justify-between"
+                      >
+                        <div>
+                          <p className="text-sm font-medium text-foreground">{project.name}</p>
+                          <p className="text-xs text-muted-foreground mt-1 capitalize">{project.status.replace('_', ' ')}</p>
+                        </div>
+                        <ArrowUpRight className="w-4 h-4 text-muted-foreground" />
+                      </div>
+                    ))
                   )}
-                </div>
-              </div>
+                </TabsContent>
+              </Tabs>
 
               <div className="flex gap-2 mt-6 pt-4 border-t border-border">
                 <Button
@@ -703,8 +699,8 @@ export default function CRM() {
               </div>
             </>
           )}
-        </SheetContent>
-      </Sheet>
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   );
 }
