@@ -39,7 +39,7 @@
 
 @layer utilities {
   .shadow-glass {
-    box-shadow: 0 8px 32px -4px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.08);
   }
   
   /* Estilo para os cards principais conforme a imagem */
