@@ -10,9 +10,7 @@ import { Button } from '@/components/ui/button';
 import { useTheme } from 'next-themes';
 import { cn } from '@/lib/utils';
 
-interface AppLayoutProps {
-  children: ReactNode;
-}
+interface AppLayoutProps { children: ReactNode; }
 
 export function AppLayout({ children }: AppLayoutProps) {
   const location = useLocation();
@@ -22,8 +20,8 @@ export function AppLayout({ children }: AppLayoutProps) {
     <div className="flex h-screen w-full bg-[#F8FAFC] overflow-hidden">
       <AppSidebar />
       
-      {/* Main Content Area as a Rounded Card */}
-      <div className="flex-1 flex flex-col min-w-0 bg-white rounded-l-[2.5rem] shadow-glass my-2 overflow-hidden">
+      {/* Main Content Area as a Rounded Card - Reduced radius */}
+      <div className="flex-1 flex flex-col min-w-0 bg-white rounded-l-[1.5rem] shadow-glass my-2 overflow-hidden">
         {/* Top Header */}
         <header className="h-20 px-8 flex items-center justify-between bg-white/50 backdrop-blur-sm border-b border-slate-50">
           {/* Search Bar */}
