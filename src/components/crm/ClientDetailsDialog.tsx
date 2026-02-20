@@ -91,7 +91,7 @@ export function ClientDetailsDialog({
           {infoItems.map((item, idx) => (
             <div 
               key={idx}
-              className="flex items-center justify-between p-3.5 rounded-2xl bg-slate-50/50 border border-slate-100/50 hover:bg-white hover:shadow-sm transition-all duration-200 group"
+              className="flex items-start justify-between p-3.5 rounded-2xl bg-slate-50/50 border border-slate-100/50 hover:bg-white hover:shadow-sm transition-all duration-200 group"
             >
               <div className="flex items-center gap-3">
                 <div className="h-9 w-9 rounded-xl bg-white flex items-center justify-center shadow-sm group-hover:text-primary transition-colors">
@@ -99,7 +99,7 @@ export function ClientDetailsDialog({
                 </div>
                 <span className="text-sm text-slate-500 font-medium">{item.label}</span>
               </div>
-              <span className="text-sm font-semibold text-slate-700 truncate max-w-[250px]">
+              <span className="text-sm font-semibold text-slate-700 text-right ml-4 break-words max-w-[60%]">
                 {item.value}
               </span>
             </div>
