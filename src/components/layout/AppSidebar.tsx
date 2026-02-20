@@ -36,7 +36,7 @@ export function AppSidebar() {
   };
 
   return (
-    <aside className="w-64 h-screen bg-transparent flex flex-col sticky top-0">
+    <aside className="w-64 h-screen bg-white/30 backdrop-blur-xl flex flex-col sticky top-0 z-20 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
       {/* Logo Section */}
       <div className="p-6 flex items-center gap-3">
         <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center shadow-lg shadow-primary/20">
