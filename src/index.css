@@ -46,4 +46,13 @@
   .main-card {
     @apply bg-white rounded-3xl shadow-glass border-none p-8 transition-all duration-300 hover:shadow-card-hover;
   }
+
+  /* Esconder barra de scroll mas manter funcionalidade */
+  .custom-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .custom-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
 }
