@@ -9,11 +9,10 @@ export function useCalendarEvents(userId: string | undefined) {
   const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
 
   const fetchCalendarEvents = useCallback(async () => {
-    if (!userId) return;
+    // Removido o filtro .eq('user_id', userId)
     const { data, error } = await supabase
       .from('calendar_events')
       .select('*')
-      .eq('user_id', userId)
       .order('start_date', { ascending: true });
 
     if (error) {
@@ -35,7 +34,7 @@ export function useCalendarEvents(userId: string | undefined) {
       completed: row.completed,
       createdAt: new Date(row.created_at)
     })));
-  }, [userId]);
+  }, []);
 
   const addCalendarEvent = async (event: Omit<CalendarEvent, 'id' | 'createdAt'>) => {
     if (!userId) return;
@@ -58,7 +57,7 @@ export function useCalendarEvents(userId: string | undefined) {
       startDate: new Date(data.start_date),
       endDate: new Date(data.end_date),
       allDay: data.all_day,
-      clientId: data.client_id,
+      client_id: data.client_id,
       dealId: data.deal_id,
       createdAt: new Date(data.created_at)
     } as any, ...prev]);

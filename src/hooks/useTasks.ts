@@ -9,11 +9,10 @@ export function useTasks(userId: string | undefined) {
   const [tasks, setTasks] = useState<Task[]>([]);
 
   const fetchTasks = useCallback(async () => {
-    if (!userId) return;
+    // Removido o filtro .eq('user_id', userId)
     const { data, error } = await supabase
       .from('tasks')
       .select('*')
-      .eq('user_id', userId)
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -36,7 +35,7 @@ export function useTasks(userId: string | undefined) {
       comments: Array.isArray(row.comments) ? row.comments : [],
       createdAt: new Date(row.created_at)
     })));
-  }, [userId]);
+  }, []);
 
   const addTask = async (task: Omit<Task, 'id' | 'createdAt'>) => {
     if (!userId) return;

@@ -9,11 +9,10 @@ export function useTransactions(userId: string | undefined) {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
 
   const fetchTransactions = useCallback(async () => {
-    if (!userId) return;
+    // Removido o filtro .eq('user_id', userId)
     const { data, error } = await supabase
       .from('transactions')
       .select('*')
-      .eq('user_id', userId)
       .order('date', { ascending: false });
 
     if (error) {
@@ -33,7 +32,7 @@ export function useTransactions(userId: string | undefined) {
       date: new Date(row.date),
       createdAt: new Date(row.created_at)
     })));
-  }, [userId]);
+  }, []);
 
   const addTransaction = async (transaction: Omit<Transaction, 'id' | 'createdAt'>) => {
     if (!userId) return;

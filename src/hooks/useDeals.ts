@@ -9,11 +9,10 @@ export function useDeals(userId: string | undefined) {
   const [deals, setDeals] = useState<Deal[]>([]);
 
   const fetchDeals = useCallback(async () => {
-    if (!userId) return;
+    // Removido o filtro .eq('user_id', userId)
     const { data, error } = await supabase
       .from('deals')
       .select('*')
-      .eq('user_id', userId)
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -32,7 +31,7 @@ export function useDeals(userId: string | undefined) {
       notes: row.notes,
       createdAt: new Date(row.created_at)
     })));
-  }, [userId]);
+  }, []);
 
   const addDeal = async (deal: Omit<Deal, 'id' | 'createdAt'>) => {
     if (!userId) return;

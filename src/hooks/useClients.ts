@@ -9,11 +9,10 @@ export function useClients(userId: string | undefined) {
   const [clients, setClients] = useState<Client[]>([]);
 
   const fetchClients = useCallback(async () => {
-    if (!userId) return;
+    // Removido o filtro .eq('user_id', userId) para que todos vejam os mesmos dados
     const { data, error } = await supabase
       .from('clients')
       .select('*')
-      .eq('user_id', userId)
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -33,7 +32,7 @@ export function useClients(userId: string | undefined) {
       status: row.status as any,
       createdAt: new Date(row.created_at)
     })));
-  }, [userId]);
+  }, []);
 
   const addClient = async (client: Omit<Client, 'id' | 'createdAt'>) => {
     if (!userId) return;

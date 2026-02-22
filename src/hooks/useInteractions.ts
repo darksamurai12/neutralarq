@@ -30,16 +30,11 @@ export function useInteractions() {
   const [loading, setLoading] = useState(true);
 
   const fetchInteractions = useCallback(async () => {
-    if (!user) {
-      setInteractions([]);
-      setLoading(false);
-      return;
-    }
+    // Removido o filtro .eq('user_id', user.id)
     try {
       const { data, error } = await supabase
         .from('client_interactions')
         .select('*')
-        .eq('user_id', user.id)
         .order('date', { ascending: false });
 
       if (error) {
@@ -50,11 +45,13 @@ export function useInteractions() {
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, []);
 
   useEffect(() => {
-    fetchInteractions();
-  }, [fetchInteractions]);
+    if (user) {
+      fetchInteractions();
+    }
+  }, [user, fetchInteractions]);
 
   const addInteraction = useCallback(async (
     clientId: string,

@@ -9,11 +9,10 @@ export function useProjects(userId: string | undefined) {
   const [projects, setProjects] = useState<Project[]>([]);
 
   const fetchProjects = useCallback(async () => {
-    if (!userId) return;
+    // Removido o filtro .eq('user_id', userId)
     const { data, error } = await supabase
       .from('projects')
       .select('*')
-      .eq('user_id', userId)
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -35,7 +34,7 @@ export function useProjects(userId: string | undefined) {
       parentProjectId: row.parent_project_id,
       createdAt: new Date(row.created_at)
     })));
-  }, [userId]);
+  }, []);
 
   const addProject = async (project: Omit<Project, 'id' | 'createdAt'>) => {
     if (!userId) return;

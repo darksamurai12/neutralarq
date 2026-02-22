@@ -18,35 +18,35 @@ export function usePricingDB() {
   };
 
   const fetchProducts = useCallback(async () => {
-    if (!user) return;
-    const { data, error } = await supabase.from('pricing_products').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
+    // Removido o filtro .eq('user_id', user.id)
+    const { data, error } = await supabase.from('pricing_products').select('*').order('created_at', { ascending: false });
     if (!error && data) setProducts(data.map(p => ({
       id: p.id, name: p.name, description: p.description || '', basePrice: Number(p.base_price),
       marginPercent: Number(p.margin_percent), finalPrice: Number(p.final_price), createdAt: new Date(p.created_at),
     })));
-  }, [user]);
+  }, []);
 
   const fetchLabor = useCallback(async () => {
-    if (!user) return;
-    const { data, error } = await supabase.from('pricing_labor').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
+    // Removido o filtro .eq('user_id', user.id)
+    const { data, error } = await supabase.from('pricing_labor').select('*').order('created_at', { ascending: false });
     if (!error && data) setLabor(data.map(l => ({
       id: l.id, name: l.name, description: l.description || '', providerValue: Number(l.provider_value),
       marginPercent: Number(l.margin_percent), finalPrice: Number(l.final_price), createdAt: new Date(l.created_at),
     })));
-  }, [user]);
+  }, []);
 
   const fetchTransport = useCallback(async () => {
-    if (!user) return;
-    const { data, error } = await supabase.from('pricing_transport').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
+    // Removido o filtro .eq('user_id', user.id)
+    const { data, error } = await supabase.from('pricing_transport').select('*').order('created_at', { ascending: false });
     if (!error && data) setTransport(data.map(t => ({
       id: t.id, name: t.name, description: t.description || '', baseCost: Number(t.base_cost),
       marginPercent: Number(t.margin_percent), finalPrice: Number(t.final_price), createdAt: new Date(t.created_at),
     })));
-  }, [user]);
+  }, []);
 
   const fetchBudgets = useCallback(async () => {
-    if (!user) return;
-    const { data: budgetsData, error: budgetsError } = await supabase.from('budgets').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
+    // Removido o filtro .eq('user_id', user.id)
+    const { data: budgetsData, error: budgetsError } = await supabase.from('budgets').select('*').order('created_at', { ascending: false });
     if (budgetsError) return;
 
     const budgetsWithItems = await Promise.all(
@@ -68,7 +68,7 @@ export function usePricingDB() {
       })
     );
     setBudgets(budgetsWithItems);
-  }, [user]);
+  }, []);
 
   useEffect(() => {
     if (user) {

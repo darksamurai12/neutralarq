@@ -9,11 +9,10 @@ export function useInventory(userId: string | undefined) {
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
 
   const fetchInventory = useCallback(async () => {
-    if (!userId) return;
+    // Removido o filtro .eq('user_id', userId)
     const { data, error } = await supabase
       .from('inventory')
       .select('*')
-      .eq('user_id', userId)
       .order('name', { ascending: true });
 
     if (error) {
@@ -34,7 +33,7 @@ export function useInventory(userId: string | undefined) {
       lastUpdated: new Date(row.updated_at),
       createdAt: new Date(row.created_at)
     })));
-  }, [userId]);
+  }, []);
 
   const addInventoryItem = async (item: Omit<InventoryItem, 'id' | 'createdAt' | 'lastUpdated' | 'totalValue'>) => {
     if (!userId) return;
