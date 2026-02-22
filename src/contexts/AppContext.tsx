@@ -223,7 +223,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           minStock: Number(row.min_stock),
           unitCost: Number(row.unit_cost),
           totalValue: Number(row.quantity) * Number(row.unit_cost),
-          location: row.location,
+          location: row.location || '',
           lastUpdated: new Date(row.updated_at),
           createdAt: new Date(row.created_at)
         })));
@@ -644,31 +644,44 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const addInventoryItem = async (item: Omit<InventoryItem, 'id' | 'createdAt' | 'lastUpdated' | 'totalValue'>) => {
     if (!user) return;
-    const { data, error } = await supabase.from('inventory').insert({
-      name: item.name,
-      category: item.category,
-      quantity: item.quantity,
-      unit: item.unit,
-      min_stock: item.minStock,
-      unit_cost: item.unitCost,
-      location: item.location,
-      user_id: user.id
-    }).select().single();
-    if (error) { toast.error('Erro ao adicionar item ao inventário'); return; }
-    setInventory(prev => [...prev, {
-      id: data.id,
-      name: data.name,
-      category: data.category as any,
-      quantity: Number(data.quantity),
-      unit: data.unit,
-      minStock: Number(data.min_stock),
-      unitCost: Number(data.unit_cost),
-      totalValue: Number(data.quantity) * Number(data.unit_cost),
-      location: data.location,
-      lastUpdated: new Date(data.updated_at),
-      createdAt: new Date(data.created_at)
-    }]);
-    toast.success('Item adicionado ao inventário');
+    try {
+      const { data, error } = await supabase.from('inventory').insert({
+        name: item.name,
+        category: item.category,
+        quantity: item.quantity,
+        unit: item.unit,
+        min_stock: item.minStock,
+        unit_cost: item.unitCost,
+        location: item.location,
+        user_id: user.id
+      }).select().single();
+
+      if (error) {
+        console.error('Supabase error:', error);
+        toast.error(`Erro ao adicionar item: ${error.message}`);
+        return;
+      }
+
+      if (data) {
+        setInventory(prev => [...prev, {
+          id: data.id,
+          name: data.name,
+          category: data.category as any,
+          quantity: Number(data.quantity),
+          unit: data.unit,
+          minStock: Number(data.min_stock),
+          unitCost: Number(data.unit_cost),
+          totalValue: Number(data.quantity) * Number(data.unit_cost),
+          location: data.location || '',
+          lastUpdated: new Date(data.updated_at),
+          createdAt: new Date(data.created_at)
+        }]);
+        toast.success('Item adicionado ao inventário');
+      }
+    } catch (err) {
+      console.error('Unexpected error:', err);
+      toast.error('Ocorreu um erro inesperado ao salvar o item.');
+    }
   };
 
   const updateInventoryItem = async (id: string, updates: Partial<InventoryItem>) => {
