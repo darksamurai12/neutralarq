@@ -58,7 +58,8 @@ export default function Auth() {
     if (error) {
       toast({ title: 'Erro ao criar conta', description: error.message, variant: 'destructive' });
     } else {
-      toast({ title: 'Conta criada!', description: 'Verifique seu email para confirmar a conta.' });
+      toast({ title: 'Conta criada!', description: 'Pode agora entrar na sua conta.' });
+      // Opcional: Tentar login automático ou mudar para a tab de login
     }
     setLoading(false);
   };
@@ -141,9 +142,6 @@ export default function Auth() {
                   <Button type="submit" className="w-full rounded-xl h-11" disabled={loading}>
                     {loading ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" />Criando conta...</>) : 'Criar Conta'}
                   </Button>
-                  <p className="text-xs text-center text-muted-foreground">
-                    Ao criar uma conta, você receberá um email de confirmação.
-                  </p>
                 </form>
               </TabsContent>
             </CardContent>
