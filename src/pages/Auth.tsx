@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Calculator, Loader2, Mail, Lock, User } from 'lucide-react';
+import { Loader2, Mail, Lock, User } from 'lucide-react';
 
 export default function Auth() {
   const navigate = useNavigate();
@@ -59,7 +59,6 @@ export default function Auth() {
       toast({ title: 'Erro ao criar conta', description: error.message, variant: 'destructive' });
     } else {
       toast({ title: 'Conta criada!', description: 'Pode agora entrar na sua conta.' });
-      // Opcional: Tentar login automático ou mudar para a tab de login
     }
     setLoading(false);
   };
@@ -77,10 +76,11 @@ export default function Auth() {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-purple-400 text-white mb-4 shadow-glass">
-            <Calculator className="w-8 h-8" />
-          </div>
-          <h1 className="text-2xl font-bold text-foreground">GestãoPro</h1>
+          <img 
+            src="/logo02.png" 
+            alt="Neutral Arq" 
+            className="h-20 w-auto mx-auto mb-4 dark:invert transition-all"
+          />
           <p className="text-muted-foreground mt-1">Precificação & Orçamentos</p>
         </div>
 
@@ -149,7 +149,7 @@ export default function Auth() {
         </Card>
 
         <p className="text-center text-sm text-muted-foreground mt-6">
-          © 2025 GestãoPro. Todos os direitos reservados.
+          © 2025 Neutral Arq. Todos os direitos reservados.
         </p>
       </div>
     </div>
