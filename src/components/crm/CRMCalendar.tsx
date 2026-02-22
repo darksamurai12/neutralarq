@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { CalendarEvent, CalendarEventType, CalendarView } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -29,6 +29,7 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
+import { useIsMobile } from '@/hooks/use-mobile';
 import {
   CalendarDays,
   CalendarIcon,
@@ -118,6 +119,7 @@ export function CRMCalendar() {
     getUpcomingEvents,
   } = useApp();
 
+  const isMobile = useIsMobile();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState<CalendarView>('month');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -125,7 +127,15 @@ export function CRMCalendar() {
   const [formData, setFormData] = useState(emptyFormData);
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
 
-  // Navigation
+  // Auto-switch to day view on mobile
+  useEffect(() => {
+    if (isMobile) {
+      setView('day');
+    } else {
+      setView('month');
+    }
+  }, [isMobile]);
+
   const navigatePrevious = () => {
     if (view === 'day') setCurrentDate(subDays(currentDate, 1));
     else if (view === 'week') setCurrentDate(subWeeks(currentDate, 1));
@@ -140,14 +150,12 @@ export function CRMCalendar() {
 
   const goToToday = () => setCurrentDate(new Date());
 
-  // Get events based on view
   const displayedEvents = useMemo(() => {
     if (view === 'day') return getEventsForDay(currentDate);
     if (view === 'week') return getEventsForWeek(currentDate);
     return getEventsForMonth(currentDate);
   }, [view, currentDate, getEventsForDay, getEventsForWeek, getEventsForMonth]);
 
-  // Calendar days for month view
   const calendarDays = useMemo(() => {
     const monthStart = startOfMonth(currentDate);
     const monthEnd = endOfMonth(currentDate);
@@ -156,14 +164,12 @@ export function CRMCalendar() {
     return eachDayOfInterval({ start: calendarStart, end: calendarEnd });
   }, [currentDate]);
 
-  // Week days for week view
   const weekDays = useMemo(() => {
     const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
     const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
     return eachDayOfInterval({ start: weekStart, end: weekEnd });
   }, [currentDate]);
 
-  // Hours for day/week view
   const hours = Array.from({ length: 14 }, (_, i) => i + 7); // 7am to 8pm
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -235,28 +241,26 @@ export function CRMCalendar() {
 
   const upcomingEvents = getUpcomingEvents(5);
 
-  // Title based on view
   const getViewTitle = () => {
-    if (view === 'day') return format(currentDate, "EEEE, d 'de' MMMM 'de' yyyy", { locale: ptBR });
+    if (view === 'day') return format(currentDate, "d 'de' MMM", { locale: ptBR });
     if (view === 'week') {
       const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
       const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
-      return `${format(weekStart, 'd MMM', { locale: ptBR })} - ${format(weekEnd, "d MMM 'de' yyyy", { locale: ptBR })}`;
+      return `${format(weekStart, 'd MMM', { locale: ptBR })} - ${format(weekEnd, 'd MMM', { locale: ptBR })}`;
     }
-    return format(currentDate, "MMMM 'de' yyyy", { locale: ptBR });
+    return format(currentDate, "MMMM yyyy", { locale: ptBR });
   };
 
   const EventCard = ({ event, compact = false }: { event: CalendarEvent; compact?: boolean }) => {
     const config = eventTypeConfig[event.type];
     const Icon = config.icon;
     const clientName = getClientName(event.clientId);
-    const dealTitle = getDealTitle(event.dealId);
 
     if (compact) {
       return (
         <div 
           className={cn(
-            'text-xs px-1.5 py-0.5 rounded truncate text-white cursor-pointer hover:opacity-80 transition-opacity',
+            'text-[10px] px-1 py-0.5 rounded truncate text-white cursor-pointer hover:opacity-80 transition-opacity',
             config.bgClass,
             event.completed && 'opacity-50 line-through'
           )}
@@ -294,40 +298,20 @@ export function CRMCalendar() {
                 </span>
               </div>
               
-              <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
+              <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
                 <Icon className={cn('w-3 h-3', config.color)} />
-                <Badge variant="secondary" className="text-xs">
-                  {config.label}
-                </Badge>
                 {!event.allDay && (
                   <span>
-                    {format(new Date(event.startDate), 'HH:mm')} - {format(new Date(event.endDate), 'HH:mm')}
+                    {format(new Date(event.startDate), 'HH:mm')}
                   </span>
                 )}
-                {event.allDay && <span>Dia inteiro</span>}
+                {clientName && <span className="truncate">• {clientName}</span>}
               </div>
-
-              {(clientName || dealTitle) && (
-                <div className="flex flex-wrap gap-1.5">
-                  {clientName && (
-                    <Badge variant="outline" className="text-xs gap-1">
-                      <Users className="w-3 h-3" />
-                      {clientName}
-                    </Badge>
-                  )}
-                  {dealTitle && (
-                    <Badge variant="outline" className="text-xs gap-1">
-                      <Handshake className="w-3 h-3" />
-                      {dealTitle}
-                    </Badge>
-                  )}
-                </div>
-              )}
             </div>
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity">
+                <Button variant="ghost" size="icon" className="h-6 w-6">
                   <MoreHorizontal className="w-3 h-3" />
                 </Button>
               </DropdownMenuTrigger>
@@ -352,118 +336,87 @@ export function CRMCalendar() {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-        <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-          <CardContent className="p-5">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-blue-100 text-sm font-medium mb-1">Eventos Hoje</p>
-                <p className="text-3xl font-bold tracking-tight">{getEventsForDay(new Date()).length}</p>
-              </div>
-              <div className="h-12 w-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                <CalendarDays className="w-6 h-6 text-white" />
-              </div>
-            </div>
-            <div className="absolute -bottom-4 -right-4 h-24 w-24 rounded-full bg-white/10" />
-          </CardContent>
+    <div className="space-y-4 md:space-y-6">
+      {/* Stats Cards - Hidden on very small screens or adjusted */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+        <Card className="border-0 bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg p-4">
+          <p className="text-blue-100 text-[10px] md:text-xs font-medium uppercase">Hoje</p>
+          <p className="text-xl md:text-3xl font-bold">{getEventsForDay(new Date()).length}</p>
         </Card>
 
-        <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-          <CardContent className="p-5">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-emerald-100 text-sm font-medium mb-1">Esta Semana</p>
-                <p className="text-3xl font-bold tracking-tight">{getEventsForWeek(new Date()).length}</p>
-              </div>
-              <div className="h-12 w-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                <Clock className="w-6 h-6 text-white" />
-              </div>
-            </div>
-            <div className="absolute -bottom-4 -right-4 h-24 w-24 rounded-full bg-white/10" />
-          </CardContent>
+        <Card className="border-0 bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-lg p-4">
+          <p className="text-emerald-100 text-[10px] md:text-xs font-medium uppercase">Semana</p>
+          <p className="text-xl md:text-3xl font-bold">{getEventsForWeek(new Date()).length}</p>
         </Card>
 
-        <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-purple-500 to-purple-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-          <CardContent className="p-5">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-purple-100 text-sm font-medium mb-1">Este Mês</p>
-                <p className="text-3xl font-bold tracking-tight">{getEventsForMonth(new Date()).length}</p>
-              </div>
-              <div className="h-12 w-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                <CalendarIcon className="w-6 h-6 text-white" />
-              </div>
-            </div>
-            <div className="absolute -bottom-4 -right-4 h-24 w-24 rounded-full bg-white/10" />
-          </CardContent>
-        </Card>
-
-        <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-amber-500 to-amber-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-          <CardContent className="p-5">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-amber-100 text-sm font-medium mb-1">Com Lembrete</p>
-                <p className="text-3xl font-bold tracking-tight">{calendarEvents.filter(e => e.reminder && !e.completed).length}</p>
-              </div>
-              <div className="h-12 w-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                <Bell className="w-6 h-6 text-white" />
-              </div>
-            </div>
-            <div className="absolute -bottom-4 -right-4 h-24 w-24 rounded-full bg-white/10" />
-          </CardContent>
-        </Card>
+        {!isMobile && (
+          <>
+            <Card className="border-0 bg-gradient-to-br from-purple-500 to-purple-600 text-white shadow-lg p-4">
+              <p className="text-purple-100 text-xs font-medium uppercase">Mês</p>
+              <p className="text-3xl font-bold">{getEventsForMonth(new Date()).length}</p>
+            </Card>
+            <Card className="border-0 bg-gradient-to-br from-amber-500 to-amber-600 text-white shadow-lg p-4">
+              <p className="text-amber-100 text-xs font-medium uppercase">Lembretes</p>
+              <p className="text-3xl font-bold">{calendarEvents.filter(e => e.reminder && !e.completed).length}</p>
+            </Card>
+          </>
+        )}
       </div>
 
       {/* Calendar Header */}
       <Card className="shadow-lg border-0">
-        <CardContent className="p-4">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="icon" onClick={navigatePrevious}>
-                <ChevronLeft className="w-4 h-4" />
-              </Button>
-              <Button variant="outline" onClick={goToToday}>Hoje</Button>
-              <Button variant="outline" size="icon" onClick={navigateNext}>
-                <ChevronRight className="w-4 h-4" />
-              </Button>
-              <h2 className="text-lg font-semibold ml-2 capitalize">{getViewTitle()}</h2>
+        <CardContent className="p-3 md:p-4">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-start">
+              <div className="flex items-center gap-1">
+                <Button variant="outline" size="icon" className="h-8 w-8" onClick={navigatePrevious}>
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+                <Button variant="outline" size="sm" className="h-8" onClick={goToToday}>Hoje</Button>
+                <Button variant="outline" size="icon" className="h-8 w-8" onClick={navigateNext}>
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
+              <h2 className="text-sm md:text-lg font-semibold capitalize truncate">{getViewTitle()}</h2>
             </div>
 
-            <div className="flex items-center gap-2">
-              <div className="flex rounded-lg border overflow-hidden">
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <div className="flex flex-1 rounded-lg border overflow-hidden">
                 <Button 
                   variant={view === 'day' ? 'default' : 'ghost'} 
                   size="sm"
                   onClick={() => setView('day')}
-                  className="rounded-none"
+                  className="flex-1 rounded-none h-8 text-xs"
                 >
                   Dia
                 </Button>
-                <Button 
-                  variant={view === 'week' ? 'default' : 'ghost'} 
-                  size="sm"
-                  onClick={() => setView('week')}
-                  className="rounded-none"
-                >
-                  Semana
-                </Button>
-                <Button 
-                  variant={view === 'month' ? 'default' : 'ghost'} 
-                  size="sm"
-                  onClick={() => setView('month')}
-                  className="rounded-none"
-                >
-                  Mês
-                </Button>
+                {!isMobile && (
+                  <>
+                    <Button 
+                      variant={view === 'week' ? 'default' : 'ghost'} 
+                      size="sm"
+                      onClick={() => setView('week')}
+                      className="flex-1 rounded-none h-8 text-xs"
+                    >
+                      Semana
+                    </Button>
+                    <Button 
+                      variant={view === 'month' ? 'default' : 'ghost'} 
+                      size="sm"
+                      onClick={() => setView('month')}
+                      className="flex-1 rounded-none h-8 text-xs"
+                    >
+                      Mês
+                    </Button>
+                  </>
+                )}
               </div>
 
               <Dialog open={isDialogOpen} onOpenChange={(open) => { setIsDialogOpen(open); if (!open) resetForm(); }}>
                 <DialogTrigger asChild>
-                  <Button className="gap-2 shadow-lg hover:shadow-xl transition-all duration-300">
-                    <Plus className="w-4 h-4" />
-                    Novo Evento
+                  <Button size="sm" className="h-8 gap-1 text-xs">
+                    <Plus className="w-3 h-3" />
+                    Novo
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
@@ -571,83 +524,6 @@ export function CRMCalendar() {
                       )}
                     </div>
 
-                    {!formData.allDay && (
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label>Data Fim</Label>
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <Button variant="outline" className="w-full justify-start text-left font-normal">
-                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                {format(formData.endDate, 'dd/MM/yyyy')}
-                              </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
-                              <Calendar
-                                mode="single"
-                                selected={formData.endDate}
-                                onSelect={(date) => date && setFormData({ ...formData, endDate: date })}
-                                initialFocus
-                              />
-                            </PopoverContent>
-                          </Popover>
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label>Hora Fim</Label>
-                          <Input
-                            type="time"
-                            value={format(formData.endDate, 'HH:mm')}
-                            onChange={(e) => {
-                              const [hours, minutes] = e.target.value.split(':').map(Number);
-                              setFormData({ 
-                                ...formData, 
-                                endDate: setMinutes(setHours(formData.endDate, hours), minutes) 
-                              });
-                            }}
-                          />
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label>Contacto</Label>
-                        <Select
-                          value={formData.clientId || 'none'}
-                          onValueChange={(value) => setFormData({ ...formData, clientId: value === 'none' ? null : value })}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Seleccionar contacto" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="none">Nenhum</SelectItem>
-                            {clients.map((client) => (
-                              <SelectItem key={client.id} value={client.id}>{client.name}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label>Negócio</Label>
-                        <Select
-                          value={formData.dealId || 'none'}
-                          onValueChange={(value) => setFormData({ ...formData, dealId: value === 'none' ? null : value })}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Seleccionar negócio" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="none">Nenhum</SelectItem>
-                            {deals.map((deal) => (
-                              <SelectItem key={deal.id} value={deal.id}>{deal.title}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-
                     <div className="space-y-2">
                       <Label htmlFor="description">Descrição</Label>
                       <Textarea
@@ -664,7 +540,7 @@ export function CRMCalendar() {
                         Cancelar
                       </Button>
                       <Button type="submit">
-                        {editingEvent ? 'Guardar' : 'Criar Evento'}
+                        {editingEvent ? 'Guardar' : 'Criar'}
                       </Button>
                     </div>
                   </form>
@@ -680,9 +556,8 @@ export function CRMCalendar() {
         <div className="lg:col-span-3">
           <Card className="shadow-lg border-0">
             <CardContent className="p-0">
-              {view === 'month' && (
+              {view === 'month' && !isMobile && (
                 <div className="divide-y">
-                  {/* Week day headers */}
                   <div className="grid grid-cols-7 bg-muted/50">
                     {['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'].map((day) => (
                       <div key={day} className="py-3 text-center text-sm font-medium text-muted-foreground">
@@ -691,7 +566,6 @@ export function CRMCalendar() {
                     ))}
                   </div>
 
-                  {/* Calendar grid */}
                   <div className="grid grid-cols-7">
                     {calendarDays.map((day, idx) => {
                       const dayEvents = getEventsForDayLocal(day);
@@ -717,11 +591,6 @@ export function CRMCalendar() {
                             {dayEvents.slice(0, 3).map((event) => (
                               <EventCard key={event.id} event={event} compact />
                             ))}
-                            {dayEvents.length > 3 && (
-                              <div className="text-xs text-muted-foreground text-center">
-                                +{dayEvents.length - 3} mais
-                              </div>
-                            )}
                           </div>
                         </div>
                       );
@@ -730,72 +599,9 @@ export function CRMCalendar() {
                 </div>
               )}
 
-              {view === 'week' && (
-                <div className="divide-y">
-                  <div className="grid grid-cols-8 bg-muted/50">
-                    <div className="py-3 px-2 text-center text-sm font-medium text-muted-foreground border-r" />
-                    {weekDays.map((day) => (
-                      <div 
-                        key={day.toISOString()} 
-                        className={cn(
-                          'py-3 text-center text-sm font-medium text-muted-foreground border-r',
-                          isToday(day) && 'bg-primary/10'
-                        )}
-                      >
-                        <div>{format(day, 'EEE', { locale: ptBR })}</div>
-                        <div className={cn(
-                          'w-8 h-8 mx-auto flex items-center justify-center rounded-full text-lg',
-                          isToday(day) && 'bg-primary text-primary-foreground'
-                        )}>
-                          {format(day, 'd')}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="max-h-[500px] overflow-y-auto">
-                    {hours.map((hour) => (
-                      <div key={hour} className="grid grid-cols-8 border-b">
-                        <div className="py-4 px-2 text-right text-xs text-muted-foreground border-r">
-                          {hour.toString().padStart(2, '0')}:00
-                        </div>
-                        {weekDays.map((day) => {
-                          const dayEvents = getEventsForDayLocal(day).filter(e => {
-                            const eventHour = getHours(new Date(e.startDate));
-                            return eventHour === hour;
-                          });
-                          
-                          return (
-                            <div 
-                              key={day.toISOString()}
-                              className={cn(
-                                'py-1 px-1 border-r min-h-[60px] hover:bg-muted/30 transition-colors cursor-pointer',
-                                isToday(day) && 'bg-primary/5'
-                              )}
-                              onClick={() => {
-                                handleDayClick(day);
-                                setFormData(prev => ({
-                                  ...prev,
-                                  startDate: setHours(setMinutes(day, 0), hour),
-                                  endDate: setHours(setMinutes(day, 0), hour + 1),
-                                }));
-                              }}
-                            >
-                              {dayEvents.map((event) => (
-                                <EventCard key={event.id} event={event} compact />
-                              ))}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
               {view === 'day' && (
                 <div className="divide-y">
-                  <div className="max-h-[500px] overflow-y-auto">
+                  <div className="max-h-[600px] overflow-y-auto custom-scrollbar">
                     {hours.map((hour) => {
                       const hourEvents = displayedEvents.filter(e => {
                         const eventHour = getHours(new Date(e.startDate));
@@ -804,11 +610,11 @@ export function CRMCalendar() {
                       
                       return (
                         <div key={hour} className="grid grid-cols-12 border-b hover:bg-muted/30 transition-colors">
-                          <div className="col-span-1 py-4 px-2 text-right text-sm text-muted-foreground">
+                          <div className="col-span-2 md:col-span-1 py-4 px-2 text-right text-xs md:text-sm text-muted-foreground">
                             {hour.toString().padStart(2, '0')}:00
                           </div>
                           <div 
-                            className="col-span-11 py-2 px-2 min-h-[80px] cursor-pointer"
+                            className="col-span-10 md:col-span-11 py-2 px-2 min-h-[80px] cursor-pointer"
                             onClick={() => {
                               setFormData({
                                 ...emptyFormData,
@@ -834,46 +640,41 @@ export function CRMCalendar() {
           </Card>
         </div>
 
-        {/* Sidebar - Upcoming Events */}
-        <div className="space-y-6">
-          <Card className="shadow-lg border-0">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Clock className="w-5 h-5 text-primary" />
-                Próximos Eventos
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {upcomingEvents.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-4">
-                  Nenhum evento próximo
-                </p>
-              ) : (
-                upcomingEvents.map((event) => (
-                  <EventCard key={event.id} event={event} />
-                ))
-              )}
-            </CardContent>
-          </Card>
+        {/* Sidebar - Upcoming Events - Hidden on mobile to save space */}
+        {!isMobile && (
+          <div className="space-y-6">
+            <Card className="shadow-lg border-0">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Clock className="w-5 h-5 text-primary" />
+                  Próximos
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {upcomingEvents.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    Nenhum evento próximo
+                  </p>
+                ) : (
+                  upcomingEvents.map((event) => (
+                    <EventCard key={event.id} event={event} />
+                  ))
+                )}
+              </CardContent>
+            </Card>
 
-          {/* Mini Calendar */}
-          <Card className="shadow-lg border-0">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <CalendarIcon className="w-5 h-5 text-primary" />
-                Calendário
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Calendar
-                mode="single"
-                selected={currentDate}
-                onSelect={(date) => date && setCurrentDate(date)}
-                className="rounded-md"
-              />
-            </CardContent>
-          </Card>
-        </div>
+            <Card className="shadow-lg border-0">
+              <CardContent className="p-2">
+                <Calendar
+                  mode="single"
+                  selected={currentDate}
+                  onSelect={(date) => date && setCurrentDate(date)}
+                  className="rounded-md"
+                />
+              </CardContent>
+            </Card>
+          </div>
+        )}
       </div>
     </div>
   );
