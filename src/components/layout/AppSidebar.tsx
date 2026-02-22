@@ -52,12 +52,11 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
   return (
     <aside className="w-full lg:w-64 h-full bg-white dark:bg-slate-900 lg:bg-transparent flex flex-col border-r lg:border-none border-slate-100 dark:border-slate-800">
       {/* Logo Section */}
-      <div className="p-6 flex items-center">
-        <img 
-          src="/logo02.png" 
-          alt="Neutral Arq" 
-          className="h-12 w-auto dark:invert transition-all duration-300"
-        />
+      <div className="p-6 flex items-center gap-3">
+        <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center shadow-lg shadow-primary/20">
+          <span className="text-white font-bold text-lg">G</span>
+        </div>
+        <span className="text-xl font-bold text-slate-800 dark:text-white tracking-tight">GestãoPro</span>
       </div>
 
       {/* Team/Profile Selector */}

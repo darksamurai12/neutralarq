@@ -57,9 +57,7 @@ export function AppLayout({ children }: AppLayoutProps) {
             </div>
             
             {/* Logo for mobile */}
-            <div className="lg:hidden">
-              <img src="/logo02.png" alt="Neutral Arq" className="h-8 w-auto dark:invert" />
-            </div>
+            <div className="lg:hidden font-bold text-primary text-lg truncate">GestãoPro</div>
           </div>
 
           {/* Actions */}
