@@ -30,18 +30,14 @@ export default function Projects() {
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   
-  // Filters
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<ProjectStatus | 'all'>('all');
   const [typeFilter, setTypeFilter] = useState<ProjectType | 'all'>('all');
   const [clientFilter, setClientFilter] = useState<string>('all');
 
   const selectedProject = selectedProjectId ? getProjectWithDetails(selectedProjectId) : null;
-
-  // Only show root-level projects (not subprojects) in the main list
   const rootProjects = projects.filter(p => !p.parentProjectId);
 
-  // Stats (only root projects)
   const planningProjects = rootProjects.filter(p => p.status === 'planning').length;
   const activeProjects = rootProjects.filter(p => p.status === 'in_progress').length;
   const pausedProjects = rootProjects.filter(p => p.status === 'paused').length;
@@ -90,7 +86,7 @@ export default function Projects() {
         icon={FolderKanban}
       >
         <Button 
-          className="gap-2 shadow-lg hover:shadow-xl transition-all duration-300"
+          className="w-full md:w-auto gap-2 shadow-lg hover:shadow-xl transition-all duration-300"
           onClick={() => { setEditingProject(null); setIsFormOpen(true); }}
         >
           <Plus className="w-4 h-4" />
@@ -121,7 +117,7 @@ export default function Projects() {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredProjects.map((project) => {
           const client = clients.find((c) => c.id === project.clientId);
           const projectDetails = getProjectWithDetails(project.id);
