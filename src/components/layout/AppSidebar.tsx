@@ -30,7 +30,11 @@ const managementItems = [
   { title: 'Precificação', url: '/precificacao', icon: Calculator },
 ];
 
-export function AppSidebar() {
+interface AppSidebarProps {
+  onNavigate?: () => void;
+}
+
+export function AppSidebar({ onNavigate }: AppSidebarProps) {
   const { profile, user, signOut } = useAuth();
   const navigate = useNavigate();
 
@@ -45,7 +49,7 @@ export function AppSidebar() {
   };
 
   return (
-    <aside className="w-64 h-screen bg-transparent flex flex-col sticky top-0">
+    <aside className="w-full h-full bg-transparent flex flex-col">
       {/* Logo Section */}
       <div className="p-6 flex items-center gap-3">
         <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center shadow-lg shadow-primary/20">
@@ -87,6 +91,7 @@ export function AppSidebar() {
                 <NavLink
                   to={item.url}
                   end={item.url === '/'}
+                  onClick={onNavigate}
                   className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-white hover:bg-white/50 dark:hover:bg-slate-800/50 transition-all duration-200 group"
                   activeClassName="bg-white dark:bg-slate-800 text-primary dark:text-white shadow-sm shadow-blue-100/20 dark:shadow-none"
                 >
@@ -106,6 +111,7 @@ export function AppSidebar() {
               <li key={item.title}>
                 <NavLink
                   to={item.url}
+                  onClick={onNavigate}
                   className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-white hover:bg-white/50 dark:hover:bg-slate-800/50 transition-all duration-200 group"
                   activeClassName="bg-white dark:bg-slate-800 text-primary dark:text-white shadow-sm shadow-blue-100/20 dark:shadow-none"
                 >
