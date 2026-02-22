@@ -7,13 +7,11 @@ import {
   Wallet, 
   Calculator, 
   CalendarDays, 
-  ChevronDown,
   Package,
   LogOut
 } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useAuth } from '@/hooks/useAuth';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 
@@ -35,13 +33,8 @@ interface AppSidebarProps {
 }
 
 export function AppSidebar({ onNavigate }: AppSidebarProps) {
-  const { profile, user, signOut } = useAuth();
+  const { signOut } = useAuth();
   const navigate = useNavigate();
-
-  const getInitials = () => {
-    if (profile?.full_name) return profile.full_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-    return user?.email?.[0].toUpperCase() || 'U';
-  };
 
   const handleLogout = async () => {
     await signOut();
@@ -53,32 +46,26 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
     <aside className="w-full lg:w-64 h-full bg-white dark:bg-slate-900 lg:bg-transparent flex flex-col border-r lg:border-none border-slate-100 dark:border-slate-800">
       {/* Logo Section */}
       <div className="p-6 flex items-center gap-3">
-        <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center shadow-lg shadow-primary/20">
-          <span className="text-white font-bold text-lg">G</span>
-        </div>
-        <span className="text-xl font-bold text-slate-800 dark:text-white tracking-tight">GestãoPro</span>
-      </div>
-
-      {/* Team/Profile Selector */}
-      <div className="px-4 mb-6">
-        <button className="w-full flex items-center justify-between p-2 rounded-xl hover:bg-white/50 dark:hover:bg-slate-800/50 transition-colors group">
-          <div className="flex items-center gap-3">
-            <Avatar className="h-10 w-10 rounded-xl border-2 border-white dark:border-slate-700 shadow-sm">
-              <AvatarFallback className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-bold">
-                {getInitials()}
-              </AvatarFallback>
-            </Avatar>
-            <div className="text-left">
-              <p className="text-sm font-bold text-slate-700 dark:text-slate-200 truncate w-32">
-                {profile?.company_name || 'Minha Empresa'}
-              </p>
-              <p className="text-[11px] text-slate-400 truncate w-32">
-                {user?.email}
-              </p>
-            </div>
-          </div>
-          <ChevronDown className="w-4 h-4 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300 transition-colors" />
-        </button>
+        <img 
+          src="/logo02.png" 
+          alt="Logo" 
+          className="h-10 w-auto dark:invert"
+          onError={(e) => {
+            // Fallback caso a imagem não carregue
+            e.currentTarget.style.display = 'none';
+            const parent = e.currentTarget.parentElement;
+            if (parent) {
+              const fallback = document.createElement('div');
+              fallback.className = "w-8 h-8 bg-primary rounded-lg flex items-center justify-center shadow-lg shadow-primary/20";
+              fallback.innerHTML = '<span class="text-white font-bold text-lg">G</span>';
+              parent.appendChild(fallback);
+              const text = document.createElement('span');
+              text.className = "text-xl font-bold text-slate-800 dark:text-white tracking-tight";
+              text.innerText = "GestãoPro";
+              parent.appendChild(text);
+            }
+          }}
+        />
       </div>
 
       {/* Navigation */}
