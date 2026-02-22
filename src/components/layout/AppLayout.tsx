@@ -21,17 +21,18 @@ export function AppLayout({ children }: AppLayoutProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (
-    <div className="flex h-screen w-full bg-[#F8FAFC] dark:bg-slate-950 overflow-hidden">
-      {/* Desktop Sidebar */}
-      {!isMobile && <AppSidebar />}
+    <div className="flex h-screen w-full bg-white dark:bg-slate-950 overflow-hidden">
+      {/* Desktop Sidebar - Fixed Width */}
+      {!isMobile && (
+        <div className="w-72 border-r border-slate-100 dark:border-slate-800 bg-[#F8FAFC] dark:bg-slate-900/50">
+          <AppSidebar />
+        </div>
+      )}
       
       {/* Main Content Area */}
-      <div className={cn(
-        "flex-1 flex flex-col min-w-0 bg-white dark:bg-slate-900 overflow-hidden border-slate-100 dark:border-slate-800 transition-all duration-300",
-        !isMobile ? "rounded-tl-[1.5rem] shadow-glass mt-2 border-l border-t" : "mt-0 rounded-none border-none"
-      )}>
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Top Header */}
-        <header className="h-16 md:h-20 px-4 md:px-8 flex items-center justify-between bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm border-b border-slate-50 dark:border-slate-800 sticky top-0 z-30">
+        <header className="h-16 md:h-20 px-4 md:px-8 flex items-center justify-between bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 sticky top-0 z-30">
           <div className="flex items-center gap-4 flex-1">
             {/* Mobile Menu Trigger */}
             {isMobile && (
@@ -47,7 +48,7 @@ export function AppLayout({ children }: AppLayoutProps) {
               </Sheet>
             )}
 
-            {/* Search Bar - Hidden on very small screens, or simplified */}
+            {/* Search Bar */}
             <div className="relative w-full max-w-md hidden sm:block">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <Input 
@@ -95,7 +96,7 @@ export function AppLayout({ children }: AppLayoutProps) {
         </header>
 
         {/* Content Scroll Area */}
-        <main className="flex-1 overflow-auto custom-scrollbar">
+        <main className="flex-1 overflow-auto custom-scrollbar bg-[#F8FAFC] dark:bg-slate-950/50">
           <AnimatePresence mode="wait">
             <motion.div
               key={location.pathname}
@@ -103,7 +104,7 @@ export function AppLayout({ children }: AppLayoutProps) {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.3, ease: 'easeOut' }}
-              className="p-4 md:p-8"
+              className="p-4 md:p-8 max-w-[1600px] mx-auto w-full"
             >
               {children}
             </motion.div>
