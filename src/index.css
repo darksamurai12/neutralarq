@@ -24,14 +24,23 @@
     --input: 214.3 31.8% 91.4%;
     --ring: 221 83% 53%;
     --radius: 1.25rem;
+
+    /* Pastel Colors Light */
+    --pastel-lavender: #F3F0FF;
+    --pastel-peach: #FFF4E6;
+    --pastel-mint: #EBFBEE;
+    --pastel-sky: #E7F5FF;
+    --pastel-amber: #FFF9DB;
+    --pastel-rose: #FFF0F6;
+    --pastel-slate: #F8FAFC;
   }
 
   .dark {
     --background: 222 47% 4%;
     --foreground: 210 40% 98%;
-    --card: 222 47% 6%;
+    --card: 222 47% 7%;
     --card-foreground: 210 40% 98%;
-    --popover: 222 47% 6%;
+    --popover: 222 47% 7%;
     --popover-foreground: 210 40% 98%;
     --primary: 217.2 91.2% 59.8%;
     --primary-foreground: 222.2 47.4% 11.2%;
@@ -43,9 +52,18 @@
     --accent-foreground: 210 40% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
+    --border: 217.2 32.6% 16%;
+    --input: 217.2 32.6% 16%;
     --ring: 224.3 76.3% 48%;
+
+    /* Pastel Colors Dark - More muted and deep */
+    --pastel-lavender: #1e1b4b;
+    --pastel-peach: #2d1a10;
+    --pastel-mint: #062016;
+    --pastel-sky: #081e2d;
+    --pastel-amber: #2d2305;
+    --pastel-rose: #2d101b;
+    --pastel-slate: #0f172a;
   }
 }
 
@@ -61,7 +79,7 @@
 
 @layer utilities {
   .shadow-glass {
-    @apply shadow-[0_8px_32px_-4px_rgba(0,0,0,0.05)] dark:shadow-[0_8px_32px_-4px_rgba(0,0,0,0.3)];
+    @apply shadow-[0_8px_32px_-4px_rgba(0,0,0,0.05)] dark:shadow-[0_8px_32px_-4px_rgba(0,0,0,0.4)];
   }
   
   .main-card {

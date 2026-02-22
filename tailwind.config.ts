@@ -36,15 +36,15 @@ export default {
           accent: "hsl(var(--accent))",
           border: "hsl(var(--border))",
         },
-        // Cores Pastel adaptáveis
+        // Cores Pastel adaptáveis via variáveis CSS
         pastel: {
-          lavender: "var(--pastel-lavender, #F3F0FF)",
-          peach: "var(--pastel-peach, #FFF4E6)",
-          mint: "var(--pastel-mint, #EBFBEE)",
-          sky: "var(--pastel-sky, #E7F5FF)",
-          amber: "var(--pastel-amber, #FFF9DB)",
-          rose: "var(--pastel-rose, #FFF0F6)",
-          slate: "var(--pastel-slate, #F8FAFC)",
+          lavender: "var(--pastel-lavender)",
+          peach: "var(--pastel-peach)",
+          mint: "var(--pastel-mint)",
+          sky: "var(--pastel-sky)",
+          amber: "var(--pastel-amber)",
+          rose: "var(--pastel-rose)",
+          slate: "var(--pastel-slate)",
         }
       },
       borderRadius: {

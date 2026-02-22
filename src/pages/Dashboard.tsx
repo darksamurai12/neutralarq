@@ -4,6 +4,7 @@ import { CashFlowChart } from '@/components/dashboard/CashFlowChart';
 import { ProjectStatusChart } from '@/components/dashboard/ProjectStatusChart';
 import { RecentProjects } from '@/components/dashboard/RecentProjects';
 import { DashboardStatCard } from '@/components/dashboard/DashboardStatCard';
+import { WelcomeHeader } from '@/components/dashboard/WelcomeHeader';
 import { useApp } from '@/contexts/AppContext';
 import { 
   LayoutDashboard, 
@@ -26,9 +27,11 @@ export default function Dashboard() {
 
   return (
     <AppLayout>
+      <WelcomeHeader />
+
       <PageHeader
-        title="Dashboard"
-        description="Visão geral do seu negócio"
+        title="Visão Geral"
+        description="Métricas de desempenho e estado atual do negócio"
         icon={LayoutDashboard}
       />
 
@@ -95,7 +98,7 @@ export default function Dashboard() {
         <Card className="shadow-card border-none rounded-2xl bg-pastel-lavender/30">
           <CardHeader className="pb-2">
             <CardTitle className="text-base font-semibold flex items-center gap-3">
-              <div className="h-9 w-9 rounded-xl bg-white flex items-center justify-center shadow-sm">
+              <div className="h-9 w-9 rounded-xl bg-white dark:bg-slate-800 flex items-center justify-center shadow-sm">
                 <FolderKanban className="w-4 h-4 text-primary" />
               </div>
               Distribuição de Projectos
@@ -109,7 +112,7 @@ export default function Dashboard() {
         <Card className="shadow-card border-none rounded-2xl bg-pastel-mint/30">
           <CardHeader className="pb-2">
             <CardTitle className="text-base font-semibold flex items-center gap-3">
-              <div className="h-9 w-9 rounded-xl bg-white flex items-center justify-center shadow-sm">
+              <div className="h-9 w-9 rounded-xl bg-white dark:bg-slate-800 flex items-center justify-center shadow-sm">
                 <TrendingUp className="w-4 h-4 text-emerald-600" />
               </div>
               Fluxo de Caixa Mensal
@@ -125,7 +128,7 @@ export default function Dashboard() {
       <Card className="shadow-card border-none rounded-2xl bg-pastel-slate">
         <CardHeader className="pb-2">
           <CardTitle className="text-base font-semibold flex items-center gap-3">
-            <div className="h-9 w-9 rounded-xl bg-white flex items-center justify-center shadow-sm">
+            <div className="h-9 w-9 rounded-xl bg-white dark:bg-slate-800 flex items-center justify-center shadow-sm">
               <Briefcase className="w-4 h-4 text-orange-600" />
             </div>
             Projectos Recentes
