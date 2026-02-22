@@ -17,34 +17,34 @@ export function AppLayout({ children }: AppLayoutProps) {
   const { theme, setTheme } = useTheme();
 
   return (
-    <div className="flex h-screen w-full bg-[#F8FAFC] overflow-hidden">
+    <div className="flex h-screen w-full bg-[#F8FAFC] dark:bg-slate-950 overflow-hidden">
       <AppSidebar />
       
-      {/* Main Content Area - Only top-left corner rounded */}
-      <div className="flex-1 flex flex-col min-w-0 bg-white rounded-tl-[1.5rem] shadow-glass mt-2 overflow-hidden">
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col min-w-0 bg-white dark:bg-slate-900 rounded-tl-[1.5rem] shadow-glass mt-2 overflow-hidden border-l border-t border-slate-100 dark:border-slate-800">
         {/* Top Header */}
-        <header className="h-20 px-8 flex items-center justify-between bg-white/50 backdrop-blur-sm border-b border-slate-50">
+        <header className="h-20 px-8 flex items-center justify-between bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm border-b border-slate-50 dark:border-slate-800">
           {/* Search Bar */}
           <div className="relative w-full max-w-md">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <Input 
               placeholder="Pesquisar..." 
-              className="pl-11 h-11 bg-slate-50/50 border-none rounded-2xl focus-visible:ring-primary/20 text-sm"
+              className="pl-11 h-11 bg-slate-50/50 dark:bg-slate-800/50 border-none rounded-2xl focus-visible:ring-primary/20 text-sm"
             />
           </div>
 
           {/* Actions */}
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" className="h-11 w-11 rounded-2xl hover:bg-slate-50">
-              <Bell className="w-5 h-5 text-slate-500" />
+            <Button variant="ghost" size="icon" className="h-11 w-11 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800">
+              <Bell className="w-5 h-5 text-slate-500 dark:text-slate-400" />
             </Button>
             
-            <div className="flex items-center bg-slate-50 rounded-2xl p-1">
+            <div className="flex items-center bg-slate-50 dark:bg-slate-800 rounded-2xl p-1">
               <Button 
                 variant="ghost" 
                 size="icon" 
                 onClick={() => setTheme('light')}
-                className={cn("h-9 w-9 rounded-xl", theme === 'light' && "bg-white text-primary shadow-sm")}
+                className={cn("h-9 w-9 rounded-xl transition-all", theme === 'light' && "bg-white dark:bg-slate-700 text-primary shadow-sm")}
               >
                 <Sun className="w-4 h-4" />
               </Button>
@@ -52,15 +52,15 @@ export function AppLayout({ children }: AppLayoutProps) {
                 variant="ghost" 
                 size="icon" 
                 onClick={() => setTheme('dark')}
-                className={cn("h-9 w-9 rounded-xl", theme === 'dark' && "bg-white text-primary shadow-sm")}
+                className={cn("h-9 w-9 rounded-xl transition-all", theme === 'dark' && "bg-white dark:bg-slate-700 text-primary shadow-sm")}
               >
                 <Moon className="w-4 h-4" />
               </Button>
             </div>
 
-            <Button variant="ghost" size="icon" className="h-11 w-11 rounded-2xl hover:bg-slate-50 overflow-hidden border-2 border-white shadow-sm">
-              <div className="w-full h-full bg-slate-100 flex items-center justify-center">
-                <User className="w-5 h-5 text-slate-400" />
+            <Button variant="ghost" size="icon" className="h-11 w-11 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800 overflow-hidden border-2 border-white dark:border-slate-700 shadow-sm">
+              <div className="w-full h-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+                <User className="w-5 h-5 text-slate-400 dark:text-slate-500" />
               </div>
             </Button>
           </div>
