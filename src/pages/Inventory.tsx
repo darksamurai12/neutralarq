@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { useApp } from '@/contexts/AppContext';
-import { Package, Plus, Search, Filter, MoreHorizontal, Pencil, Trash2, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { Package, Plus, Search, MoreHorizontal, Pencil, Trash2, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -23,7 +23,15 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { InventoryStats } from '@/components/inventory/InventoryStats';
+import { InventoryFormDialog } from '@/components/inventory/InventoryFormDialog';
 import { InventoryItem, InventoryCategory } from '@/types';
 import { formatCurrency } from '@/lib/currency';
 import { cn } from '@/lib/utils';
@@ -36,9 +44,26 @@ const categoryLabels: Record<InventoryCategory, string> = {
 };
 
 export default function Inventory() {
-  const { inventory, deleteInventoryItem, adjustStock } = useApp();
+  const { inventory, addInventoryItem, updateInventoryItem, deleteInventoryItem, adjustStock } = useApp();
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<InventoryCategory | 'all'>('all');
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
+
+  const handleFormSubmit = (data: any) => {
+    if (editingItem) {
+      updateInventoryItem(editingItem.id, data);
+    } else {
+      addInventoryItem(data);
+    }
+    setIsFormOpen(false);
+    setEditingItem(null);
+  };
+
+  const handleEdit = (item: InventoryItem) => {
+    setEditingItem(item);
+    setIsFormOpen(true);
+  };
 
   const filteredItems = inventory.filter(item => {
     const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -54,7 +79,10 @@ export default function Inventory() {
         description="Gestão de stock, materiais e ferramentas"
         icon={Package}
       >
-        <Button className="gap-2 shadow-lg hover:shadow-xl transition-all duration-300">
+        <Button 
+          className="gap-2 shadow-lg hover:shadow-xl transition-all duration-300"
+          onClick={() => { setEditingItem(null); setIsFormOpen(true); }}
+        >
           <Plus className="w-4 h-4" />
           Novo Item
         </Button>
@@ -74,11 +102,19 @@ export default function Inventory() {
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            <div className="flex gap-2">
-              <Button variant="outline" className="gap-2">
-                <Filter className="w-4 h-4" />
-                Categorias
-              </Button>
+            <div className="w-full sm:w-48">
+              <Select value={categoryFilter} onValueChange={(v: any) => setCategoryFilter(v)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Categoria" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas as Categorias</SelectItem>
+                  <SelectItem value="material">Material</SelectItem>
+                  <SelectItem value="ferramenta">Ferramenta</SelectItem>
+                  <SelectItem value="consumivel">Consumível</SelectItem>
+                  <SelectItem value="outro">Outro</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </CardContent>
@@ -157,7 +193,7 @@ export default function Inventory() {
                             <ArrowDownRight className="w-4 h-4 mr-2 text-rose-500" />
                             Saída (-1)
                           </DropdownMenuItem>
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleEdit(item)}>
                             <Pencil className="w-4 h-4 mr-2" />
                             Editar
                           </DropdownMenuItem>
@@ -175,6 +211,13 @@ export default function Inventory() {
           </Table>
         </CardContent>
       </Card>
+
+      <InventoryFormDialog
+        open={isFormOpen}
+        onOpenChange={setIsFormOpen}
+        editingItem={editingItem}
+        onSubmit={handleFormSubmit}
+      />
     </AppLayout>
   );
 }
