@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useMemo, useEffect } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { CalendarEvent, CalendarEventType, CalendarView } from '@/types';
@@ -45,7 +47,6 @@ import {
   Trash2,
   CheckCircle2,
   Circle,
-  Handshake,
   MoreHorizontal,
 } from 'lucide-react';
 import {
@@ -76,18 +77,18 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-const eventTypeConfig: Record<CalendarEventType, { label: string; icon: typeof CalendarDays; color: string; bgClass: string }> = {
-  meeting: { label: 'Reunião', icon: Users, color: 'text-blue-600', bgClass: 'bg-blue-500' },
-  call: { label: 'Chamada', icon: Phone, color: 'text-emerald-600', bgClass: 'bg-emerald-500' },
-  follow_up: { label: 'Acompanhamento', icon: Target, color: 'text-purple-600', bgClass: 'bg-purple-500' },
-  deadline: { label: 'Prazo', icon: Clock, color: 'text-rose-600', bgClass: 'bg-rose-500' },
-  other: { label: 'Outro', icon: CalendarDays, color: 'text-slate-600', bgClass: 'bg-slate-500' },
+const eventTypeConfig: Record<CalendarEventType, { label: string; icon: typeof CalendarDays; color: string; bgClass: string; pastelClass: string }> = {
+  meeting: { label: 'Reunião', icon: Users, color: 'text-blue-600', bgClass: 'bg-blue-500', pastelClass: 'bg-blue-50 border-blue-100' },
+  call: { label: 'Chamada', icon: Phone, color: 'text-emerald-600', bgClass: 'bg-emerald-500', pastelClass: 'bg-emerald-50 border-emerald-100' },
+  follow_up: { label: 'Acompanhamento', icon: Target, color: 'text-purple-600', bgClass: 'bg-purple-500', pastelClass: 'bg-purple-50 border-purple-100' },
+  deadline: { label: 'Prazo', icon: Clock, color: 'text-rose-600', bgClass: 'bg-rose-500', pastelClass: 'bg-rose-50 border-rose-100' },
+  other: { label: 'Outro', icon: CalendarDays, color: 'text-slate-600', bgClass: 'bg-slate-500', pastelClass: 'bg-slate-50 border-slate-100' },
 };
 
 const reminderOptions = [
   { value: '0', label: 'Sem lembrete' },
-  { value: '15', label: '15 minutos antes' },
-  { value: '30', label: '30 minutos antes' },
+  { value: '15', label: '15 min antes' },
+  { value: '30', label: '30 min antes' },
   { value: '60', label: '1 hora antes' },
   { value: '1440', label: '1 dia antes' },
 ];
@@ -108,7 +109,6 @@ const emptyFormData = {
 export function CRMCalendar() {
   const { 
     clients, 
-    deals, 
     calendarEvents,
     addCalendarEvent, 
     updateCalendarEvent, 
@@ -116,7 +116,6 @@ export function CRMCalendar() {
     getEventsForDay,
     getEventsForWeek,
     getEventsForMonth,
-    getUpcomingEvents,
   } = useApp();
 
   const isMobile = useIsMobile();
@@ -125,15 +124,10 @@ export function CRMCalendar() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
   const [formData, setFormData] = useState(emptyFormData);
-  const [selectedDay, setSelectedDay] = useState<Date | null>(null);
 
-  // Auto-switch to day view on mobile
   useEffect(() => {
-    if (isMobile) {
-      setView('day');
-    } else {
-      setView('month');
-    }
+    if (isMobile) setView('day');
+    else setView('month');
   }, [isMobile]);
 
   const navigatePrevious = () => {
@@ -164,15 +158,9 @@ export function CRMCalendar() {
     return eachDayOfInterval({ start: calendarStart, end: calendarEnd });
   }, [currentDate]);
 
-  const weekDays = useMemo(() => {
-    const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
-    const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
-    return eachDayOfInterval({ start: weekStart, end: weekEnd });
-  }, [currentDate]);
-
   const hours = Array.from({ length: 14 }, (_, i) => i + 7); // 7am to 8pm
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const eventData = {
       ...formData,
@@ -182,9 +170,9 @@ export function CRMCalendar() {
     };
     
     if (editingEvent) {
-      updateCalendarEvent(editingEvent.id, eventData);
+      await updateCalendarEvent(editingEvent.id, eventData);
     } else {
-      addCalendarEvent(eventData);
+      await addCalendarEvent(eventData);
     }
     resetForm();
   };
@@ -213,20 +201,16 @@ export function CRMCalendar() {
   };
 
   const handleDayClick = (day: Date) => {
-    setSelectedDay(day);
     setFormData({
       ...emptyFormData,
       startDate: setHours(setMinutes(day, 0), 9),
       endDate: setHours(setMinutes(day, 0), 10),
     });
+    setIsDialogOpen(true);
   };
 
-  const toggleEventComplete = (event: CalendarEvent) => {
-    updateCalendarEvent(event.id, { completed: !event.completed });
-  };
-
-  const getEventsForDayLocal = (day: Date) => {
-    return calendarEvents.filter(e => isSameDay(new Date(e.startDate), day));
+  const toggleEventComplete = async (event: CalendarEvent) => {
+    await updateCalendarEvent(event.id, { completed: !event.completed });
   };
 
   const getClientName = (clientId: string | null) => {
@@ -234,15 +218,8 @@ export function CRMCalendar() {
     return clients.find(c => c.id === clientId)?.name;
   };
 
-  const getDealTitle = (dealId: string | null) => {
-    if (!dealId) return null;
-    return deals.find(d => d.id === dealId)?.title;
-  };
-
-  const upcomingEvents = getUpcomingEvents(5);
-
   const getViewTitle = () => {
-    if (view === 'day') return format(currentDate, "d 'de' MMM", { locale: ptBR });
+    if (view === 'day') return format(currentDate, "d 'de' MMMM", { locale: ptBR });
     if (view === 'week') {
       const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
       const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
@@ -260,9 +237,10 @@ export function CRMCalendar() {
       return (
         <div 
           className={cn(
-            'text-[10px] px-1 py-0.5 rounded truncate text-white cursor-pointer hover:opacity-80 transition-opacity',
-            config.bgClass,
-            event.completed && 'opacity-50 line-through'
+            'text-[10px] px-1.5 py-0.5 rounded-md truncate cursor-pointer hover:brightness-95 transition-all border shadow-sm',
+            config.pastelClass,
+            config.color,
+            event.completed && 'opacity-50 line-through grayscale'
           )}
           onClick={(e) => { e.stopPropagation(); handleEdit(event); }}
         >
@@ -274,14 +252,14 @@ export function CRMCalendar() {
     return (
       <Card className={cn(
         'group border-l-4 shadow-sm hover:shadow-md transition-all duration-200',
-        event.completed && 'opacity-60'
+        event.completed && 'opacity-60 grayscale'
       )} style={{ borderLeftColor: config.bgClass.replace('bg-', '') }}>
         <CardContent className="p-3">
           <div className="flex items-start justify-between gap-2">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
                 <button 
-                  onClick={() => toggleEventComplete(event)}
+                  onClick={(e) => { e.stopPropagation(); toggleEventComplete(event); }}
                   className="flex-shrink-0"
                 >
                   {event.completed ? (
@@ -291,7 +269,7 @@ export function CRMCalendar() {
                   )}
                 </button>
                 <span className={cn(
-                  'font-medium text-sm truncate',
+                  'font-semibold text-sm truncate text-slate-700',
                   event.completed && 'line-through text-muted-foreground'
                 )}>
                   {event.title}
@@ -310,9 +288,9 @@ export function CRMCalendar() {
             </div>
 
             <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-6 w-6">
-                  <MoreHorizontal className="w-3 h-3" />
+              <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <MoreHorizontal className="w-4 h-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
@@ -336,75 +314,92 @@ export function CRMCalendar() {
   };
 
   return (
-    <div className="space-y-4 md:space-y-6">
-      {/* Stats Cards - Hidden on very small screens or adjusted */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-        <Card className="border-0 bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg p-4">
-          <p className="text-blue-100 text-[10px] md:text-xs font-medium uppercase">Hoje</p>
-          <p className="text-xl md:text-3xl font-bold">{getEventsForDay(new Date()).length}</p>
-        </Card>
+    <div className="space-y-6">
+      {/* Stats Cards - Pastel Theme */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="rounded-2xl p-5 bg-pastel-sky transition-all duration-300 hover:shadow-glass hover:-translate-y-0.5">
+          <div className="flex items-center justify-between mb-3">
+            <div className="h-10 w-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center">
+              <CalendarDays className="w-5 h-5" />
+            </div>
+          </div>
+          <p className="text-xs font-medium text-muted-foreground mb-1">Hoje</p>
+          <p className="text-xl font-bold text-foreground tracking-tight">{getEventsForDay(new Date()).length}</p>
+        </div>
 
-        <Card className="border-0 bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-lg p-4">
-          <p className="text-emerald-100 text-[10px] md:text-xs font-medium uppercase">Semana</p>
-          <p className="text-xl md:text-3xl font-bold">{getEventsForWeek(new Date()).length}</p>
-        </Card>
+        <div className="rounded-2xl p-5 bg-pastel-mint transition-all duration-300 hover:shadow-glass hover:-translate-y-0.5">
+          <div className="flex items-center justify-between mb-3">
+            <div className="h-10 w-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center">
+              <Users className="w-5 h-5" />
+            </div>
+          </div>
+          <p className="text-xs font-medium text-muted-foreground mb-1">Semana</p>
+          <p className="text-xl font-bold text-foreground tracking-tight">{getEventsForWeek(new Date()).length}</p>
+        </div>
 
-        {!isMobile && (
-          <>
-            <Card className="border-0 bg-gradient-to-br from-purple-500 to-purple-600 text-white shadow-lg p-4">
-              <p className="text-purple-100 text-xs font-medium uppercase">Mês</p>
-              <p className="text-3xl font-bold">{getEventsForMonth(new Date()).length}</p>
-            </Card>
-            <Card className="border-0 bg-gradient-to-br from-amber-500 to-amber-600 text-white shadow-lg p-4">
-              <p className="text-amber-100 text-xs font-medium uppercase">Lembretes</p>
-              <p className="text-3xl font-bold">{calendarEvents.filter(e => e.reminder && !e.completed).length}</p>
-            </Card>
-          </>
-        )}
+        <div className="rounded-2xl p-5 bg-pastel-lavender transition-all duration-300 hover:shadow-glass hover:-translate-y-0.5">
+          <div className="flex items-center justify-between mb-3">
+            <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+              <Target className="w-5 h-5" />
+            </div>
+          </div>
+          <p className="text-xs font-medium text-muted-foreground mb-1">Mês</p>
+          <p className="text-xl font-bold text-foreground tracking-tight">{getEventsForMonth(new Date()).length}</p>
+        </div>
+
+        <div className="rounded-2xl p-5 bg-pastel-amber transition-all duration-300 hover:shadow-glass hover:-translate-y-0.5">
+          <div className="flex items-center justify-between mb-3">
+            <div className="h-10 w-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center">
+              <Bell className="w-5 h-5" />
+            </div>
+          </div>
+          <p className="text-xs font-medium text-muted-foreground mb-1">Lembretes</p>
+          <p className="text-xl font-bold text-foreground tracking-tight">{calendarEvents.filter(e => e.reminder && !e.completed).length}</p>
+        </div>
       </div>
 
       {/* Calendar Header */}
-      <Card className="shadow-lg border-0">
-        <CardContent className="p-3 md:p-4">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-            <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-start">
-              <div className="flex items-center gap-1">
-                <Button variant="outline" size="icon" className="h-8 w-8" onClick={navigatePrevious}>
+      <Card className="shadow-card border-none rounded-2xl">
+        <CardContent className="p-4">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-start">
+              <div className="flex items-center gap-1 bg-slate-50 p-1 rounded-xl border border-slate-100">
+                <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg" onClick={navigatePrevious}>
                   <ChevronLeft className="w-4 h-4" />
                 </Button>
-                <Button variant="outline" size="sm" className="h-8" onClick={goToToday}>Hoje</Button>
-                <Button variant="outline" size="icon" className="h-8 w-8" onClick={navigateNext}>
+                <Button variant="ghost" size="sm" className="h-9 px-4 font-semibold text-slate-600" onClick={goToToday}>Hoje</Button>
+                <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg" onClick={navigateNext}>
                   <ChevronRight className="w-4 h-4" />
                 </Button>
               </div>
-              <h2 className="text-sm md:text-lg font-semibold capitalize truncate">{getViewTitle()}</h2>
+              <h2 className="text-lg font-bold text-slate-800 capitalize">{getViewTitle()}</h2>
             </div>
 
-            <div className="flex items-center gap-2 w-full sm:w-auto">
-              <div className="flex flex-1 rounded-lg border overflow-hidden">
+            <div className="flex items-center gap-3 w-full sm:w-auto">
+              <div className="flex bg-slate-50 p-1 rounded-xl border border-slate-100 flex-1 sm:flex-none">
                 <Button 
-                  variant={view === 'day' ? 'default' : 'ghost'} 
+                  variant={view === 'day' ? 'secondary' : 'ghost'} 
                   size="sm"
                   onClick={() => setView('day')}
-                  className="flex-1 rounded-none h-8 text-xs"
+                  className={cn("flex-1 rounded-lg h-9 text-xs font-bold", view === 'day' && "bg-white shadow-sm")}
                 >
                   Dia
                 </Button>
                 {!isMobile && (
                   <>
                     <Button 
-                      variant={view === 'week' ? 'default' : 'ghost'} 
+                      variant={view === 'week' ? 'secondary' : 'ghost'} 
                       size="sm"
                       onClick={() => setView('week')}
-                      className="flex-1 rounded-none h-8 text-xs"
+                      className={cn("flex-1 rounded-lg h-9 text-xs font-bold", view === 'week' && "bg-white shadow-sm")}
                     >
                       Semana
                     </Button>
                     <Button 
-                      variant={view === 'month' ? 'default' : 'ghost'} 
+                      variant={view === 'month' ? 'secondary' : 'ghost'} 
                       size="sm"
                       onClick={() => setView('month')}
-                      className="flex-1 rounded-none h-8 text-xs"
+                      className={cn("flex-1 rounded-lg h-9 text-xs font-bold", view === 'month' && "bg-white shadow-sm")}
                     >
                       Mês
                     </Button>
@@ -414,23 +409,24 @@ export function CRMCalendar() {
 
               <Dialog open={isDialogOpen} onOpenChange={(open) => { setIsDialogOpen(open); if (!open) resetForm(); }}>
                 <DialogTrigger asChild>
-                  <Button size="sm" className="h-8 gap-1 text-xs">
-                    <Plus className="w-3 h-3" />
-                    Novo
+                  <Button className="h-11 gap-2 rounded-xl shadow-lg hover:shadow-xl transition-all">
+                    <Plus className="w-4 h-4" />
+                    Novo Evento
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
+                <DialogContent className="sm:max-w-xl">
                   <DialogHeader>
-                    <DialogTitle>{editingEvent ? 'Editar Evento' : 'Novo Evento'}</DialogTitle>
+                    <DialogTitle className="text-xl font-bold">{editingEvent ? 'Editar Evento' : 'Novo Evento'}</DialogTitle>
                   </DialogHeader>
                   <form onSubmit={handleSubmit} className="space-y-4 mt-4">
                     <div className="space-y-2">
-                      <Label htmlFor="title">Título *</Label>
+                      <Label htmlFor="title">Título do Evento *</Label>
                       <Input
                         id="title"
                         value={formData.title}
                         onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                        placeholder="Nome do evento"
+                        placeholder="Ex: Reunião de Projecto"
+                        className="h-11 rounded-xl"
                         required
                       />
                     </div>
@@ -442,7 +438,7 @@ export function CRMCalendar() {
                           value={formData.type}
                           onValueChange={(value: CalendarEventType) => setFormData({ ...formData, type: value })}
                         >
-                          <SelectTrigger>
+                          <SelectTrigger className="h-11 rounded-xl">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -464,7 +460,7 @@ export function CRMCalendar() {
                           value={formData.reminder?.toString() || '0'}
                           onValueChange={(value) => setFormData({ ...formData, reminder: value === '0' ? null : parseInt(value) })}
                         >
-                          <SelectTrigger>
+                          <SelectTrigger className="h-11 rounded-xl">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -476,21 +472,21 @@ export function CRMCalendar() {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100">
                       <Switch
                         id="allDay"
                         checked={formData.allDay}
                         onCheckedChange={(checked) => setFormData({ ...formData, allDay: checked })}
                       />
-                      <Label htmlFor="allDay">Dia inteiro</Label>
+                      <Label htmlFor="allDay" className="font-semibold text-slate-600">Evento de dia inteiro</Label>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label>Data Início</Label>
+                        <Label>Data</Label>
                         <Popover>
                           <PopoverTrigger asChild>
-                            <Button variant="outline" className="w-full justify-start text-left font-normal">
+                            <Button variant="outline" className="w-full h-11 justify-start text-left font-normal rounded-xl">
                               <CalendarIcon className="mr-2 h-4 w-4" />
                               {format(formData.startDate, 'dd/MM/yyyy')}
                             </Button>
@@ -508,10 +504,11 @@ export function CRMCalendar() {
 
                       {!formData.allDay && (
                         <div className="space-y-2">
-                          <Label>Hora Início</Label>
+                          <Label>Hora</Label>
                           <Input
                             type="time"
                             value={format(formData.startDate, 'HH:mm')}
+                            className="h-11 rounded-xl"
                             onChange={(e) => {
                               const [hours, minutes] = e.target.value.split(':').map(Number);
                               setFormData({ 
@@ -525,22 +522,23 @@ export function CRMCalendar() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="description">Descrição</Label>
+                      <Label htmlFor="description">Descrição / Notas</Label>
                       <Textarea
                         id="description"
                         value={formData.description}
                         onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                        placeholder="Detalhes do evento..."
+                        placeholder="Detalhes adicionais..."
+                        className="rounded-xl resize-none"
                         rows={3}
                       />
                     </div>
 
-                    <div className="flex justify-end gap-2 pt-4">
-                      <Button type="button" variant="outline" onClick={resetForm}>
+                    <div className="flex justify-end gap-3 pt-4">
+                      <Button type="button" variant="outline" className="h-11 rounded-xl px-6" onClick={resetForm}>
                         Cancelar
                       </Button>
-                      <Button type="submit">
-                        {editingEvent ? 'Guardar' : 'Criar'}
+                      <Button type="submit" className="h-11 rounded-xl px-8">
+                        {editingEvent ? 'Guardar Alterações' : 'Criar Evento'}
                       </Button>
                     </div>
                   </form>
@@ -554,13 +552,13 @@ export function CRMCalendar() {
       {/* Calendar Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         <div className="lg:col-span-3">
-          <Card className="shadow-lg border-0">
+          <Card className="shadow-card border-none rounded-3xl overflow-hidden">
             <CardContent className="p-0">
               {view === 'month' && !isMobile && (
-                <div className="divide-y">
-                  <div className="grid grid-cols-7 bg-muted/50">
+                <div className="divide-y divide-slate-100">
+                  <div className="grid grid-cols-7 bg-slate-50/50">
                     {['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'].map((day) => (
-                      <div key={day} className="py-3 text-center text-sm font-medium text-muted-foreground">
+                      <div key={day} className="py-4 text-center text-xs font-bold uppercase tracking-widest text-slate-400">
                         {day}
                       </div>
                     ))}
@@ -568,29 +566,34 @@ export function CRMCalendar() {
 
                   <div className="grid grid-cols-7">
                     {calendarDays.map((day, idx) => {
-                      const dayEvents = getEventsForDayLocal(day);
+                      const dayEvents = calendarEvents.filter(e => isSameDay(new Date(e.startDate), day));
                       const isCurrentMonth = isSameMonth(day, currentDate);
                       
                       return (
                         <div
                           key={idx}
                           className={cn(
-                            'min-h-[100px] p-2 border-r border-b cursor-pointer hover:bg-muted/30 transition-colors',
-                            !isCurrentMonth && 'bg-muted/20 text-muted-foreground',
+                            'min-h-[120px] p-2 border-r border-b border-slate-50 cursor-pointer hover:bg-slate-50/50 transition-colors group',
+                            !isCurrentMonth && 'bg-slate-50/20 text-slate-300',
                             isToday(day) && 'bg-primary/5'
                           )}
                           onClick={() => handleDayClick(day)}
                         >
                           <div className={cn(
-                            'text-sm font-medium mb-1 w-7 h-7 flex items-center justify-center rounded-full',
-                            isToday(day) && 'bg-primary text-primary-foreground'
+                            'text-sm font-bold mb-2 w-8 h-8 flex items-center justify-center rounded-xl transition-all',
+                            isToday(day) ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-slate-500 group-hover:text-primary'
                           )}>
                             {format(day, 'd')}
                           </div>
-                          <div className="space-y-1">
+                          <div className="space-y-1.5">
                             {dayEvents.slice(0, 3).map((event) => (
                               <EventCard key={event.id} event={event} compact />
                             ))}
+                            {dayEvents.length > 3 && (
+                              <p className="text-[10px] font-bold text-slate-400 pl-1">
+                                + {dayEvents.length - 3} mais
+                              </p>
+                            )}
                           </div>
                         </div>
                       );
@@ -600,21 +603,18 @@ export function CRMCalendar() {
               )}
 
               {view === 'day' && (
-                <div className="divide-y">
-                  <div className="max-h-[600px] overflow-y-auto custom-scrollbar">
+                <div className="divide-y divide-slate-100">
+                  <div className="max-h-[700px] overflow-y-auto custom-scrollbar">
                     {hours.map((hour) => {
-                      const hourEvents = displayedEvents.filter(e => {
-                        const eventHour = getHours(new Date(e.startDate));
-                        return eventHour === hour;
-                      });
+                      const hourEvents = displayedEvents.filter(e => getHours(new Date(e.startDate)) === hour);
                       
                       return (
-                        <div key={hour} className="grid grid-cols-12 border-b hover:bg-muted/30 transition-colors">
-                          <div className="col-span-2 md:col-span-1 py-4 px-2 text-right text-xs md:text-sm text-muted-foreground">
+                        <div key={hour} className="grid grid-cols-12 border-b border-slate-50 hover:bg-slate-50/30 transition-colors">
+                          <div className="col-span-2 md:col-span-1 py-6 px-2 text-right text-xs font-bold text-slate-400">
                             {hour.toString().padStart(2, '0')}:00
                           </div>
                           <div 
-                            className="col-span-10 md:col-span-11 py-2 px-2 min-h-[80px] cursor-pointer"
+                            className="col-span-10 md:col-span-11 py-3 px-4 min-h-[100px] cursor-pointer"
                             onClick={() => {
                               setFormData({
                                 ...emptyFormData,
@@ -624,7 +624,7 @@ export function CRMCalendar() {
                               setIsDialogOpen(true);
                             }}
                           >
-                            <div className="space-y-2">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                               {hourEvents.map((event) => (
                                 <EventCard key={event.id} event={event} />
                               ))}
@@ -640,37 +640,53 @@ export function CRMCalendar() {
           </Card>
         </div>
 
-        {/* Sidebar - Upcoming Events - Hidden on mobile to save space */}
+        {/* Sidebar - Mini Calendar & Upcoming */}
         {!isMobile && (
           <div className="space-y-6">
-            <Card className="shadow-lg border-0">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Clock className="w-5 h-5 text-primary" />
-                  Próximos
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {upcomingEvents.length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-4">
-                    Nenhum evento próximo
-                  </p>
-                ) : (
-                  upcomingEvents.map((event) => (
-                    <EventCard key={event.id} event={event} />
-                  ))
-                )}
-              </CardContent>
-            </Card>
-
-            <Card className="shadow-lg border-0">
+            <Card className="shadow-card border-none rounded-3xl overflow-hidden">
               <CardContent className="p-2">
                 <Calendar
                   mode="single"
                   selected={currentDate}
                   onSelect={(date) => date && setCurrentDate(date)}
-                  className="rounded-md"
+                  className="rounded-2xl"
+                  locale={ptBR}
                 />
+              </CardContent>
+            </Card>
+
+            <Card className="shadow-card border-none rounded-3xl bg-pastel-lavender/30">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-primary" />
+                  Próximos Compromissos
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {calendarEvents
+                  .filter(e => !e.completed && new Date(e.startDate) >= new Date())
+                  .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
+                  .slice(0, 4)
+                  .map((event) => (
+                    <div 
+                      key={event.id}
+                      className="p-3 rounded-2xl bg-white shadow-sm border border-slate-100 cursor-pointer hover:border-primary/20 transition-all"
+                      onClick={() => handleEdit(event)}
+                    >
+                      <p className="text-xs font-bold text-slate-700 truncate">{event.title}</p>
+                      <div className="flex items-center justify-between mt-2">
+                        <span className="text-[10px] text-slate-400 font-medium">
+                          {format(new Date(event.startDate), "d 'de' MMM", { locale: ptBR })}
+                        </span>
+                        <Badge variant="outline" className={cn("text-[9px] px-1.5 py-0 border-none", eventTypeConfig[event.type].pastelClass, eventTypeConfig[event.type].color)}>
+                          {eventTypeConfig[event.type].label}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))}
+                {calendarEvents.filter(e => !e.completed && new Date(e.startDate) >= new Date()).length === 0 && (
+                  <p className="text-xs text-slate-400 text-center py-6 italic">Nenhum evento agendado</p>
+                )}
               </CardContent>
             </Card>
           </div>
