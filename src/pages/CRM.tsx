@@ -75,7 +75,7 @@ export default function CRM() {
       >
         {activeTab === 'clients' && (
           <Button 
-            className="w-full md:w-auto gap-2 shadow-lg hover:shadow-xl transition-all duration-300"
+            className="gap-2 shadow-lg hover:shadow-xl transition-all duration-300"
             onClick={() => { setEditingClient(null); setIsFormOpen(true); }}
           >
             <Plus className="w-4 h-4" />
@@ -85,12 +85,12 @@ export default function CRM() {
       </PageHeader>
 
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'clients' | 'pipeline')} className="mb-6">
-        <TabsList className="grid w-full max-w-sm grid-cols-2 rounded-xl bg-muted/50 p-1">
-          <TabsTrigger value="clients" className="gap-2 rounded-lg data-[state=active]:shadow-sm">
+        <TabsList className="grid w-full max-w-sm grid-cols-2 rounded-xl">
+          <TabsTrigger value="clients" className="gap-2 rounded-lg">
             <Users className="w-4 h-4" />
             Clientes
           </TabsTrigger>
-          <TabsTrigger value="pipeline" className="gap-2 rounded-lg data-[state=active]:shadow-sm">
+          <TabsTrigger value="pipeline" className="gap-2 rounded-lg">
             <Handshake className="w-4 h-4" />
             Pipeline
           </TabsTrigger>
@@ -110,7 +110,7 @@ export default function CRM() {
             onStatusChange={setStatusFilter} 
           />
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredClients.map((client) => (
               <ClientCard 
                 key={client.id}

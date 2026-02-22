@@ -26,34 +26,36 @@ export function WelcomeHeader() {
   const firstName = profile?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || 'Utilizador';
   const initials = profile?.full_name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'U';
   
+  // Seleciona uma frase baseada no dia do mês para ser consistente durante o dia
   const quoteIndex = new Date().getDate() % quotes.length;
   const quoteOfDay = quotes[quoteIndex];
 
   return (
-    <div className="flex flex-col lg:flex-row items-center justify-between gap-6 mb-8 md:mb-10 p-4 md:p-6 rounded-3xl bg-gradient-to-r from-primary/5 to-transparent border border-primary/10">
-      <div className="flex flex-col sm:flex-row items-center gap-4 md:gap-5 text-center sm:text-left">
-        <Avatar className="h-16 w-16 md:h-20 md:w-20 rounded-2xl border-4 border-white dark:border-slate-800 shadow-xl">
-          <AvatarFallback className="bg-primary text-white text-xl md:text-2xl font-bold rounded-2xl">
+    <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-10 p-6 rounded-3xl bg-gradient-to-r from-primary/5 to-transparent border border-primary/10">
+      <div className="flex items-center gap-5">
+        <Avatar className="h-20 w-20 rounded-2xl border-4 border-white dark:border-slate-800 shadow-xl">
+          <AvatarImage src="" /> {/* Espaço para avatar_url se existir no futuro */}
+          <AvatarFallback className="bg-primary text-white text-2xl font-bold rounded-2xl">
             {initials}
           </AvatarFallback>
         </Avatar>
         
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-slate-800 dark:text-white tracking-tight">
+        <div className="text-left">
+          <h1 className="text-3xl font-bold text-slate-800 dark:text-white tracking-tight">
             {greeting}, <span className="text-primary">{firstName}</span>!
           </h1>
-          <p className="text-slate-500 dark:text-slate-400 mt-1 font-medium text-sm md:text-base">
+          <p className="text-slate-500 dark:text-slate-400 mt-1 font-medium">
             {format(new Date(), "EEEE, d 'de' MMMM", { locale: ptBR })}
           </p>
         </div>
       </div>
 
-      <div className="w-full lg:max-w-md bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm p-4 rounded-2xl border border-white/20 dark:border-slate-700/50 shadow-sm">
+      <div className="flex-1 max-w-md bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm p-4 rounded-2xl border border-white/20 dark:border-slate-700/50 shadow-sm">
         <div className="flex items-center gap-2 mb-1 text-primary">
           <Sparkles className="w-4 h-4" />
           <span className="text-[10px] font-bold uppercase tracking-widest">Frase do Dia</span>
         </div>
-        <p className="text-xs md:text-sm italic text-slate-600 dark:text-slate-300 leading-relaxed">
+        <p className="text-sm italic text-slate-600 dark:text-slate-300 leading-relaxed">
           "{quoteOfDay}"
         </p>
       </div>

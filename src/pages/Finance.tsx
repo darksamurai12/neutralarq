@@ -71,6 +71,8 @@ import {
   Pie,
   Cell,
   Legend,
+  BarChart,
+  Bar,
 } from 'recharts';
 
 const typeOptions = [
@@ -100,7 +102,16 @@ const categoryIcons: Record<ExpenseCategory, React.ElementType> = {
   outros: HelpCircle,
 };
 
-const COLORS = ['hsl(217, 91%, 60%)', 'hsl(142, 76%, 36%)', 'hsl(38, 92%, 50%)', 'hsl(0, 84%, 60%)', 'hsl(280, 84%, 60%)'];
+const categoryColors: Record<ExpenseCategory, string> = {
+  alimentacao: 'hsl(38, 92%, 50%)',
+  transporte: 'hsl(217, 91%, 60%)',
+  material: 'hsl(142, 76%, 36%)',
+  servicos: 'hsl(280, 84%, 60%)',
+  equipamento: 'hsl(0, 84%, 60%)',
+  comunicacao: 'hsl(190, 80%, 45%)',
+  renda: 'hsl(340, 65%, 60%)',
+  outros: 'hsl(220, 10%, 50%)',
+};
 
 export default function Finance() {
   const { transactions, projects, clients, addTransaction, updateTransaction, deleteTransaction, getDashboardMetrics } = useApp();
@@ -191,9 +202,19 @@ export default function Finance() {
   const totalIncome = transactions.filter((t) => t.type === 'income').reduce((sum, t) => sum + t.value, 0);
   const totalExpenses = transactions.filter((t) => t.type === 'expense').reduce((sum, t) => sum + t.value, 0);
   const balance = totalIncome - totalExpenses;
+  const savingsRate = totalIncome > 0 ? ((balance / totalIncome) * 100).toFixed(1) : '0';
 
+  const cashflowIncome = cashflowTransactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.value, 0);
   const cashflowExpenses = cashflowTransactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.value, 0);
+  const cashflowBalance = cashflowIncome - cashflowExpenses;
   const cashflowTotal = cashflowExpenses;
+
+  const cashflowByCategory = Object.entries(categoryLabels).map(([key, label]) => {
+    const total = cashflowTransactions
+      .filter(t => t.category === key)
+      .reduce((sum, t) => sum + t.value, 0);
+    return { category: key as ExpenseCategory, label, value: total };
+  }).filter(c => c.value > 0);
 
   const areaChartData = dashboardMetrics.monthlyFlow.map(item => ({
     ...item,
@@ -206,19 +227,22 @@ export default function Finance() {
     return { name: project.name, value: total };
   }).filter(p => p.value > 0).slice(0, 5);
 
+  const COLORS = ['hsl(217, 91%, 60%)', 'hsl(142, 76%, 36%)', 'hsl(38, 92%, 50%)', 'hsl(0, 84%, 60%)', 'hsl(280, 84%, 60%)'];
+
   const renderTransactionRow = (transaction: Transaction, index: number) => {
     const project = projects.find((p) => p.id === transaction.projectId);
+    const client = clients.find((c) => c.id === transaction.clientId);
     const CategoryIcon = transaction.category ? categoryIcons[transaction.category] : null;
     
     return (
       <div
         key={transaction.id}
-        className="flex items-center justify-between p-3 md:p-4 hover:bg-muted/30 transition-all duration-200 group"
+        className="flex items-center justify-between p-4 hover:bg-muted/30 transition-all duration-200 group"
         style={{ animationDelay: `${index * 50}ms` }}
       >
-        <div className="flex items-center gap-3 md:gap-4">
+        <div className="flex items-center gap-4">
           <div className={cn(
-            'w-10 h-10 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110',
+            'w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110',
             transaction.type === 'income' 
               ? 'bg-gradient-to-br from-emerald-500/20 to-emerald-600/20' 
               : 'bg-gradient-to-br from-rose-500/20 to-rose-600/20'
@@ -230,7 +254,7 @@ export default function Finance() {
             )}
           </div>
           <div className="min-w-0">
-            <p className="font-medium text-foreground truncate max-w-[140px] xs:max-w-[200px] md:max-w-none">{transaction.description}</p>
+            <p className="font-medium text-foreground truncate max-w-[150px] md:max-w-none">{transaction.description}</p>
             <div className="flex items-center gap-2 text-[10px] md:text-xs text-muted-foreground mt-1 flex-wrap">
               <div className="flex items-center gap-1">
                 <Calendar className="w-3 h-3" />
@@ -296,7 +320,7 @@ export default function Finance() {
               Nova Transação
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogContent className="sm:max-w-md">
             <DialogHeader>
               <DialogTitle>{editingTransaction ? 'Editar Transação' : 'Nova Transação'}</DialogTitle>
             </DialogHeader>
@@ -311,7 +335,7 @@ export default function Finance() {
                   required
                 />
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="value">Valor (AOA)</Label>
                   <Input
@@ -452,7 +476,7 @@ export default function Finance() {
       </PageHeader>
 
       {/* Summary Cards - Responsive Grid */}
-      <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <div className="rounded-2xl p-5 bg-pastel-mint transition-all duration-300 hover:shadow-glass hover:-translate-y-0.5">
           <div className="flex items-center justify-between mb-3">
             <div className="h-10 w-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center">

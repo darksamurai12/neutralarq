@@ -35,8 +35,8 @@ export default function Dashboard() {
         icon={LayoutDashboard}
       />
 
-      {/* Stats Grid - Responsive Columns */}
-      <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+      {/* Stats Grid - Pastel Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
         <DashboardStatCard
           title="Clientes Activos"
           value={metrics.activeClients}
@@ -93,7 +93,7 @@ export default function Dashboard() {
         />
       </div>
 
-      {/* Charts Row - Stacks on mobile */}
+      {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         <Card className="shadow-card border-none rounded-2xl bg-pastel-lavender/30">
           <CardHeader className="pb-2">
