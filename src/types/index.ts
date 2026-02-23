@@ -210,6 +210,7 @@ export interface BudgetItem {
   unitCost: number;
   totalCost: number;
   profit: number;
+  marginPercent: number;
   groupName?: string;
 }
 

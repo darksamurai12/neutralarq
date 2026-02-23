@@ -18,7 +18,6 @@ export function usePricingDB() {
   };
 
   const fetchProducts = useCallback(async () => {
-    // Removido o filtro .eq('user_id', user.id)
     const { data, error } = await supabase.from('pricing_products').select('*').order('created_at', { ascending: false });
     if (!error && data) setProducts(data.map(p => ({
       id: p.id, name: p.name, description: p.description || '', basePrice: Number(p.base_price),
@@ -27,7 +26,6 @@ export function usePricingDB() {
   }, []);
 
   const fetchLabor = useCallback(async () => {
-    // Removido o filtro .eq('user_id', user.id)
     const { data, error } = await supabase.from('pricing_labor').select('*').order('created_at', { ascending: false });
     if (!error && data) setLabor(data.map(l => ({
       id: l.id, name: l.name, description: l.description || '', providerValue: Number(l.provider_value),
@@ -36,7 +34,6 @@ export function usePricingDB() {
   }, []);
 
   const fetchTransport = useCallback(async () => {
-    // Removido o filtro .eq('user_id', user.id)
     const { data, error } = await supabase.from('pricing_transport').select('*').order('created_at', { ascending: false });
     if (!error && data) setTransport(data.map(t => ({
       id: t.id, name: t.name, description: t.description || '', baseCost: Number(t.base_cost),
@@ -45,7 +42,6 @@ export function usePricingDB() {
   }, []);
 
   const fetchBudgets = useCallback(async () => {
-    // Removido o filtro .eq('user_id', user.id)
     const { data: budgetsData, error: budgetsError } = await supabase.from('budgets').select('*').order('created_at', { ascending: false });
     if (budgetsError) return;
 
@@ -56,6 +52,7 @@ export function usePricingDB() {
           id: item.id, type: item.type as any, itemId: item.item_id || '', name: item.name,
           quantity: Number(item.quantity), unitPrice: Number(item.unit_price), totalPrice: Number(item.total_price),
           unitCost: Number(item.unit_cost), totalCost: Number(item.total_cost), profit: Number(item.profit),
+          marginPercent: Number(item.margin_percent || 0),
           groupName: item.group_name || undefined,
         }));
 
@@ -79,7 +76,7 @@ export function usePricingDB() {
 
   const addProduct = async (product: any) => {
     if (!user) return;
-    const finalPrice = calculateFinalPrice(product.basePrice, product.margin_percent || product.marginPercent);
+    const finalPrice = calculateFinalPrice(product.basePrice, product.marginPercent);
     const { error } = await supabase.from('pricing_products').insert({
       user_id: user.id, name: product.name, description: product.description,
       base_price: product.basePrice, margin_percent: product.marginPercent, final_price: finalPrice,
@@ -122,7 +119,8 @@ export function usePricingDB() {
     const itemsToInsert = budget.items.map(item => ({
       budget_id: bData.id, type: item.type, item_id: item.itemId || null, name: item.name,
       quantity: item.quantity, unit_price: item.unitPrice, total_price: item.totalPrice,
-      unit_cost: item.unitCost, total_cost: item.totalCost, profit: item.profit, group_name: item.groupName || null,
+      unit_cost: item.unitCost, total_cost: item.totalCost, profit: item.profit, 
+      margin_percent: item.marginPercent, group_name: item.groupName || null,
     }));
 
     await supabase.from('budget_items').insert(itemsToInsert);
@@ -142,17 +140,30 @@ export function usePricingDB() {
     addLabor, updateLabor: async () => {}, deleteLabor: async () => {},
     addTransport, updateTransport: async () => {}, deleteTransport: async () => {},
     createBudget, updateBudget: async () => {}, deleteBudget,
-    createBudgetItem: (type: any, itemId: string, quantity: number): BudgetItem | null => {
+    createBudgetItem: (type: any, itemId: string, quantity: number, customMargin?: number): BudgetItem | null => {
       let item: any;
       if (type === 'product') item = products.find(p => p.id === itemId);
       else if (type === 'labor') item = labor.find(l => l.id === itemId);
       else item = transport.find(t => t.id === itemId);
+      
       if (!item) return null;
+      
       const unitCost = item.basePrice || item.providerValue || item.baseCost;
+      const margin = customMargin !== undefined ? customMargin : item.marginPercent;
+      const unitPrice = unitCost * (1 + margin / 100);
+      
       return {
-        id: crypto.randomUUID(), type, itemId, name: item.name, quantity, unitPrice: item.finalPrice,
-        totalPrice: item.finalPrice * quantity, unitCost, totalCost: unitCost * quantity,
-        profit: (item.finalPrice - unitCost) * quantity,
+        id: crypto.randomUUID(), 
+        type, 
+        itemId, 
+        name: item.name, 
+        quantity, 
+        unitPrice,
+        totalPrice: unitPrice * quantity, 
+        unitCost, 
+        totalCost: unitCost * quantity,
+        profit: (unitPrice - unitCost) * quantity,
+        marginPercent: margin,
       };
     },
     getPricingMetrics: () => ({ totalProducts: products.length, totalLabor: labor.length, totalTransport: transport.length, totalBudgets: budgets.length, approvedBudgets: budgets.filter(b => b.status === 'approved').length, totalBudgetValue: budgets.reduce((s, b) => s + b.totalValue, 0), totalProfit: budgets.reduce((s, b) => s + b.totalProfit, 0) }),
