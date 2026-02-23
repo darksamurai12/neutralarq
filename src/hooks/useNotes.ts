@@ -36,7 +36,11 @@ export function useNotes(userId: string | undefined) {
   }, [userId]);
 
   const addNote = async (note: Omit<Note, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => {
-    if (!userId) return;
+    if (!userId) {
+      toast.error('Utilizador não autenticado');
+      return;
+    }
+
     const { data, error } = await supabase
       .from('notes')
       .insert({
@@ -50,7 +54,8 @@ export function useNotes(userId: string | undefined) {
       .single();
 
     if (error) {
-      toast.error('Erro ao criar nota');
+      console.error('Erro detalhado ao criar nota:', error);
+      toast.error(`Erro ao criar nota: ${error.message}`);
     } else {
       setNotes(prev => [{
         id: data.id,
@@ -77,6 +82,7 @@ export function useNotes(userId: string | undefined) {
       .eq('id', id);
 
     if (error) {
+      console.error('Erro ao atualizar nota:', error);
       toast.error('Erro ao atualizar nota');
     } else {
       setNotes(prev => prev.map(n => n.id === id ? { ...n, ...updates, updatedAt: new Date() } : n));
@@ -90,6 +96,7 @@ export function useNotes(userId: string | undefined) {
       .eq('id', id);
 
     if (error) {
+      console.error('Erro ao eliminar nota:', error);
       toast.error('Erro ao eliminar nota');
     } else {
       setNotes(prev => prev.filter(n => n.id !== id));
