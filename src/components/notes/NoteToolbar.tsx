@@ -5,7 +5,8 @@ import {
   Bold, Italic, Underline, Strikethrough, 
   AlignLeft, AlignCenter, AlignRight, AlignJustify,
   List, ListOrdered, Heading1, Heading2, Type,
-  Highlighter, Eraser, ChevronDown, Baseline
+  Highlighter, Eraser, ChevronDown, Table as TableIcon,
+  Plus, Trash2, LayoutGrid, CheckSquare, Network
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -28,16 +29,19 @@ export function NoteToolbar({ editor }: NoteToolbarProps) {
     onClick, 
     isActive = false, 
     children, 
-    className = "" 
+    className = "",
+    disabled = false
   }: { 
     onClick: () => void; 
     isActive?: boolean; 
     children: React.ReactNode;
     className?: string;
+    disabled?: boolean;
   }) => (
     <Button
       variant="ghost"
       size="icon"
+      disabled={disabled}
       onClick={(e) => { e.preventDefault(); onClick(); }}
       className={cn(
         "h-8 w-8 rounded-md transition-colors",
@@ -56,37 +60,13 @@ export function NoteToolbar({ editor }: NoteToolbarProps) {
         {/* Secção: Tipo de Letra */}
         <div className="flex flex-col items-center px-2 border-r border-slate-200">
           <div className="flex items-center gap-0.5">
-            <ToolbarButton 
-              onClick={() => editor.chain().focus().toggleBold().run()}
-              isActive={editor.isActive('bold')}
-            >
-              <Bold className="w-4 h-4" />
-            </ToolbarButton>
-            <ToolbarButton 
-              onClick={() => editor.chain().focus().toggleItalic().run()}
-              isActive={editor.isActive('italic')}
-            >
-              <Italic className="w-4 h-4" />
-            </ToolbarButton>
-            <ToolbarButton 
-              onClick={() => editor.chain().focus().toggleUnderline().run()}
-              isActive={editor.isActive('underline')}
-            >
-              <Underline className="w-4 h-4" />
-            </ToolbarButton>
-            <ToolbarButton 
-              onClick={() => editor.chain().focus().toggleStrike().run()}
-              isActive={editor.isActive('strike')}
-            >
-              <Strikethrough className="w-4 h-4" />
-            </ToolbarButton>
+            <ToolbarButton onClick={() => editor.chain().focus().toggleBold().run()} isActive={editor.isActive('bold')}><Bold className="w-4 h-4" /></ToolbarButton>
+            <ToolbarButton onClick={() => editor.chain().focus().toggleItalic().run()} isActive={editor.isActive('italic')}><Italic className="w-4 h-4" /></ToolbarButton>
+            <ToolbarButton onClick={() => editor.chain().focus().toggleUnderline().run()} isActive={editor.isActive('underline')}><Underline className="w-4 h-4" /></ToolbarButton>
+            <ToolbarButton onClick={() => editor.chain().focus().toggleStrike().run()} isActive={editor.isActive('strike')}><Strikethrough className="w-4 h-4" /></ToolbarButton>
             <Separator orientation="vertical" className="h-6 mx-1" />
-            <ToolbarButton onClick={() => editor.chain().focus().toggleHighlight().run()} isActive={editor.isActive('highlight')}>
-              <Highlighter className="w-4 h-4" />
-            </ToolbarButton>
-            <ToolbarButton onClick={() => editor.chain().focus().unsetAllMarks().run()}>
-              <Eraser className="w-4 h-4" />
-            </ToolbarButton>
+            <ToolbarButton onClick={() => editor.chain().focus().toggleHighlight().run()} isActive={editor.isActive('highlight')}><Highlighter className="w-4 h-4" /></ToolbarButton>
+            <ToolbarButton onClick={() => editor.chain().focus().unsetAllMarks().run()}><Eraser className="w-4 h-4" /></ToolbarButton>
           </div>
           <span className="text-[9px] font-bold text-slate-400 uppercase mt-1">Tipo de Letra</span>
         </div>
@@ -94,72 +74,75 @@ export function NoteToolbar({ editor }: NoteToolbarProps) {
         {/* Secção: Parágrafo */}
         <div className="flex flex-col items-center px-2 border-r border-slate-200">
           <div className="flex items-center gap-0.5">
-            <ToolbarButton 
-              onClick={() => editor.chain().focus().setTextAlign('left').run()}
-              isActive={editor.isActive({ textAlign: 'left' })}
-            >
-              <AlignLeft className="w-4 h-4" />
-            </ToolbarButton>
-            <ToolbarButton 
-              onClick={() => editor.chain().focus().setTextAlign('center').run()}
-              isActive={editor.isActive({ textAlign: 'center' })}
-            >
-              <AlignCenter className="w-4 h-4" />
-            </ToolbarButton>
-            <ToolbarButton 
-              onClick={() => editor.chain().focus().setTextAlign('right').run()}
-              isActive={editor.isActive({ textAlign: 'right' })}
-            >
-              <AlignRight className="w-4 h-4" />
-            </ToolbarButton>
-            <ToolbarButton 
-              onClick={() => editor.chain().focus().setTextAlign('justify').run()}
-              isActive={editor.isActive({ textAlign: 'justify' })}
-            >
-              <AlignJustify className="w-4 h-4" />
-            </ToolbarButton>
+            <ToolbarButton onClick={() => editor.chain().focus().setTextAlign('left').run()} isActive={editor.isActive({ textAlign: 'left' })}><AlignLeft className="w-4 h-4" /></ToolbarButton>
+            <ToolbarButton onClick={() => editor.chain().focus().setTextAlign('center').run()} isActive={editor.isActive({ textAlign: 'center' })}><AlignCenter className="w-4 h-4" /></ToolbarButton>
+            <ToolbarButton onClick={() => editor.chain().focus().setTextAlign('right').run()} isActive={editor.isActive({ textAlign: 'right' })}><AlignRight className="w-4 h-4" /></ToolbarButton>
             <Separator orientation="vertical" className="h-6 mx-1" />
-            <ToolbarButton 
-              onClick={() => editor.chain().focus().toggleBulletList().run()}
-              isActive={editor.isActive('bulletList')}
-            >
-              <List className="w-4 h-4" />
-            </ToolbarButton>
-            <ToolbarButton 
-              onClick={() => editor.chain().focus().toggleOrderedList().run()}
-              isActive={editor.isActive('orderedList')}
-            >
-              <ListOrdered className="w-4 h-4" />
-            </ToolbarButton>
+            <ToolbarButton onClick={() => editor.chain().focus().toggleBulletList().run()} isActive={editor.isActive('bulletList')}><List className="w-4 h-4" /></ToolbarButton>
+            <ToolbarButton onClick={() => editor.chain().focus().toggleOrderedList().run()} isActive={editor.isActive('orderedList')}><ListOrdered className="w-4 h-4" /></ToolbarButton>
+            <ToolbarButton onClick={() => editor.chain().focus().toggleTaskList().run()} isActive={editor.isActive('taskList')}><CheckSquare className="w-4 h-4" /></ToolbarButton>
           </div>
           <span className="text-[9px] font-bold text-slate-400 uppercase mt-1">Parágrafo</span>
         </div>
 
-        {/* Secção: Estilos */}
-        <div className="flex flex-col items-center px-2">
-          <div className="flex items-center gap-1">
+        {/* Secção: Tabela */}
+        <div className="flex flex-col items-center px-2 border-r border-slate-200">
+          <div className="flex items-center gap-0.5">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="h-8 gap-2 text-xs font-medium border-slate-200">
-                  {editor.isActive('heading', { level: 1 }) ? 'Título 1' : 
-                   editor.isActive('heading', { level: 2 }) ? 'Título 2' : 'Normal'}
-                  <ChevronDown className="w-3 h-3 opacity-50" />
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-600 hover:bg-slate-100 rounded-md">
+                  <TableIcon className="w-4 h-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-40">
-                <DropdownMenuItem onClick={() => editor.chain().focus().setParagraph().run()}>
-                  <Type className="w-4 h-4 mr-2" /> Normal
+              <DropdownMenuContent align="start" className="w-48">
+                <DropdownMenuItem onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}>
+                  <Plus className="w-4 h-4 mr-2" /> Inserir Tabela
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}>
-                  <Heading1 className="w-4 h-4 mr-2" /> Título 1
+                <Separator className="my-1" />
+                <DropdownMenuItem onClick={() => editor.chain().focus().addColumnBefore().run()} disabled={!editor.isActive('table')}>
+                  Adicionar Coluna Antes
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}>
-                  <Heading2 className="w-4 h-4 mr-2" /> Título 2
+                <DropdownMenuItem onClick={() => editor.chain().focus().addColumnAfter().run()} disabled={!editor.isActive('table')}>
+                  Adicionar Coluna Depois
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => editor.chain().focus().deleteColumn().run()} disabled={!editor.isActive('table')} className="text-rose-500">
+                  Eliminar Coluna
+                </DropdownMenuItem>
+                <Separator className="my-1" />
+                <DropdownMenuItem onClick={() => editor.chain().focus().addRowBefore().run()} disabled={!editor.isActive('table')}>
+                  Adicionar Linha Antes
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => editor.chain().focus().addRowAfter().run()} disabled={!editor.isActive('table')}>
+                  Adicionar Linha Depois
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => editor.chain().focus().deleteRow().run()} disabled={!editor.isActive('table')} className="text-rose-500">
+                  Eliminar Linha
+                </DropdownMenuItem>
+                <Separator className="my-1" />
+                <DropdownMenuItem onClick={() => editor.chain().focus().deleteTable().run()} disabled={!editor.isActive('table')} className="text-rose-500 font-bold">
+                  <Trash2 className="w-4 h-4 mr-2" /> Eliminar Tabela
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-          <span className="text-[9px] font-bold text-slate-400 uppercase mt-1">Estilos</span>
+          <span className="text-[9px] font-bold text-slate-400 uppercase mt-1">Tabela</span>
+        </div>
+
+        {/* Secção: Mapa Mental (Estrutura) */}
+        <div className="flex flex-col items-center px-2">
+          <div className="flex items-center gap-0.5">
+            <ToolbarButton 
+              onClick={() => {
+                editor.chain().focus()
+                  .toggleHeading({ level: 1 })
+                  .insertContent('<ul data-type="taskList"><li data-checked="false"><div>Ideia Central</div><ul data-type="taskList"><li data-checked="false"><div>Sub-ideia 1</div></li><li data-checked="false"><div>Sub-ideia 2</div></li></ul></li></ul>')
+                  .run();
+              }}
+            >
+              <Network className="w-4 h-4" />
+            </ToolbarButton>
+          </div>
+          <span className="text-[9px] font-bold text-slate-400 uppercase mt-1">Mapa Mental</span>
         </div>
 
       </div>

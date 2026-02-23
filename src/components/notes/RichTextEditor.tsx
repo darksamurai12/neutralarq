@@ -7,6 +7,12 @@ import { TextAlign } from '@tiptap/extension-text-align';
 import { Highlight } from '@tiptap/extension-highlight';
 import { TextStyle } from '@tiptap/extension-text-style';
 import { Color } from '@tiptap/extension-color';
+import { Table } from '@tiptap/extension-table';
+import { TableRow } from '@tiptap/extension-table-row';
+import { TableHeader } from '@tiptap/extension-table-header';
+import { TableCell } from '@tiptap/extension-table-cell';
+import { TaskList } from '@tiptap/extension-task-list';
+import { TaskItem } from '@tiptap/extension-task-item';
 import { NoteToolbar } from './NoteToolbar';
 import { useEffect } from 'react';
 
@@ -31,6 +37,16 @@ export function RichTextEditor({ content, onChange, placeholder }: RichTextEdito
       Highlight.configure({ multicolor: true }),
       TextStyle,
       Color,
+      Table.configure({
+        resizable: true,
+      }),
+      TableRow,
+      TableHeader,
+      TableCell,
+      TaskList,
+      TaskItem.configure({
+        nested: true,
+      }),
     ],
     content: content,
     onUpdate: ({ editor }) => {
@@ -43,7 +59,6 @@ export function RichTextEditor({ content, onChange, placeholder }: RichTextEdito
     },
   });
 
-  // Sincronizar conteúdo inicial se mudar externamente (ex: carregamento de dados)
   useEffect(() => {
     if (editor && content !== editor.getHTML()) {
       editor.commands.setContent(content);
