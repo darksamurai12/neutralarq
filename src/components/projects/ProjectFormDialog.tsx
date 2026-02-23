@@ -39,6 +39,7 @@ const emptyFormData = {
   deadline: '',
   budget: '',
   status: 'planning' as ProjectStatus,
+  imageUrl: '', // Adicionado
 };
 
 export function ProjectFormDialog({ open, onOpenChange, editingProject, clients, onSubmit }: ProjectFormDialogProps) {
@@ -56,6 +57,7 @@ export function ProjectFormDialog({ open, onOpenChange, editingProject, clients,
         deadline: format(new Date(editingProject.deadline), 'yyyy-MM-dd'),
         budget: editingProject.budget.toString(),
         status: editingProject.status,
+        imageUrl: editingProject.imageUrl || '', // Adicionado
       });
     } else {
       setFormData(emptyFormData);
@@ -126,6 +128,16 @@ export function ProjectFormDialog({ open, onOpenChange, editingProject, clients,
                   <SelectItem value="interior_design">🎨 Design de Interiores</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="col-span-2 space-y-2">
+              <Label htmlFor="imageUrl">URL da Imagem de Capa</Label>
+              <Input
+                id="imageUrl"
+                value={formData.imageUrl}
+                onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
+                placeholder="https://exemplo.com/imagem.jpg"
+              />
             </div>
 
             <div className="col-span-2 space-y-2">
