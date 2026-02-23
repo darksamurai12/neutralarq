@@ -8,6 +8,7 @@ import {
   Calculator, 
   CalendarDays, 
   Package,
+  StickyNote,
   LogOut
 } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
@@ -19,6 +20,7 @@ const menuItems = [
   { title: 'Dashboard', url: '/', icon: LayoutDashboard },
   { title: 'CRM', url: '/crm', icon: Users },
   { title: 'Calendário', url: '/calendario', icon: CalendarDays },
+  { title: 'Notas', url: '/notas', icon: StickyNote },
 ];
 
 const managementItems = [

@@ -4,7 +4,7 @@ import React, { createContext, useContext, useMemo, useEffect } from 'react';
 import { 
   Client, Project, Transaction, Task, ProjectWithDetails, 
   DashboardMetrics, MonthlyFlow, ProjectKPIs, Deal, DealStage, DealStageConfig, 
-  CalendarEvent, ClientInteraction, InventoryItem
+  CalendarEvent, ClientInteraction, InventoryItem, Note
 } from '@/types';
 import { format, subMonths, isWithinInterval, startOfMonth, endOfMonth, differenceInDays, isPast, isFuture, isSameDay, startOfWeek, endOfWeek } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -17,6 +17,8 @@ import { useDeals } from '@/hooks/useDeals';
 import { useCalendarEvents } from '@/hooks/useCalendarEvents';
 import { useInventory } from '@/hooks/useInventory';
 import { useInteractions } from '@/hooks/useInteractions';
+import { useNotes } from '@/hooks/useNotes';
+import { toast } from 'sonner';
 
 export const dealStageConfig: DealStageConfig[] = [
   { id: 'lead', label: 'Lead', probability: 10, color: 'from-slate-400 to-slate-500' },
@@ -35,6 +37,7 @@ interface AppContextType {
   deals: Deal[];
   calendarEvents: CalendarEvent[];
   inventory: InventoryItem[];
+  notes: Note[];
   loading: boolean;
   
   addClient: (client: Omit<Client, 'id' | 'createdAt'>) => Promise<void>;
@@ -70,6 +73,10 @@ interface AppContextType {
   deleteInventoryItem: (id: string) => Promise<void>;
   adjustStock: (itemId: string, amount: number, type: 'in' | 'out', reason: string) => Promise<void>;
 
+  addNote: (note: Omit<Note, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+  updateNote: (id: string, updates: Partial<Note>) => Promise<void>;
+  deleteNote: (id: string) => Promise<void>;
+
   getClientProjects: (clientId: string) => Project[];
   getClientInteractions: (clientId: string) => ClientInteraction[];
   getProjectWithDetails: (projectId: string) => ProjectWithDetails | null;
@@ -96,15 +103,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const { calendarEvents, fetchCalendarEvents, addCalendarEvent, updateCalendarEvent, deleteCalendarEvent } = useCalendarEvents(user?.id);
   const { inventory, fetchInventory, addInventoryItem, updateInventoryItem, deleteInventoryItem } = useInventory(user?.id);
   const { interactions, addInteraction, deleteInteraction, getClientInteractions } = useInteractions();
+  const { notes, fetchNotes, addNote, updateNote, deleteNote } = useNotes(user?.id);
 
   useEffect(() => {
     if (user) {
       Promise.all([
         fetchClients(), fetchProjects(), fetchTransactions(), fetchTasks(),
-        fetchDeals(), fetchCalendarEvents(), fetchInventory()
+        fetchDeals(), fetchCalendarEvents(), fetchInventory(), fetchNotes()
       ]);
     }
-  }, [user, fetchClients, fetchProjects, fetchTransactions, fetchTasks, fetchDeals, fetchCalendarEvents, fetchInventory]);
+  }, [user, fetchClients, fetchProjects, fetchTransactions, fetchTasks, fetchDeals, fetchCalendarEvents, fetchInventory, fetchNotes]);
 
   const getClientProjects = (clientId: string) => projects.filter(p => p.clientId === clientId);
   const getSubprojects = (projectId: string) => projects.filter(p => p.parentProjectId === projectId);
@@ -194,7 +202,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         completed: completedProjects,
       },
       monthlyFlow,
-      recentProjects: projects.slice(0, 2), // Alterado de 5 para 2 conforme solicitado
+      recentProjects: projects.slice(0, 2),
     };
   };
 
@@ -248,7 +256,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const value = useMemo(() => ({
-    clients, projects, transactions, tasks, deals, calendarEvents, inventory, loading: authLoading,
+    clients, projects, transactions, tasks, deals, calendarEvents, inventory, notes, loading: authLoading,
     addClient, updateClient, deleteClient,
     addProject, updateProject, deleteProject,
     addTransaction, updateTransaction, deleteTransaction,
@@ -257,11 +265,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     addCalendarEvent, updateCalendarEvent, deleteCalendarEvent,
     addInteraction, deleteInteraction,
     addInventoryItem, updateInventoryItem, deleteInventoryItem, adjustStock,
+    addNote, updateNote, deleteNote,
     getClientProjects, getClientInteractions, getProjectWithDetails, getSubprojects,
     getDashboardMetrics, getProjectKPIs, getPipelineMetrics,
     getEventsForDay, getEventsForWeek, getEventsForMonth, getUpcomingEvents
   }), [
-    clients, projects, transactions, tasks, deals, calendarEvents, inventory, authLoading,
+    clients, projects, transactions, tasks, deals, calendarEvents, inventory, notes, authLoading,
     addClient, updateClient, deleteClient,
     addProject, updateProject, deleteProject,
     addTransaction, updateTransaction, deleteTransaction,
@@ -270,6 +279,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     addCalendarEvent, updateCalendarEvent, deleteCalendarEvent,
     addInteraction, deleteInteraction,
     addInventoryItem, updateInventoryItem, deleteInventoryItem, adjustStock,
+    addNote, updateNote, deleteNote,
     getClientProjects, getClientInteractions, getProjectWithDetails, getSubprojects,
     getDashboardMetrics, getProjectKPIs, getPipelineMetrics,
     getEventsForDay, getEventsForWeek, getEventsForMonth, getUpcomingEvents

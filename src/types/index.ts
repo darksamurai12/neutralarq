@@ -4,7 +4,7 @@ export type ProjectType = 'architecture' | 'construction' | 'interior_design';
 export interface Project {
   id: string;
   clientId: string;
-  name: string; // Corrigido de title para name
+  name: string;
   type: ProjectType;
   location: string;
   description: string;
@@ -225,4 +225,17 @@ export interface Budget {
   totalProfit: number;
   marginPercent: number;
   createdAt: Date;
+}
+
+export type NoteColor = 'default' | 'blue' | 'green' | 'yellow' | 'purple' | 'rose';
+
+export interface Note {
+  id: string;
+  userId: string;
+  title: string;
+  content: string;
+  color: NoteColor;
+  isPinned: boolean;
+  createdAt: Date;
+  updatedAt: Date;
 }
