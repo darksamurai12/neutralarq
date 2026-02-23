@@ -1,157 +1,78 @@
-"use client";
-
-import React from 'react';
-import { 
-  Building2, 
-  MapPin, 
-  CalendarClock, 
-  DollarSign, 
-  MoreHorizontal, 
-  Pencil, 
-  Trash2,
-  Clock,
-  PlayCircle,
-  PauseCircle,
-  CheckCircle2,
-  FolderKanban
-} from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Project } from '@/types';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Project, ProjectStatus, ProjectType } from '@/types';
-import { cn } from '@/lib/utils';
+import { Calendar, DollarSign, MoreVertical, Image as ImageIcon } from 'lucide-react';
 import { format } from 'date-fns';
-import { pt } from 'date-fns/locale';
+import { ptBR } from 'date-fns/locale';
 import { formatCurrency } from '@/lib/currency';
+import { cn } from '@/lib/utils';
 
 interface ProjectCardProps {
   project: Project;
-  clientName: string;
   progress: number;
-  taskCount: number;
-  subprojectCount: number;
-  onEdit: (project: Project, e?: React.MouseEvent) => void;
-  onDelete: (id: string, e?: React.MouseEvent) => void;
-  onClick: (id: string) => void;
+  clientName?: string;
+  onClick?: () => void;
 }
 
-const statusConfig: Record<ProjectStatus, { label: string; className: string; icon: React.ElementType }> = {
-  planning: { label: 'Planeamento', className: 'bg-slate-500/10 text-slate-600 border-slate-500/20', icon: Clock },
-  in_progress: { label: 'Em Execução', className: 'bg-blue-500/10 text-blue-600 border-blue-500/20', icon: PlayCircle },
-  paused: { label: 'Parado', className: 'bg-amber-500/10 text-amber-600 border-amber-500/20', icon: PauseCircle },
-  completed: { label: 'Concluído', className: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20', icon: CheckCircle2 },
+const statusConfig = {
+  planning: { label: 'Planeamento', color: 'bg-blue-100 text-blue-700 border-blue-200' },
+  in_progress: { label: 'Em Curso', color: 'bg-amber-100 text-amber-700 border-amber-200' },
+  paused: { label: 'Pausado', color: 'bg-slate-100 text-slate-700 border-slate-200' },
+  completed: { label: 'Concluído', color: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
 };
 
-const typeConfig: Record<ProjectType, { label: string; icon: string; color: string }> = {
-  architecture: { label: 'Arquitectura', icon: '🏛️', color: 'from-violet-500 to-violet-600' },
-  construction: { label: 'Construção Civil', icon: '🏗️', color: 'from-orange-500 to-orange-600' },
-  interior_design: { label: 'Design de Interiores', icon: '🎨', color: 'from-pink-500 to-pink-600' },
-};
+export function ProjectCard({ project, progress, clientName, onClick }: ProjectCardProps) {
+  const status = statusConfig[project.status];
 
-export function ProjectCard({ 
-  project, 
-  clientName, 
-  progress, 
-  taskCount, 
-  subprojectCount,
-  onEdit, 
-  onDelete, 
-  onClick 
-}: ProjectCardProps) {
-  const StatusIcon = statusConfig[project.status].icon;
-  
   return (
-    <Card
-      onClick={() => onClick(project.id)}
-      className="group cursor-pointer shadow-lg border-0 bg-card hover:shadow-xl transition-all duration-300 hover:-translate-y-1 overflow-hidden"
+    <Card 
+      className="group overflow-hidden border-none shadow-sm hover:shadow-glass transition-all duration-300 cursor-pointer bg-white/80 backdrop-blur-sm rounded-2xl"
+      onClick={onClick}
     >
-      <div className={cn(
-        'h-2 bg-gradient-to-r',
-        typeConfig[project.type].color
-      )} />
-      
+      {/* Project Image Header */}
+      <div className="relative h-32 w-full overflow-hidden bg-slate-100">
+        {project.imageUrl ? (
+          <img 
+            src={project.imageUrl} 
+            alt={project.title}
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-pastel-sky to-pastel-lavender">
+            <ImageIcon className="w-8 h-8 text-white/50" />
+          </div>
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-60" />
+        <Badge className={cn("absolute top-3 right-3 border shadow-sm", status.color)}>
+          {status.label}
+        </Badge>
+      </div>
+
       <CardContent className="p-5">
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">{typeConfig[project.type].icon}</span>
-            <div>
-              <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-1">
-                {project.name}
-              </h3>
-              <p className="text-xs text-muted-foreground">{typeConfig[project.type].label}</p>
-            </div>
-          </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-              <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
-                <MoreHorizontal className="w-4 h-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={(e) => onEdit(project, e)}>
-                <Pencil className="w-4 h-4 mr-2" />
-                Editar
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                className="text-destructive focus:text-destructive"
-                onClick={(e) => onDelete(project.id, e)}
-              >
-                <Trash2 className="w-4 h-4 mr-2" />
-                Excluir
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-        
-        <div className="space-y-2 text-sm mb-4">
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Building2 className="w-4 h-4 flex-shrink-0" />
-            <span className="truncate">{clientName}</span>
-          </div>
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <MapPin className="w-4 h-4 flex-shrink-0" />
-            <span className="truncate">{project.location}</span>
-          </div>
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <CalendarClock className="w-4 h-4 flex-shrink-0" />
-            <span>{format(new Date(project.deadline), "dd MMM yyyy", { locale: pt })}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <DollarSign className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-            <span className="font-semibold text-foreground">{formatCurrency(project.budget)}</span>
-          </div>
-        </div>
-
         <div className="mb-4">
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-xs text-muted-foreground">Progresso</span>
-            <span className="text-xs font-medium text-foreground">{progress}%</span>
-          </div>
-          <Progress value={progress} className="h-2" />
+          <p className="text-[10px] font-bold text-primary uppercase tracking-wider mb-1">{clientName || 'Cliente'}</p>
+          <h3 className="font-bold text-slate-800 line-clamp-1 group-hover:text-primary transition-colors">
+            {project.title}
+          </h3>
         </div>
 
-        <div className="flex items-center justify-between pt-3 border-t border-border/50">
-          <Badge variant="outline" className={cn('font-medium gap-1', statusConfig[project.status].className)}>
-            <StatusIcon className="w-3 h-3" />
-            {statusConfig[project.status].label}
-          </Badge>
-          <div className="flex items-center gap-2">
-            {subprojectCount > 0 && (
-              <span className="text-xs text-primary font-medium flex items-center gap-1">
-                <FolderKanban className="w-3 h-3" />
-                {subprojectCount} sub
-              </span>
-            )}
-            <span className="text-xs text-muted-foreground">
-              {taskCount} tarefa{taskCount !== 1 ? 's' : ''}
-            </span>
+        <div className="space-y-3">
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-slate-500 font-medium">Progresso</span>
+            <span className="font-bold text-slate-700">{progress}%</span>
+          </div>
+          <Progress value={progress} className="h-1.5" />
+          
+          <div className="grid grid-cols-2 gap-3 pt-2">
+            <div className="flex items-center gap-1.5 text-[11px] text-slate-500">
+              <Calendar className="w-3.5 h-3.5 text-slate-400" />
+              <span>{format(new Date(project.deadline), "dd MMM", { locale: ptBR })}</span>
+            </div>
+            <div className="flex items-center gap-1.5 text-[11px] text-slate-500 justify-end">
+              <DollarSign className="w-3.5 h-3.5 text-slate-400" />
+              <span className="font-medium">{formatCurrency(project.budget)}</span>
+            </div>
           </div>
         </div>
       </CardContent>
