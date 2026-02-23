@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { useApp } from '@/contexts/AppContext';
@@ -8,29 +9,12 @@ import { StickyNote, Plus, Search, Pin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { NoteCard } from '@/components/notes/NoteCard';
-import { NoteDialog } from '@/components/notes/NoteDialog';
 import { Note } from '@/types';
 
 export default function Notes() {
-  const { notes, addNote, updateNote, deleteNote } = useApp();
+  const { notes, updateNote, deleteNote } = useApp();
   const [searchQuery, setSearchQuery] = useState('');
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingNote, setEditingNote] = useState<Note | null>(null);
-
-  const handleFormSubmit = (data: any) => {
-    if (editingNote) {
-      updateNote(editingNote.id, data);
-    } else {
-      addNote(data);
-    }
-    setIsDialogOpen(false);
-    setEditingNote(null);
-  };
-
-  const handleEdit = (note: Note) => {
-    setEditingNote(note);
-    setIsDialogOpen(true);
-  };
+  const navigate = useNavigate();
 
   const handleTogglePin = (note: Note) => {
     updateNote(note.id, { isPinned: !note.isPinned });
@@ -53,7 +37,7 @@ export default function Notes() {
       >
         <Button 
           className="gap-2 shadow-lg hover:shadow-xl transition-all duration-300 rounded-xl"
-          onClick={() => { setEditingNote(null); setIsDialogOpen(true); }}
+          onClick={() => navigate('/notas/nova')}
         >
           <Plus className="w-4 h-4" />
           Nova Nota
@@ -84,7 +68,6 @@ export default function Notes() {
                 <NoteCard 
                   key={note.id} 
                   note={note} 
-                  onEdit={handleEdit} 
                   onDelete={deleteNote}
                   onTogglePin={handleTogglePin}
                 />
@@ -102,7 +85,6 @@ export default function Notes() {
               <NoteCard 
                 key={note.id} 
                 note={note} 
-                onEdit={handleEdit} 
                 onDelete={deleteNote}
                 onTogglePin={handleTogglePin}
               />
@@ -117,14 +99,6 @@ export default function Notes() {
           </div>
         </div>
       </div>
-
-      <NoteDialog
-        open={isDialogOpen}
-        onOpenChange={setIsDialogOpen}
-        editingNote={editingNote}
-        onSubmit={handleFormSubmit}
-        onDelete={deleteNote}
-      />
     </AppLayout>
   );
 }

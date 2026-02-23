@@ -14,6 +14,7 @@ import Pricing from "./pages/Pricing";
 import CalendarPage from "./pages/Calendar";
 import Inventory from "./pages/Inventory";
 import Notes from "./pages/Notes";
+import NoteEditor from "./pages/NoteEditor";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -37,6 +38,7 @@ const App = () => (
               <Route path="/inventario" element={<ProtectedRoute><Inventory /></ProtectedRoute>} />
               <Route path="/precificacao" element={<ProtectedRoute><Pricing /></ProtectedRoute>} />
               <Route path="/notas" element={<ProtectedRoute><Notes /></ProtectedRoute>} />
+              <Route path="/notas/:id" element={<ProtectedRoute><NoteEditor /></ProtectedRoute>} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

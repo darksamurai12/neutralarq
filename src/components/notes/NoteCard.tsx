@@ -3,10 +3,11 @@
 import { Note, NoteColor } from '@/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Pin, Trash2, MoreHorizontal, Pencil } from 'lucide-react';
+import { Pin, Trash2, MoreHorizontal, Pencil, ExternalLink } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useNavigate } from 'react-router-dom';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,7 +17,6 @@ import {
 
 interface NoteCardProps {
   note: Note;
-  onEdit: (note: Note) => void;
   onDelete: (id: string) => void;
   onTogglePin: (note: Note) => void;
 }
@@ -30,21 +30,24 @@ const colorClasses: Record<NoteColor, string> = {
   rose: 'bg-pastel-rose border-rose-200',
 };
 
-export function NoteCard({ note, onEdit, onDelete, onTogglePin }: NoteCardProps) {
+export function NoteCard({ note, onDelete, onTogglePin }: NoteCardProps) {
+  const navigate = useNavigate();
+
   return (
     <Card 
       className={cn(
-        "group relative overflow-hidden transition-all duration-300 hover:shadow-md border-2",
+        "group relative overflow-hidden transition-all duration-300 hover:shadow-md border-2 cursor-pointer",
         colorClasses[note.color],
         note.isPinned && "ring-2 ring-primary/20"
       )}
+      onClick={() => navigate(`/notas/${note.id}`)}
     >
       <CardContent className="p-5">
         <div className="flex items-start justify-between mb-3">
           <h3 className="font-bold text-slate-800 dark:text-white line-clamp-1 flex-1">
             {note.title}
           </h3>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
             <Button
               variant="ghost"
               size="icon"
@@ -64,7 +67,7 @@ export function NoteCard({ note, onEdit, onDelete, onTogglePin }: NoteCardProps)
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => onEdit(note)}>
+                <DropdownMenuItem onClick={() => navigate(`/notas/${note.id}`)}>
                   <Pencil className="w-4 h-4 mr-2" />
                   Editar
                 </DropdownMenuItem>
@@ -88,14 +91,9 @@ export function NoteCard({ note, onEdit, onDelete, onTogglePin }: NoteCardProps)
           <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">
             {format(note.updatedAt, "d 'de' MMM", { locale: ptBR })}
           </span>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="h-7 text-[10px] font-bold text-primary hover:bg-primary/5"
-            onClick={() => onEdit(note)}
-          >
-            ABRIR
-          </Button>
+          <div className="flex items-center gap-1 text-[10px] font-bold text-primary opacity-0 group-hover:opacity-100 transition-opacity">
+            ABRIR <ExternalLink className="w-3 h-3" />
+          </div>
         </div>
       </CardContent>
     </Card>
