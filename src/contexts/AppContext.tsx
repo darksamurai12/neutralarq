@@ -194,7 +194,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         completed: completedProjects,
       },
       monthlyFlow,
-      recentProjects: projects.slice(0, 5),
+      recentProjects: projects.slice(0, 2), // Alterado de 5 para 2 conforme solicitado
     };
   };
 
