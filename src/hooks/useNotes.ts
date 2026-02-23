@@ -23,11 +23,11 @@ export function useNotes(userId: string | undefined) {
     } else {
       setNotes((data || []).map(row => ({
         id: row.id,
-        userId: row.user_id,
+        userId: row.user_id || '',
         title: row.title,
         content: row.content || '',
-        color: row.color as NoteColor,
-        isPinned: row.is_pinned,
+        color: (row.color as NoteColor) || 'default',
+        isPinned: row.is_pinned || false,
         createdAt: new Date(row.created_at),
         updatedAt: new Date(row.updated_at)
       })));
@@ -59,11 +59,11 @@ export function useNotes(userId: string | undefined) {
     } else {
       setNotes(prev => [{
         id: data.id,
-        userId: data.user_id,
+        userId: data.user_id || '',
         title: data.title,
         content: data.content || '',
-        color: data.color as NoteColor,
-        isPinned: data.is_pinned,
+        color: (data.color as NoteColor) || 'default',
+        isPinned: data.is_pinned || false,
         createdAt: new Date(data.created_at),
         updatedAt: new Date(data.updated_at)
       }, ...prev]);
@@ -72,8 +72,13 @@ export function useNotes(userId: string | undefined) {
   };
 
   const updateNote = async (id: string, updates: Partial<Note>) => {
-    const dbUpdates: any = { ...updates };
+    // Mapear apenas os campos que existem na base de dados (snake_case)
+    const dbUpdates: any = {};
+    if (updates.title !== undefined) dbUpdates.title = updates.title;
+    if (updates.content !== undefined) dbUpdates.content = updates.content;
+    if (updates.color !== undefined) dbUpdates.color = updates.color;
     if (updates.isPinned !== undefined) dbUpdates.is_pinned = updates.isPinned;
+    
     dbUpdates.updated_at = new Date().toISOString();
 
     const { error } = await supabase
@@ -82,7 +87,7 @@ export function useNotes(userId: string | undefined) {
       .eq('id', id);
 
     if (error) {
-      console.error('Erro ao atualizar nota:', error);
+      console.error('Erro ao atualizar nota no Supabase:', error);
       toast.error('Erro ao atualizar nota');
     } else {
       setNotes(prev => prev.map(n => n.id === id ? { ...n, ...updates, updatedAt: new Date() } : n));
