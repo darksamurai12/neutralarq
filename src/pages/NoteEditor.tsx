@@ -6,11 +6,11 @@ import { useApp } from '@/contexts/AppContext';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { NoteColor } from '@/types';
 import { ArrowLeft, Save, Trash2, Pin, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { NoteColorPicker } from '@/components/notes/NoteColorPicker';
+import { RichTextEditor } from '@/components/notes/RichTextEditor';
 import { toast } from 'sonner';
 
 export default function NoteEditor() {
@@ -80,11 +80,11 @@ export default function NoteEditor() {
   return (
     <AppLayout>
       <div className={cn(
-        "min-h-[calc(100vh-12rem)] rounded-3xl transition-colors duration-500 p-6 md:p-10 shadow-sm border border-black/5",
+        "min-h-[calc(100vh-8rem)] rounded-3xl transition-colors duration-500 p-4 md:p-6 shadow-sm border border-black/5",
         bgColorClass
       )}>
         {/* Header / Toolbar Superior */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between mb-6">
           <Button 
             variant="ghost" 
             size="icon" 
@@ -131,7 +131,7 @@ export default function NoteEditor() {
         </div>
 
         {/* Editor Area */}
-        <div className="max-w-4xl mx-auto space-y-6">
+        <div className="max-w-5xl mx-auto space-y-6">
           <Input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
@@ -140,11 +140,10 @@ export default function NoteEditor() {
             autoFocus
           />
           
-          <Textarea
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
+          <RichTextEditor 
+            content={content} 
+            onChange={setContent} 
             placeholder="Comece a escrever as suas ideias aqui..."
-            className="min-h-[500px] text-lg border-none bg-transparent shadow-none focus-visible:ring-0 px-0 resize-none text-slate-700 dark:text-slate-300 leading-relaxed placeholder:opacity-30"
           />
         </div>
       </div>
