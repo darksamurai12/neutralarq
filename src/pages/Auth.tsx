@@ -149,7 +149,7 @@ export default function Auth() {
         </Card>
 
         <p className="text-center text-sm text-muted-foreground mt-6">
-          © 2025 GestãoPro. Todos os direitos reservados.
+          © NeutralArq. Todos os direitos reservados.
         </p>
       </div>
     </div>
