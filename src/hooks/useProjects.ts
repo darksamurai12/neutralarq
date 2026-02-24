@@ -30,7 +30,6 @@ export function useProjects(userId: string | undefined) {
       deadline: new Date(row.deadline),
       budget: Number(row.budget),
       status: row.status as any,
-      imageUrl: row.image_url, // Adicionado
       parentProjectId: row.parent_project_id,
       createdAt: new Date(row.created_at)
     })));
@@ -48,19 +47,21 @@ export function useProjects(userId: string | undefined) {
       deadline: project.deadline.toISOString(),
       budget: project.budget,
       status: project.status,
-      image_url: project.imageUrl, // Adicionado
       parent_project_id: project.parentProjectId,
       user_id: userId
     }).select().single();
     
-    if (error) { toast.error('Erro ao adicionar projecto'); return; }
+    if (error) { 
+      console.error('Erro ao adicionar projecto:', error);
+      toast.error('Erro ao adicionar projecto'); 
+      return; 
+    }
     
     setProjects(prev => [{
       ...data,
       clientId: data.client_id,
       startDate: new Date(data.start_date),
       deadline: new Date(data.deadline),
-      imageUrl: data.image_url,
       parentProjectId: data.parent_project_id,
       createdAt: new Date(data.created_at)
     } as any, ...prev]);
@@ -72,10 +73,13 @@ export function useProjects(userId: string | undefined) {
     if (updates.clientId) { dbUpdates.client_id = updates.clientId; delete dbUpdates.clientId; }
     if (updates.startDate) { dbUpdates.start_date = updates.startDate.toISOString(); delete dbUpdates.startDate; }
     if (updates.deadline) { dbUpdates.deadline = updates.deadline.toISOString(); delete dbUpdates.deadline; }
-    if (updates.imageUrl !== undefined) { dbUpdates.image_url = updates.imageUrl; delete dbUpdates.imageUrl; } // Adicionado
     
     const { error } = await supabase.from('projects').update(dbUpdates).eq('id', id);
-    if (error) { toast.error('Erro ao atualizar projecto'); return; }
+    if (error) { 
+      console.error('Erro ao atualizar projecto:', error);
+      toast.error('Erro ao atualizar projecto'); 
+      return; 
+    }
     setProjects(prev => prev.map(p => p.id === id ? { ...p, ...updates } : p));
     toast.success('Projecto atualizado');
   };

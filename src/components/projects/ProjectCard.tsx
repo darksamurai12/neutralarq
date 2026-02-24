@@ -2,7 +2,7 @@ import { Project } from '@/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Calendar, DollarSign, Image as ImageIcon } from 'lucide-react';
+import { Calendar, DollarSign, FolderKanban } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { formatCurrency } from '@/lib/currency';
@@ -34,23 +34,9 @@ export function ProjectCard({ project, progress, clientName, onClick }: ProjectC
       className="group overflow-hidden border-none shadow-sm hover:shadow-glass transition-all duration-300 cursor-pointer bg-white/80 backdrop-blur-sm rounded-2xl"
       onClick={() => onClick(project.id)}
     >
-      {/* Project Image Header */}
-      <div className="relative h-32 w-full overflow-hidden bg-slate-100">
-        {project.imageUrl ? (
-          <img 
-            src={project.imageUrl} 
-            alt={project.name}
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-            onError={(e) => {
-              e.currentTarget.src = 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=500&auto=format&fit=crop';
-            }}
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-pastel-sky to-pastel-lavender">
-            <ImageIcon className="w-8 h-8 text-white/50" />
-          </div>
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-60" />
+      {/* Project Header Icon */}
+      <div className="relative h-24 w-full flex items-center justify-center bg-gradient-to-br from-pastel-sky to-pastel-lavender">
+        <FolderKanban className="w-10 h-10 text-primary/40" />
         <Badge className={cn("absolute top-3 right-3 border shadow-sm", status.color)}>
           {status.label}
         </Badge>

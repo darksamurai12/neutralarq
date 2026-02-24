@@ -12,7 +12,6 @@ export interface Project {
   startDate: Date;
   deadline: Date;
   budget: number;
-  imageUrl?: string;
   parentProjectId?: string | null;
   createdAt: Date;
 }
