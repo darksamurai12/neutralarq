@@ -42,45 +42,48 @@ export function usePricingDB() {
   }, []);
 
   const fetchBudgets = useCallback(async () => {
-    const { data: budgetsData, error: budgetsError } = await supabase.from('budgets').select('*').order('created_at', { ascending: false });
-    if (budgetsError) return;
+    // Busca orçamentos e itens numa única consulta (Nested Select)
+    const { data, error } = await supabase
+      .from('budgets')
+      .select('*, budget_items(*)')
+      .order('created_at', { ascending: false });
 
-    const budgetsWithItems = await Promise.all(
-      budgetsData.map(async (budget) => {
-        const { data: itemsData } = await supabase.from('budget_items').select('*').eq('budget_id', budget.id);
-        const items: BudgetItem[] = (itemsData || []).map(item => ({
-          id: item.id, 
-          type: item.type as any, 
-          itemId: item.item_id || '', 
+    if (error) {
+      console.error('Erro ao carregar orçamentos:', error);
+      return;
+    }
+
+    if (data) {
+      const mappedBudgets: Budget[] = data.map((budget) => ({
+        id: budget.id,
+        name: budget.name,
+        clientId: null,
+        clientName: budget.client_name,
+        projectId: null,
+        status: budget.status as any,
+        totalValue: Number(budget.total_value),
+        totalCost: Number(budget.total_cost),
+        totalProfit: Number(budget.total_profit),
+        marginPercent: Number(budget.margin_percent),
+        createdAt: new Date(budget.created_at),
+        notes: budget.notes || '',
+        items: (budget.budget_items || []).map((item: any) => ({
+          id: item.id,
+          type: item.type as any,
+          itemId: item.item_id || '',
           name: item.name,
-          quantity: Number(item.quantity), 
-          unitPrice: Number(item.unit_price), 
+          quantity: Number(item.quantity),
+          unitPrice: Number(item.unit_price),
           totalPrice: Number(item.total_price),
-          unitCost: Number(item.unit_cost), 
-          totalCost: Number(item.total_cost), 
+          unitCost: Number(item.unit_cost),
+          totalCost: Number(item.total_cost),
           profit: Number(item.profit),
-          marginPercent: Number((item as any).margin_percent || 0),
+          marginPercent: Number(item.margin_percent || 0),
           groupName: item.group_name || undefined,
-        }));
-
-        return {
-          id: budget.id, 
-          name: budget.name, 
-          clientId: null,
-          clientName: budget.client_name,
-          projectId: null,
-          items, 
-          status: budget.status as any, 
-          totalValue: Number(budget.total_value),
-          totalCost: Number(budget.total_cost), 
-          totalProfit: Number(budget.total_profit),
-          marginPercent: Number(budget.margin_percent), 
-          createdAt: new Date(budget.created_at),
-          notes: budget.notes || '',
-        };
-      })
-    );
-    setBudgets(budgetsWithItems);
+        })),
+      }));
+      setBudgets(mappedBudgets);
+    }
   }, []);
 
   useEffect(() => {
@@ -159,10 +162,16 @@ export function usePricingDB() {
       margin_percent: item.marginPercent
     }));
 
-    await supabase.from('budget_items').insert(itemsToInsert);
+    const { error: itemsError } = await supabase.from('budget_items').insert(itemsToInsert);
+    
+    if (itemsError) {
+      console.error('Erro ao inserir itens:', itemsError);
+      toast({ title: 'Aviso', description: 'Orçamento criado, mas houve um erro ao salvar os itens.', variant: 'destructive' });
+    } else {
+      toast({ title: 'Sucesso', description: 'Orçamento criado com sucesso!' });
+    }
     
     fetchBudgets();
-    toast({ title: 'Sucesso', description: 'Orçamento criado com sucesso!' });
     return { ...budget, id: bData.id, totalValue, totalCost, totalProfit, marginPercent, createdAt: new Date() } as any;
   };
 
@@ -185,7 +194,7 @@ export function usePricingDB() {
       dbUpdates.total_profit = totalProfit;
       dbUpdates.margin_percent = totalCost > 0 ? (totalProfit / totalCost) * 100 : 0;
 
-      // Atualizar itens: remover antigos e inserir novos (abordagem simples)
+      // Atualizar itens: remover antigos e inserir novos
       await supabase.from('budget_items').delete().eq('budget_id', id);
       const itemsToInsert = updates.items.map(item => ({
         budget_id: id, 

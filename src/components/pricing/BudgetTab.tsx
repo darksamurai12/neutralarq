@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, FileText, TrendingUp, ChevronDown, ChevronUp, Package, Users, Truck, Edit, Copy, Download, Banknote, FolderPlus, Folder, Percent } from 'lucide-react';
+import { Plus, Trash2, FileText, TrendingUp, ChevronDown, ChevronUp, Package, Users, Truck, Edit, Copy, Download, Banknote, FolderPlus, Folder, Percent, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -97,7 +97,6 @@ export function BudgetTab({ budgets, products, labor, transport, clients, projec
     setBudgetItems(prev => prev.map(item => {
       if (item.id === id) {
         const updated = { ...item, [field]: numValue };
-        // Recalcular valores dependentes
         const unitCost = updated.unitCost;
         const margin = updated.marginPercent;
         const qty = updated.quantity;
@@ -212,73 +211,84 @@ export function BudgetTab({ budgets, products, labor, transport, clients, projec
 
   const getTypeLabel = (type: BudgetItem['type']) => { switch (type) { case 'product': return 'Produto'; case 'labor': return 'Mão de Obra'; case 'transport': return 'Transporte'; } };
 
-  const renderItemsTable = (items: BudgetItem[], isEditable = false) => (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Item</TableHead>
-          <TableHead className="text-center">Tipo</TableHead>
-          <TableHead className="text-center w-[100px]">Qtd</TableHead>
-          <TableHead className="text-center w-[100px]">Margem (%)</TableHead>
-          <TableHead className="text-right">Custo Unit.</TableHead>
-          <TableHead className="text-right">Preço Unit.</TableHead>
-          <TableHead className="text-right">Total</TableHead>
-          <TableHead className="text-right text-emerald-600">Lucro</TableHead>
-          {isEditable && <TableHead className="w-[50px]"></TableHead>}
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {items.map((item) => (
-          <TableRow key={item.id}>
-            <TableCell>
-              <div className="flex items-center gap-2">
-                {getItemIcon(item.type)}
-                <span className="font-medium">{item.name}</span>
-              </div>
-            </TableCell>
-            <TableCell className="text-center text-xs text-muted-foreground">{getTypeLabel(item.type)}</TableCell>
-            <TableCell className="text-center">
-              {isEditable ? (
-                <Input 
-                  type="number" 
-                  min="1" 
-                  value={item.quantity} 
-                  onChange={(e) => updateItemInBudget(item.id, 'quantity', e.target.value)}
-                  className="h-8 text-center px-1"
-                />
-              ) : (
-                item.quantity
-              )}
-            </TableCell>
-            <TableCell className="text-center">
-              {isEditable ? (
-                <Input 
-                  type="number" 
-                  step="0.1" 
-                  value={item.marginPercent} 
-                  onChange={(e) => updateItemInBudget(item.id, 'marginPercent', e.target.value)}
-                  className="h-8 text-center px-1"
-                />
-              ) : (
-                <Badge variant="outline" className="text-[10px]">{item.marginPercent}%</Badge>
-              )}
-            </TableCell>
-            <TableCell className="text-right text-muted-foreground">{formatCurrency(item.unitCost)}</TableCell>
-            <TableCell className="text-right">{formatCurrency(item.unitPrice)}</TableCell>
-            <TableCell className="text-right font-medium">{formatCurrency(item.totalPrice)}</TableCell>
-            <TableCell className="text-right text-emerald-600 font-medium">{formatCurrency(item.profit)}</TableCell>
-            {isEditable && (
-              <TableCell>
-                <Button variant="ghost" size="icon" onClick={() => removeItemFromBudget(item.id)} className="text-destructive h-8 w-8">
-                  <Trash2 className="w-3.5 h-3.5" />
-                </Button>
-              </TableCell>
-            )}
+  const renderItemsTable = (items: BudgetItem[], isEditable = false) => {
+    if (items.length === 0) {
+      return (
+        <div className="py-8 text-center text-muted-foreground flex flex-col items-center gap-2">
+          <AlertCircle className="w-8 h-8 opacity-20" />
+          <p className="text-sm">Este orçamento não tem itens.</p>
+        </div>
+      );
+    }
+
+    return (
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Item</TableHead>
+            <TableHead className="text-center">Tipo</TableHead>
+            <TableHead className="text-center w-[100px]">Qtd</TableHead>
+            <TableHead className="text-center w-[100px]">Margem (%)</TableHead>
+            <TableHead className="text-right">Custo Unit.</TableHead>
+            <TableHead className="text-right">Preço Unit.</TableHead>
+            <TableHead className="text-right">Total</TableHead>
+            <TableHead className="text-right text-emerald-600">Lucro</TableHead>
+            {isEditable && <TableHead className="w-[50px]"></TableHead>}
           </TableRow>
-        ))}
-      </TableBody>
-    </Table>
-  );
+        </TableHeader>
+        <TableBody>
+          {items.map((item) => (
+            <TableRow key={item.id}>
+              <TableCell>
+                <div className="flex items-center gap-2">
+                  {getItemIcon(item.type)}
+                  <span className="font-medium">{item.name}</span>
+                </div>
+              </TableCell>
+              <TableCell className="text-center text-xs text-muted-foreground">{getTypeLabel(item.type)}</TableCell>
+              <TableCell className="text-center">
+                {isEditable ? (
+                  <Input 
+                    type="number" 
+                    min="1" 
+                    value={item.quantity} 
+                    onChange={(e) => updateItemInBudget(item.id, 'quantity', e.target.value)}
+                    className="h-8 text-center px-1"
+                  />
+                ) : (
+                  item.quantity
+                )}
+              </TableCell>
+              <TableCell className="text-center">
+                {isEditable ? (
+                  <Input 
+                    type="number" 
+                    step="0.1" 
+                    value={item.marginPercent || 0} 
+                    onChange={(e) => updateItemInBudget(item.id, 'marginPercent', e.target.value)}
+                    className="h-8 text-center px-1"
+                  />
+                ) : (
+                  <Badge variant="outline" className="text-[10px]">{item.marginPercent || 0}%</Badge>
+                )}
+              </TableCell>
+              <TableCell className="text-right text-muted-foreground">{formatCurrency(item.unitCost)}</TableCell>
+              <TableCell className="text-right">{formatCurrency(item.unitPrice)}</TableCell>
+              <TableCell className="text-right font-medium">{formatCurrency(item.totalPrice)}</TableCell>
+              <TableCell className="text-right text-emerald-600 font-medium">{formatCurrency(item.profit)}</TableCell>
+              {isEditable && (
+                <TableCell>
+                  <Button variant="ghost" size="icon" onClick={() => removeItemFromBudget(item.id)} className="text-destructive h-8 w-8">
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </Button>
+                </TableCell>
+              )}
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    );
+  };
 
   const renderGroupedItems = (items: BudgetItem[], isEditable = false) => {
     const grouped = groupItems(items);
