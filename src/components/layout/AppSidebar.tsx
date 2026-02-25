@@ -88,8 +88,20 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
       "h-full bg-white dark:bg-slate-900 lg:bg-transparent flex flex-col border-r lg:border-none border-slate-100 dark:border-slate-800 transition-all duration-300",
       collapsed ? "w-20" : "w-full lg:w-64"
     )}>
-      {/* Espaçamento superior em vez do logo */}
-      <div className="h-6" />
+      {/* Logo Section */}
+      <div className={cn(
+        "p-6 mb-2 flex items-center transition-all duration-300",
+        collapsed ? "justify-center px-2" : "justify-start"
+      )}>
+        <img 
+          src="/logo02.png" 
+          alt="Neutral Arq Logo" 
+          className={cn(
+            "transition-all duration-300 object-contain dark:invert",
+            collapsed ? "h-8 w-8" : "h-12 w-auto"
+          )}
+        />
+      </div>
 
       {/* Navigation */}
       <nav className="flex-1 px-4 space-y-8 overflow-y-auto custom-scrollbar">
