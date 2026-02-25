@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, FileText, TrendingUp, ChevronDown, ChevronUp, Package, Users, Truck, Edit, Copy, Download, Banknote, FolderPlus, Folder, Percent } from 'lucide-react';
+import { Plus, Trash2, FileText, TrendingUp, ChevronDown, ChevronUp, Package, Users, Truck, Edit, Copy, Download, Banknote, FolderPlus, Folder, Percent, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -60,7 +60,6 @@ export function BudgetTab({ budgets, products, labor, transport, clients, projec
   const [newGroupName, setNewGroupName] = useState('');
   const [showNewGroupInput, setShowNewGroupInput] = useState(false);
 
-  // Atualizar margem padrão quando o item selecionado mudar
   useEffect(() => {
     if (selectedItemId) {
       let item: any;
@@ -93,17 +92,92 @@ export function BudgetTab({ budgets, products, labor, transport, clients, projec
     } 
   };
 
+  const updateItemInBudget = (id: string, field: 'quantity' | 'marginPercent', value: string) => {
+    const numValue = parseFloat(value) || 0;
+    setBudgetItems(prev => prev.map(item => {
+      if (item.id === id) {
+        const updated = { ...item, [field]: numValue };
+        const unitCost = updated.unitCost;
+        const margin = updated.marginPercent;
+        const qty = updated.quantity;
+
+        updated.unitPrice = unitCost * (1 + margin / 100);
+        updated.totalPrice = updated.unitPrice * qty;
+        updated.totalCost = unitCost * qty;
+        updated.profit = updated.totalPrice - updated.totalCost;
+
+        return updated;
+      }
+      return item;
+    }));
+  };
+
   const removeItemFromBudget = (itemId: string) => { setBudgetItems(prev => prev.filter(item => item.id !== itemId)); };
 
-  const handleCreateOrUpdateBudget = () => { if (!budgetName || budgetItems.length === 0) return; if (isEditMode && editingBudgetId) onUpdateBudget(editingBudgetId, { name: budgetName, items: budgetItems }); else onCreateBudget({ name: budgetName, clientId: selectedClientId || null, projectId: selectedProjectId || null, items: budgetItems, status: 'draft' }); resetForm(); };
+  const handleCreateOrUpdateBudget = () => { 
+    if (!budgetName || budgetItems.length === 0) return; 
+    
+    const client = clients.find(c => c.id === selectedClientId);
+    
+    if (isEditMode && editingBudgetId) {
+      onUpdateBudget(editingBudgetId, { 
+        name: budgetName, 
+        items: budgetItems,
+        notes: budgetNotes,
+        clientName: client?.name || null,
+        projectId: selectedProjectId || null
+      });
+    } else {
+      onCreateBudget({ 
+        name: budgetName, 
+        clientId: selectedClientId || null, 
+        clientName: client?.name || null,
+        projectId: selectedProjectId || null, 
+        items: budgetItems, 
+        status: 'draft',
+        notes: budgetNotes
+      }); 
+    }
+    resetForm(); 
+  };
 
-  const handleEditBudget = (budget: Budget) => { setIsEditMode(true); setEditingBudgetId(budget.id); setBudgetName(budget.name); setBudgetItems([...budget.items]); setSelectedClientId(budget.clientId || ''); setSelectedProjectId(budget.projectId || ''); const existingGroups = [...new Set(budget.items.map(i => i.groupName).filter(Boolean))] as string[]; setBudgetGroups(existingGroups); setIsDialogOpen(true); };
+  const handleEditBudget = (budget: Budget) => { 
+    setIsEditMode(true); 
+    setEditingBudgetId(budget.id); 
+    setBudgetName(budget.name); 
+    setBudgetNotes(budget.notes || ''); 
+    setBudgetItems([...budget.items]); 
+    
+    // Tentar encontrar o ID do cliente pelo nome se o ID for nulo
+    const client = clients.find(c => c.name === budget.clientName);
+    setSelectedClientId(client?.id || ''); 
+    setSelectedProjectId(budget.projectId || ''); 
+    
+    const existingGroups = [...new Set(budget.items.map(i => i.groupName).filter(Boolean))] as string[]; 
+    setBudgetGroups(existingGroups); 
+    setIsDialogOpen(true); 
+  };
 
-  const handleCloneBudget = (budget: Budget) => { setIsEditMode(false); setEditingBudgetId(null); setBudgetName(`${budget.name} (Cópia)`); setBudgetItems(budget.items.map(item => ({ ...item, id: crypto.randomUUID() }))); setSelectedClientId(budget.clientId || ''); setSelectedProjectId(budget.projectId || ''); const existingGroups = [...new Set(budget.items.map(i => i.groupName).filter(Boolean))] as string[]; setBudgetGroups(existingGroups); setIsDialogOpen(true); toast.success('Orçamento clonado — edite e guarde.'); };
+  const handleCloneBudget = (budget: Budget) => { 
+    setIsEditMode(false); 
+    setEditingBudgetId(null); 
+    setBudgetName(`${budget.name} (Cópia)`); 
+    setBudgetNotes(budget.notes || ''); 
+    setBudgetItems(budget.items.map(item => ({ ...item, id: crypto.randomUUID() }))); 
+    
+    const client = clients.find(c => c.name === budget.clientName);
+    setSelectedClientId(client?.id || ''); 
+    setSelectedProjectId(budget.projectId || ''); 
+    
+    const existingGroups = [...new Set(budget.items.map(i => i.groupName).filter(Boolean))] as string[]; 
+    setBudgetGroups(existingGroups); 
+    setIsDialogOpen(true); 
+    toast.success('Orçamento clonado — edite e guarde.'); 
+  };
 
   const handleExportPDF = (budget: Budget) => {
     const doc = new jsPDF();
-    const client = clients.find(c => c.id === budget.clientId);
+    const client = clients.find(c => c.id === budget.clientId) || { name: budget.clientName };
     const project = projects.find(p => p.id === budget.projectId);
     const grouped = groupItems(budget.items);
     const typeLabels: Record<string, string> = { product: 'Produto', labor: 'Mão de Obra', transport: 'Transporte' };
@@ -114,7 +188,7 @@ export function BudgetTab({ budgets, products, labor, transport, clients, projec
       doc.setFontSize(10); doc.setTextColor(108, 117, 125); doc.text(`Nº: ${budget.id.slice(0, 8).toUpperCase()}`, 14, 30); doc.text(`Data: ${format(new Date(budget.createdAt), "dd/MM/yyyy", { locale: pt })}`, 14, 36); doc.text(`Estado: ${statusLabels[budget.status] || budget.status}`, 14, 42);
       doc.setFontSize(12); doc.setTextColor(33, 37, 41); doc.text(budget.name, 14, 54);
       doc.setFontSize(9); doc.setTextColor(108, 117, 125); doc.text(subtitle, 14, 60);
-      let yPos = 68; if (client) { doc.setFontSize(10); doc.setTextColor(108, 117, 125); doc.text(`Cliente: ${client.name}`, 14, yPos); yPos += 6; } if (project) { doc.setFontSize(10); doc.setTextColor(108, 117, 125); doc.text(`Projecto: ${project.name}`, 14, yPos); yPos += 6; }
+      let yPos = 68; if (client?.name) { doc.setFontSize(10); doc.setTextColor(108, 117, 125); doc.text(`Cliente: ${client.name}`, 14, yPos); yPos += 6; } if (project) { doc.setFontSize(10); doc.setTextColor(108, 117, 125); doc.text(`Projecto: ${project.name}`, 14, yPos); yPos += 6; }
       return yPos + 4;
     };
 
@@ -168,16 +242,88 @@ export function BudgetTab({ budgets, products, labor, transport, clients, projec
 
   const getTypeLabel = (type: BudgetItem['type']) => { switch (type) { case 'product': return 'Produto'; case 'labor': return 'Mão de Obra'; case 'transport': return 'Transporte'; } };
 
-  const renderItemsTable = (items: BudgetItem[], showDelete = false) => (
-    <Table>
-      <TableHeader><TableRow><TableHead>Item</TableHead><TableHead className="text-center">Tipo</TableHead><TableHead className="text-center">Qtd</TableHead><TableHead className="text-center">Margem</TableHead><TableHead className="text-right">Custo Unit.</TableHead><TableHead className="text-right">Preço Unit.</TableHead><TableHead className="text-right">Total</TableHead><TableHead className="text-right text-emerald-600">Lucro</TableHead>{showDelete && <TableHead className="w-[50px]"></TableHead>}</TableRow></TableHeader>
-      <TableBody>{items.map((item) => (<TableRow key={item.id}><TableCell><div className="flex items-center gap-2">{getItemIcon(item.type)}<span className="font-medium">{item.name}</span></div></TableCell><TableCell className="text-center text-xs text-muted-foreground">{getTypeLabel(item.type)}</TableCell><TableCell className="text-center">{item.quantity}</TableCell><TableCell className="text-center"><Badge variant="outline" className="text-[10px]">{item.marginPercent}%</Badge></TableCell><TableCell className="text-right text-muted-foreground">{formatCurrency(item.unitCost)}</TableCell><TableCell className="text-right">{formatCurrency(item.unitPrice)}</TableCell><TableCell className="text-right font-medium">{formatCurrency(item.totalPrice)}</TableCell><TableCell className="text-right text-emerald-600 font-medium">{formatCurrency(item.profit)}</TableCell>{showDelete && (<TableCell><Button variant="ghost" size="icon" onClick={() => removeItemFromBudget(item.id)} className="text-destructive h-8 w-8"><Trash2 className="w-3.5 h-3.5" /></Button></TableCell>)}</TableRow>))}</TableBody>
-    </Table>
-  );
+  const renderItemsTable = (items: BudgetItem[], isEditable = false) => {
+    if (items.length === 0) {
+      return (
+        <div className="py-8 text-center text-muted-foreground flex flex-col items-center gap-2">
+          <AlertCircle className="w-8 h-8 opacity-20" />
+          <p className="text-sm">Este orçamento não tem itens.</p>
+        </div>
+      );
+    }
 
-  const renderGroupedItems = (items: BudgetItem[], showDelete = false) => {
+    return (
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Item</TableHead>
+            <TableHead className="text-center">Tipo</TableHead>
+            <TableHead className="text-center w-[100px]">Qtd</TableHead>
+            <TableHead className="text-center w-[100px]">Margem (%)</TableHead>
+            <TableHead className="text-right">Custo Unit.</TableHead>
+            <TableHead className="text-right">Preço Unit.</TableHead>
+            <TableHead className="text-right">Total</TableHead>
+            <TableHead className="text-right text-emerald-600">Lucro</TableHead>
+            {isEditable && <TableHead className="w-[50px]"></TableHead>}
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {items.map((item) => (
+            <TableRow key={item.id}>
+              <TableCell>
+                <div className="flex items-center gap-2">
+                  {getItemIcon(item.type)}
+                  <span className="font-medium">{item.name}</span>
+                </div>
+              </TableCell>
+              <TableCell className="text-center text-xs text-muted-foreground">{getTypeLabel(item.type)}</TableCell>
+              <TableCell className="text-center">
+                {isEditable ? (
+                  <Input 
+                    type="number" 
+                    min="1" 
+                    value={item.quantity} 
+                    onChange={(e) => updateItemInBudget(item.id, 'quantity', e.target.value)}
+                    className="h-8 text-center px-1"
+                  />
+                ) : (
+                  item.quantity
+                )}
+              </TableCell>
+              <TableCell className="text-center">
+                {isEditable ? (
+                  <Input 
+                    type="number" 
+                    step="0.1" 
+                    value={item.marginPercent || 0} 
+                    onChange={(e) => updateItemInBudget(item.id, 'marginPercent', e.target.value)}
+                    className="h-8 text-center px-1"
+                  />
+                ) : (
+                  <Badge variant="outline" className="text-[10px]">{item.marginPercent || 0}%</Badge>
+                )}
+              </TableCell>
+              <TableCell className="text-right text-muted-foreground">{formatCurrency(item.unitCost)}</TableCell>
+              <TableCell className="text-right">{formatCurrency(item.unitPrice)}</TableCell>
+              <TableCell className="text-right font-medium">{formatCurrency(item.totalPrice)}</TableCell>
+              <TableCell className="text-right text-emerald-600 font-medium">{formatCurrency(item.profit)}</TableCell>
+              {isEditable && (
+                <TableCell>
+                  <Button variant="ghost" size="icon" onClick={() => removeItemFromBudget(item.id)} className="text-destructive h-8 w-8">
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </Button>
+                </TableCell>
+              )}
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    );
+  };
+
+  const renderGroupedItems = (items: BudgetItem[], isEditable = false) => {
     const grouped = groupItems(items);
-    if (grouped.length === 1 && !grouped[0].groupName) return renderItemsTable(items, showDelete);
+    if (grouped.length === 1 && !grouped[0].groupName) return renderItemsTable(items, isEditable);
     return (
       <div className="space-y-4">
         {grouped.map((group, idx) => {
@@ -187,7 +333,7 @@ export function BudgetTab({ budgets, products, labor, transport, clients, projec
             <div key={idx}>
               {group.groupName && (<div className="flex items-center justify-between px-2 py-2 bg-primary/5 rounded-lg mb-2"><div className="flex items-center gap-2"><Folder className="w-4 h-4 text-primary" /><span className="font-semibold text-sm">{group.groupName}</span><Badge variant="secondary" className="text-xs">{group.items.length} itens</Badge></div><div className="flex gap-4 text-xs"><span className="text-muted-foreground">Total: <strong className="text-foreground">{formatCurrency(groupTotal)}</strong></span><span className="text-muted-foreground">Lucro: <strong className="text-emerald-600">{formatCurrency(groupProfit)}</strong></span></div></div>)}
               {!group.groupName && grouped.length > 1 && (<div className="flex items-center gap-2 px-2 py-2 bg-muted/50 rounded-lg mb-2"><span className="font-medium text-sm text-muted-foreground">Sem grupo</span><Badge variant="secondary" className="text-xs">{group.items.length} itens</Badge></div>)}
-              {renderItemsTable(group.items, showDelete)}
+              {renderItemsTable(group.items, isEditable)}
             </div>
           );
         })}
@@ -267,7 +413,7 @@ export function BudgetTab({ budgets, products, labor, transport, clients, projec
           <Card><CardContent className="py-12 text-center text-muted-foreground"><FileText className="w-12 h-12 mx-auto mb-3 opacity-30" /><p className="font-medium">Nenhum orçamento criado</p><p className="text-sm">Clique em "Novo Orçamento" para começar.</p></CardContent></Card>
         ) : (
           budgets.map((budget) => {
-            const client = clients.find(c => c.id === budget.clientId);
+            const client = clients.find(c => c.id === budget.clientId) || { name: budget.clientName };
             const isExpanded = expandedBudget === budget.id;
             const statusConfig = getStatusBadge(budget.status);
             return (
