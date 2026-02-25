@@ -30,7 +30,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Package, Users, Truck, Percent, Plus, Check, ChevronsUpDown, Search } from 'lucide-react';
+import { Package, Users, Truck, Percent, Plus, Check, ChevronsUpDown } from 'lucide-react';
 import { PricingProduct, PricingLabor, PricingTransport, BudgetItem, PricingItemType } from '@/types';
 import { formatCurrency } from '@/lib/currency';
 import { Card, CardContent } from '@/components/ui/card';
@@ -136,7 +136,7 @@ export function ItemSelectionDialog({
               <SelectTrigger className="h-11 rounded-xl">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-popover">
                 <SelectItem value="product">
                   <div className="flex items-center gap-2"><Package className="w-4 h-4 text-blue-500" /> Produto</div>
                 </SelectItem>
@@ -158,7 +158,7 @@ export function ItemSelectionDialog({
                   variant="outline"
                   role="combobox"
                   aria-expanded={isComboboxOpen}
-                  className="w-full justify-between h-11 rounded-xl font-normal"
+                  className="w-full justify-between h-11 rounded-xl font-normal bg-background"
                 >
                   {itemId
                     ? availableItems.find((item) => item.id === itemId)?.name
@@ -166,10 +166,10 @@ export function ItemSelectionDialog({
                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
-                <Command>
-                  <CommandInput placeholder="Digite para pesquisar..." />
-                  <CommandList>
+              <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0 bg-popover border shadow-xl" align="start">
+                <Command className="bg-popover">
+                  <CommandInput placeholder="Digite para pesquisar..." className="h-11" />
+                  <CommandList className="max-h-[200px] overflow-y-auto">
                     <CommandEmpty>Nenhum item encontrado.</CommandEmpty>
                     <CommandGroup>
                       {availableItems.map((item) => (
@@ -180,6 +180,7 @@ export function ItemSelectionDialog({
                             setItemId(item.id);
                             setIsComboboxOpen(false);
                           }}
+                          className="cursor-pointer hover:bg-accent"
                         >
                           <Check
                             className={cn(
@@ -188,7 +189,7 @@ export function ItemSelectionDialog({
                             )}
                           />
                           <div className="flex flex-col">
-                            <span>{item.name}</span>
+                            <span className="font-medium">{item.name}</span>
                             <span className="text-[10px] text-muted-foreground">
                               {formatCurrency('finalPrice' in item ? item.finalPrice : 0)}
                             </span>
@@ -234,7 +235,7 @@ export function ItemSelectionDialog({
               <SelectTrigger className="h-11 rounded-xl">
                 <SelectValue placeholder="Sem grupo" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-popover">
                 <SelectItem value="none">Sem grupo</SelectItem>
                 {groups.map(g => (
                   <SelectItem key={g} value={g}>{g}</SelectItem>
