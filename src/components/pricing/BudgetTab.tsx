@@ -148,7 +148,6 @@ export function BudgetTab({ budgets, products, labor, transport, clients, projec
     setBudgetNotes(budget.notes || ''); 
     setBudgetItems([...budget.items]); 
     
-    // Tentar encontrar o ID do cliente pelo nome se o ID for nulo
     const client = clients.find(c => c.name === budget.clientName);
     setSelectedClientId(client?.id || ''); 
     setSelectedProjectId(budget.projectId || ''); 
@@ -182,24 +181,114 @@ export function BudgetTab({ budgets, products, labor, transport, clients, projec
     const grouped = groupItems(budget.items);
     const typeLabels: Record<string, string> = { product: 'Produto', labor: 'Mão de Obra', transport: 'Transporte' };
     const statusLabels: Record<string, string> = { draft: 'Rascunho', sent: 'Enviado', approved: 'Aprovado', rejected: 'Rejeitado' };
+    const pageHeight = doc.internal.pageSize.height;
 
-    const addHeader = (doc: jsPDF, title: string, subtitle: string) => {
-      doc.setFontSize(20); doc.setTextColor(33, 37, 41); doc.text(title, 14, 22);
-      doc.setFontSize(10); doc.setTextColor(108, 117, 125); doc.text(`Nº: ${budget.id.slice(0, 8).toUpperCase()}`, 14, 30); doc.text(`Data: ${format(new Date(budget.createdAt), "dd/MM/yyyy", { locale: pt })}`, 14, 36); doc.text(`Estado: ${statusLabels[budget.status] || budget.status}`, 14, 42);
-      doc.setFontSize(12); doc.setTextColor(33, 37, 41); doc.text(budget.name, 14, 54);
-      doc.setFontSize(9); doc.setTextColor(108, 117, 125); doc.text(subtitle, 14, 60);
-      let yPos = 68; if (client?.name) { doc.setFontSize(10); doc.setTextColor(108, 117, 125); doc.text(`Cliente: ${client.name}`, 14, yPos); yPos += 6; } if (project) { doc.setFontSize(10); doc.setTextColor(108, 117, 125); doc.text(`Projecto: ${project.name}`, 14, yPos); yPos += 6; }
-      return yPos + 4;
-    };
+    // Cabeçalho Principal
+    doc.setFontSize(20); 
+    doc.setTextColor(33, 37, 41); 
+    doc.text('ORÇAMENTO', 14, 22);
+    
+    doc.setFontSize(10); 
+    doc.setTextColor(108, 117, 125); 
+    doc.text(`Nº: ${budget.id.slice(0, 8).toUpperCase()}`, 14, 30); 
+    doc.text(`Data: ${format(new Date(budget.createdAt), "dd/MM/yyyy", { locale: pt })}`, 14, 36); 
+    doc.text(`Estado: ${statusLabels[budget.status] || budget.status}`, 14, 42);
+    
+    doc.setFontSize(12); 
+    doc.setTextColor(33, 37, 41); 
+    doc.text(budget.name, 14, 54);
+    
+    let yPos = 62; 
+    if (client?.name) { 
+      doc.setFontSize(10); 
+      doc.setTextColor(108, 117, 125); 
+      doc.text(`Cliente: ${client.name}`, 14, yPos); 
+      yPos += 6; 
+    } 
+    if (project) { 
+      doc.setFontSize(10); 
+      doc.setTextColor(108, 117, 125); 
+      doc.text(`Projecto: ${project.name}`, 14, yPos); 
+      yPos += 6; 
+    }
+    
+    yPos += 4;
 
-    let yPos = addHeader(doc, 'ORÇAMENTO', 'Proposta para cliente');
+    // Iterar pelos grupos
     grouped.forEach((group) => {
-      if (group.groupName) { doc.setFontSize(11); doc.setTextColor(79, 70, 229); doc.text(`▸ ${group.groupName}`, 14, yPos); yPos += 6; }
-      const tableData = group.items.map(item => [item.name, typeLabels[item.type] || item.type, item.quantity.toString(), formatCurrency(item.unitPrice), formatCurrency(item.totalPrice)]);
-      autoTable(doc, { startY: yPos, head: [['Item', 'Tipo', 'Qtd', 'Preço Unit.', 'Total']], body: tableData, theme: 'striped', headStyles: { fillColor: [79, 70, 229], textColor: 255, fontSize: 9 }, bodyStyles: { fontSize: 8 }, columnStyles: { 2: { halign: 'center' }, 3: { halign: 'right' }, 4: { halign: 'right' } } });
-      yPos = (doc as any).lastAutoTable?.finalY + 8 || yPos + 40;
+      // Verificar se há espaço para o título do grupo
+      if (yPos > pageHeight - 40) {
+        doc.addPage();
+        yPos = 20;
+      }
+
+      if (group.groupName) { 
+        doc.setFontSize(11); 
+        doc.setTextColor(79, 70, 229); 
+        doc.text(`▸ ${group.groupName}`, 14, yPos); 
+        yPos += 6; 
+      }
+
+      const tableData = group.items.map(item => [
+        item.name, 
+        typeLabels[item.type] || item.type, 
+        item.quantity.toString(), 
+        formatCurrency(item.unitPrice), 
+        formatCurrency(item.totalPrice)
+      ]);
+
+      autoTable(doc, { 
+        startY: yPos, 
+        head: [['Item', 'Tipo', 'Qtd', 'Preço Unit.', 'Total']], 
+        body: tableData, 
+        theme: 'striped', 
+        headStyles: { fillColor: [79, 70, 229], textColor: 255, fontSize: 9 }, 
+        bodyStyles: { fontSize: 8 }, 
+        columnStyles: { 2: { halign: 'center' }, 3: { halign: 'right' }, 4: { halign: 'right' } },
+        margin: { bottom: 20 },
+        didDrawPage: (data) => {
+          // Rodapé em cada página
+          doc.setFontSize(8);
+          doc.setTextColor(150);
+          doc.text(`Página ${data.pageNumber}`, doc.internal.pageSize.width - 25, pageHeight - 10);
+        }
+      });
+
+      yPos = (doc as any).lastAutoTable.finalY + 10;
     });
-    const summaryY1 = yPos + 4; doc.setDrawColor(200, 200, 200); doc.setFillColor(248, 249, 250); doc.roundedRect(14, summaryY1 - 4, 182, 20, 3, 3, 'FD'); doc.setFontSize(10); doc.setTextColor(108, 117, 125); doc.text('Valor Total:', 20, summaryY1 + 6); doc.setFontSize(14); doc.setTextColor(37, 99, 235); doc.text(formatCurrency(budget.totalValue), 60, summaryY1 + 6);
+
+    // Resumo Final
+    if (yPos > pageHeight - 40) {
+      doc.addPage();
+      yPos = 20;
+    }
+
+    doc.setDrawColor(200, 200, 200); 
+    doc.setFillColor(248, 249, 250); 
+    doc.roundedRect(14, yPos, 182, 20, 3, 3, 'FD'); 
+    
+    doc.setFontSize(10); 
+    doc.setTextColor(108, 117, 125); 
+    doc.text('VALOR TOTAL DO ORÇAMENTO:', 20, yPos + 12); 
+    
+    doc.setFontSize(14); 
+    doc.setTextColor(37, 99, 235); 
+    doc.text(formatCurrency(budget.totalValue), 100, yPos + 12);
+
+    if (budget.notes) {
+      yPos += 30;
+      if (yPos > pageHeight - 30) {
+        doc.addPage();
+        yPos = 20;
+      }
+      doc.setFontSize(10);
+      doc.setTextColor(33, 37, 41);
+      doc.text('Notas:', 14, yPos);
+      doc.setFontSize(9);
+      doc.setTextColor(108, 117, 125);
+      const splitNotes = doc.splitTextToSize(budget.notes, 180);
+      doc.text(splitNotes, 14, yPos + 6);
+    }
 
     doc.save(`orcamento-${budget.name.replace(/\s+/g, '-').toLowerCase()}.pdf`);
     toast.success('PDF exportado com sucesso!');
