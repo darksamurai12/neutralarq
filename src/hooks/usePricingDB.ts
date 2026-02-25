@@ -59,14 +59,14 @@ export function usePricingDB() {
           unitCost: Number(item.unit_cost), 
           totalCost: Number(item.total_cost), 
           profit: Number(item.profit),
-          marginPercent: 0, // Não existe na tabela budget_items
+          marginPercent: Number((item as any).margin_percent || 0),
           groupName: item.group_name || undefined,
         }));
 
         return {
           id: budget.id, 
           name: budget.name, 
-          clientId: null, // A tabela usa client_name
+          clientId: null,
           clientName: budget.client_name,
           projectId: null,
           items, 
@@ -76,6 +76,7 @@ export function usePricingDB() {
           totalProfit: Number(budget.total_profit),
           marginPercent: Number(budget.margin_percent), 
           createdAt: new Date(budget.created_at),
+          notes: budget.notes || '',
         };
       })
     );
@@ -123,8 +124,9 @@ export function usePricingDB() {
     if (!user) return null;
     const totalValue = budget.items.reduce((sum, item) => sum + item.totalPrice, 0);
     const totalCost = budget.items.reduce((sum, item) => sum + item.totalCost, 0);
+    const totalProfit = totalValue - totalCost;
+    const marginPercent = totalCost > 0 ? (totalProfit / totalCost) * 100 : 0;
     
-    // Ajustado para usar client_name e remover colunas inexistentes
     const { data: bData, error: bError } = await supabase.from('budgets').insert({
       user_id: user.id, 
       name: budget.name, 
@@ -132,13 +134,12 @@ export function usePricingDB() {
       status: budget.status, 
       total_value: totalValue, 
       total_cost: totalCost,
-      total_profit: totalValue - totalCost, 
-      margin_percent: totalCost > 0 ? ((totalValue - totalCost) / totalCost) * 100 : 0,
+      total_profit: totalProfit, 
+      margin_percent: marginPercent,
       notes: budget.notes || null
     }).select().single();
 
     if (bError || !bData) {
-      console.error('Erro ao criar orçamento:', bError);
       toast({ title: 'Erro', description: 'Não foi possível guardar o orçamento.', variant: 'destructive' });
       return null;
     }
@@ -155,17 +156,62 @@ export function usePricingDB() {
       total_cost: item.totalCost, 
       profit: item.profit, 
       group_name: item.groupName || null,
+      margin_percent: item.marginPercent
     }));
 
-    const { error: itemsError } = await supabase.from('budget_items').insert(itemsToInsert);
+    await supabase.from('budget_items').insert(itemsToInsert);
     
-    if (itemsError) {
-      console.error('Erro ao inserir itens do orçamento:', itemsError);
-    }
-
     fetchBudgets();
     toast({ title: 'Sucesso', description: 'Orçamento criado com sucesso!' });
-    return { ...budget, id: bData.id, totalValue, totalCost, totalProfit: totalValue - totalCost, marginPercent: 0, createdAt: new Date() } as any;
+    return { ...budget, id: bData.id, totalValue, totalCost, totalProfit, marginPercent, createdAt: new Date() } as any;
+  };
+
+  const updateBudget = async (id: string, updates: Partial<Budget>) => {
+    if (!user) return;
+
+    const dbUpdates: any = {};
+    if (updates.name) dbUpdates.name = updates.name;
+    if (updates.status) dbUpdates.status = updates.status;
+    if (updates.notes !== undefined) dbUpdates.notes = updates.notes;
+    if (updates.clientName !== undefined) dbUpdates.client_name = updates.clientName;
+
+    if (updates.items) {
+      const totalValue = updates.items.reduce((sum, item) => sum + item.totalPrice, 0);
+      const totalCost = updates.items.reduce((sum, item) => sum + item.totalCost, 0);
+      const totalProfit = totalValue - totalCost;
+      
+      dbUpdates.total_value = totalValue;
+      dbUpdates.total_cost = totalCost;
+      dbUpdates.total_profit = totalProfit;
+      dbUpdates.margin_percent = totalCost > 0 ? (totalProfit / totalCost) * 100 : 0;
+
+      // Atualizar itens: remover antigos e inserir novos (abordagem simples)
+      await supabase.from('budget_items').delete().eq('budget_id', id);
+      const itemsToInsert = updates.items.map(item => ({
+        budget_id: id, 
+        type: item.type, 
+        item_id: item.itemId || null, 
+        name: item.name,
+        quantity: item.quantity, 
+        unit_price: item.unitPrice, 
+        total_price: item.totalPrice,
+        unit_cost: item.unitCost, 
+        total_cost: item.totalCost, 
+        profit: item.profit, 
+        group_name: item.groupName || null,
+        margin_percent: item.marginPercent
+      }));
+      await supabase.from('budget_items').insert(itemsToInsert);
+    }
+
+    const { error } = await supabase.from('budgets').update(dbUpdates).eq('id', id);
+    
+    if (error) {
+      toast({ title: 'Erro', description: 'Erro ao atualizar orçamento', variant: 'destructive' });
+    } else {
+      fetchBudgets();
+      toast({ title: 'Sucesso', description: 'Orçamento atualizado' });
+    }
   };
 
   const deleteBudget = async (id: string) => {
@@ -178,7 +224,7 @@ export function usePricingDB() {
     addProduct, updateProduct: async () => {}, deleteProduct: async () => {},
     addLabor, updateLabor: async () => {}, deleteLabor: async () => {},
     addTransport, updateTransport: async () => {}, deleteTransport: async () => {},
-    createBudget, updateBudget: async () => {}, deleteBudget,
+    createBudget, updateBudget, deleteBudget,
     createBudgetItem: (type: any, itemId: string, quantity: number, customMargin?: number): BudgetItem | null => {
       let item: any;
       if (type === 'product') item = products.find(p => p.id === itemId);
