@@ -56,7 +56,7 @@ export function usePricingDB() {
       const mappedBudgets: Budget[] = data.map((budget) => ({
         id: budget.id,
         name: budget.name,
-        clientId: null,
+        clientId: budget.client_id || null,
         clientName: budget.client_name,
         projectId: budget.project_id,
         status: budget.status as any,
@@ -199,6 +199,7 @@ export function usePricingDB() {
       user_id: user.id, 
       name: budget.name, 
       client_name: budget.clientName || null,
+      client_id: budget.clientId || null,
       project_id: budget.projectId || null,
       status: budget.status, 
       total_value: totalValue, 
@@ -209,7 +210,8 @@ export function usePricingDB() {
     }).select().single();
 
     if (bError || !bData) {
-      toast({ title: 'Erro', description: 'Não foi possível guardar o orçamento.', variant: 'destructive' });
+      console.error('Erro ao criar orçamento:', bError);
+      toast({ title: 'Erro', description: 'Não foi possível guardar o orçamento. Verifique a ligação.', variant: 'destructive' });
       return null;
     }
 
@@ -231,7 +233,7 @@ export function usePricingDB() {
     const { error: itemsError } = await supabase.from('budget_items').insert(itemsToInsert);
     
     if (itemsError) {
-      console.error('Erro ao inserir itens:', itemsError);
+      console.error('Erro ao inserir itens do orçamento:', itemsError);
       toast({ title: 'Aviso', description: 'Orçamento criado, mas houve um erro ao salvar os itens.', variant: 'destructive' });
     } else {
       toast({ title: 'Sucesso', description: 'Orçamento criado com sucesso!' });
@@ -249,6 +251,7 @@ export function usePricingDB() {
     if (updates.status) dbUpdates.status = updates.status;
     if (updates.notes !== undefined) dbUpdates.notes = updates.notes;
     if (updates.clientName !== undefined) dbUpdates.client_name = updates.clientName;
+    if (updates.clientId !== undefined) dbUpdates.client_id = updates.clientId;
     if (updates.projectId !== undefined) dbUpdates.project_id = updates.projectId;
 
     if (updates.items) {
@@ -262,7 +265,9 @@ export function usePricingDB() {
       dbUpdates.margin_percent = totalCost > 0 ? (totalProfit / totalCost) * 100 : 0;
 
       // Atualizar itens: remover antigos e inserir novos
-      await supabase.from('budget_items').delete().eq('budget_id', id);
+      const { error: deleteError } = await supabase.from('budget_items').delete().eq('budget_id', id);
+      if (deleteError) console.error('Erro ao limpar itens antigos:', deleteError);
+
       const itemsToInsert = updates.items.map(item => ({
         budget_id: id, 
         type: item.type, 
@@ -277,13 +282,15 @@ export function usePricingDB() {
         group_name: item.groupName || null,
         margin_percent: item.marginPercent
       }));
-      await supabase.from('budget_items').insert(itemsToInsert);
+      const { error: insertError } = await supabase.from('budget_items').insert(itemsToInsert);
+      if (insertError) console.error('Erro ao inserir novos itens:', insertError);
     }
 
     const { error } = await supabase.from('budgets').update(dbUpdates).eq('id', id);
     
     if (error) {
-      toast({ title: 'Erro', description: 'Erro ao atualizar orçamento', variant: 'destructive' });
+      console.error('Erro ao atualizar orçamento:', error);
+      toast({ title: 'Erro', description: 'Erro ao atualizar orçamento na base de dados.', variant: 'destructive' });
     } else {
       fetchBudgets();
       toast({ title: 'Sucesso', description: 'Orçamento atualizado' });
@@ -293,6 +300,7 @@ export function usePricingDB() {
   const deleteBudget = async (id: string) => {
     const { error } = await supabase.from('budgets').delete().eq('id', id);
     if (!error) { fetchBudgets(); toast({ title: 'Sucesso', description: 'Orçamento eliminado' }); }
+    else console.error('Erro ao eliminar orçamento:', error);
   };
 
   return {
