@@ -33,7 +33,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       {/* Main Content Area */}
       <div className={cn(
         "flex-1 flex flex-col min-w-0 bg-white dark:bg-slate-900 shadow-glass overflow-hidden transition-all duration-300",
-        "lg:rounded-tl-[1.5rem] lg:mt-2 lg:border-l lg:border-t border-slate-100 dark:border-slate-800"
+        "lg:rounded-[1.5rem] lg:m-2 lg:border border-slate-100 dark:border-slate-800"
       )}>
         {/* Top Header */}
         <header className="h-16 md:h-20 px-4 md:px-8 flex items-center justify-between bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm border-b border-slate-50 dark:border-slate-800">
