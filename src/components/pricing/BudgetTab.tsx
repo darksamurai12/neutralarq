@@ -183,45 +183,48 @@ export function BudgetTab({ budgets, products, labor, transport, clients, projec
     const statusLabels: Record<string, string> = { draft: 'Rascunho', sent: 'Enviado', approved: 'Aprovado', rejected: 'Rejeitado' };
     const pageHeight = doc.internal.pageSize.height;
 
-    // Cabeçalho Principal
-    doc.setFontSize(20); 
-    doc.setTextColor(33, 37, 41); 
-    doc.text('ORÇAMENTO', 14, 22);
-    
-    doc.setFontSize(10); 
-    doc.setTextColor(108, 117, 125); 
-    doc.text(`Nº: ${budget.id.slice(0, 8).toUpperCase()}`, 14, 30); 
-    doc.text(`Data: ${format(new Date(budget.createdAt), "dd/MM/yyyy", { locale: pt })}`, 14, 36); 
-    doc.text(`Estado: ${statusLabels[budget.status] || budget.status}`, 14, 42);
-    
-    doc.setFontSize(12); 
-    doc.setTextColor(33, 37, 41); 
-    doc.text(budget.name, 14, 54);
-    
-    let yPos = 62; 
-    if (client?.name) { 
+    const renderHeader = (title: string, isInternal: boolean) => {
+      doc.setFontSize(20); 
+      doc.setTextColor(33, 37, 41); 
+      doc.text(title, 14, 22);
+      
       doc.setFontSize(10); 
       doc.setTextColor(108, 117, 125); 
-      doc.text(`Cliente: ${client.name}`, 14, yPos); 
-      yPos += 6; 
-    } 
-    if (project) { 
-      doc.setFontSize(10); 
-      doc.setTextColor(108, 117, 125); 
-      doc.text(`Projecto: ${project.name}`, 14, yPos); 
-      yPos += 6; 
-    }
-    
-    yPos += 4;
-
-    // Iterar pelos grupos
-    grouped.forEach((group) => {
-      // Verificar se há espaço para o título do grupo
-      if (yPos > pageHeight - 40) {
-        doc.addPage();
-        yPos = 20;
+      doc.text(`Nº: ${budget.id.slice(0, 8).toUpperCase()}`, 14, 30); 
+      doc.text(`Data: ${format(new Date(budget.createdAt), "dd/MM/yyyy", { locale: pt })}`, 14, 36); 
+      doc.text(`Estado: ${statusLabels[budget.status] || budget.status}`, 14, 42);
+      
+      doc.setFontSize(12); 
+      doc.setTextColor(33, 37, 41); 
+      doc.text(budget.name, 14, 54);
+      
+      let y = 62; 
+      if (client?.name) { 
+        doc.setFontSize(10); 
+        doc.setTextColor(108, 117, 125); 
+        doc.text(`Cliente: ${client.name}`, 14, y); 
+        y += 6; 
+      } 
+      if (project) { 
+        doc.setFontSize(10); 
+        doc.setTextColor(108, 117, 125); 
+        doc.text(`Projecto: ${project.name}`, 14, y); 
+        y += 6; 
       }
+      if (isInternal) {
+        doc.setFontSize(10);
+        doc.setTextColor(220, 38, 38);
+        doc.text('DOCUMENTO PARA USO INTERNO - NÃO ENVIAR AO CLIENTE', 14, y);
+        y += 6;
+      }
+      return y + 4;
+    };
 
+    // --- FOLHA 1: ORÇAMENTO CLIENTE (COM MARGEM) ---
+    let yPos = renderHeader('ORÇAMENTO (CLIENTE)', false);
+
+    grouped.forEach((group) => {
+      if (yPos > pageHeight - 40) { doc.addPage(); yPos = 20; }
       if (group.groupName) { 
         doc.setFontSize(11); 
         doc.setTextColor(79, 70, 229); 
@@ -245,53 +248,85 @@ export function BudgetTab({ budgets, products, labor, transport, clients, projec
         headStyles: { fillColor: [79, 70, 229], textColor: 255, fontSize: 9 }, 
         bodyStyles: { fontSize: 8 }, 
         columnStyles: { 2: { halign: 'center' }, 3: { halign: 'right' }, 4: { halign: 'right' } },
-        margin: { bottom: 20 },
-        didDrawPage: (data) => {
-          // Rodapé em cada página
-          doc.setFontSize(8);
-          doc.setTextColor(150);
-          doc.text(`Página ${data.pageNumber}`, doc.internal.pageSize.width - 25, pageHeight - 10);
-        }
+        margin: { bottom: 20 }
       });
-
       yPos = (doc as any).lastAutoTable.finalY + 10;
     });
 
-    // Resumo Final
-    if (yPos > pageHeight - 40) {
-      doc.addPage();
-      yPos = 20;
-    }
-
+    if (yPos > pageHeight - 40) { doc.addPage(); yPos = 20; }
     doc.setDrawColor(200, 200, 200); 
     doc.setFillColor(248, 249, 250); 
     doc.roundedRect(14, yPos, 182, 20, 3, 3, 'FD'); 
-    
     doc.setFontSize(10); 
     doc.setTextColor(108, 117, 125); 
     doc.text('VALOR TOTAL DO ORÇAMENTO:', 20, yPos + 12); 
-    
     doc.setFontSize(14); 
     doc.setTextColor(37, 99, 235); 
     doc.text(formatCurrency(budget.totalValue), 100, yPos + 12);
 
     if (budget.notes) {
       yPos += 30;
-      if (yPos > pageHeight - 30) {
-        doc.addPage();
-        yPos = 20;
-      }
-      doc.setFontSize(10);
-      doc.setTextColor(33, 37, 41);
-      doc.text('Notas:', 14, yPos);
-      doc.setFontSize(9);
-      doc.setTextColor(108, 117, 125);
+      if (yPos > pageHeight - 30) { doc.addPage(); yPos = 20; }
+      doc.setFontSize(10); doc.setTextColor(33, 37, 41); doc.text('Notas:', 14, yPos);
+      doc.setFontSize(9); doc.setTextColor(108, 117, 125);
       const splitNotes = doc.splitTextToSize(budget.notes, 180);
       doc.text(splitNotes, 14, yPos + 6);
     }
 
+    // --- FOLHA 2: RELATÓRIO INTERNO (SEM MARGEM / CUSTO BASE) ---
+    doc.addPage();
+    yPos = renderHeader('RELATÓRIO DE CUSTOS (INTERNO)', true);
+
+    grouped.forEach((group) => {
+      if (yPos > pageHeight - 40) { doc.addPage(); yPos = 20; }
+      if (group.groupName) { 
+        doc.setFontSize(11); 
+        doc.setTextColor(220, 38, 38); 
+        doc.text(`▸ ${group.groupName}`, 14, yPos); 
+        yPos += 6; 
+      }
+
+      const tableData = group.items.map(item => [
+        item.name, 
+        item.quantity.toString(), 
+        formatCurrency(item.unitCost), 
+        formatCurrency(item.totalCost),
+        `${item.marginPercent}%`,
+        formatCurrency(item.profit)
+      ]);
+
+      autoTable(doc, { 
+        startY: yPos, 
+        head: [['Item', 'Qtd', 'Custo Unit.', 'Custo Total', 'Margem', 'Lucro']], 
+        body: tableData, 
+        theme: 'grid', 
+        headStyles: { fillColor: [220, 38, 38], textColor: 255, fontSize: 9 }, 
+        bodyStyles: { fontSize: 8 }, 
+        columnStyles: { 1: { halign: 'center' }, 2: { halign: 'right' }, 3: { halign: 'right' }, 4: { halign: 'center' }, 5: { halign: 'right' } },
+        margin: { bottom: 20 }
+      });
+      yPos = (doc as any).lastAutoTable.finalY + 10;
+    });
+
+    if (yPos > pageHeight - 60) { doc.addPage(); yPos = 20; }
+    doc.setDrawColor(200, 200, 200); 
+    doc.setFillColor(254, 242, 242); 
+    doc.roundedRect(14, yPos, 182, 40, 3, 3, 'FD'); 
+    
+    doc.setFontSize(10); doc.setTextColor(108, 117, 125);
+    doc.text('RESUMO FINANCEIRO INTERNO:', 20, yPos + 10);
+    doc.text('Custo Total de Execução:', 20, yPos + 20);
+    doc.text('Lucro Bruto Previsto:', 20, yPos + 28);
+    doc.text('Margem Média Global:', 20, yPos + 36);
+
+    doc.setFontSize(11); doc.setTextColor(33, 37, 41);
+    doc.text(formatCurrency(budget.totalCost), 100, yPos + 20);
+    doc.setTextColor(22, 163, 74);
+    doc.text(formatCurrency(budget.totalProfit), 100, yPos + 28);
+    doc.text(`${budget.marginPercent.toFixed(1)}%`, 100, yPos + 36);
+
     doc.save(`orcamento-${budget.name.replace(/\s+/g, '-').toLowerCase()}.pdf`);
-    toast.success('PDF exportado com sucesso!');
+    toast.success('PDF exportado com folhas de cliente e interna!');
   };
 
   const getAvailableItems = () => {
