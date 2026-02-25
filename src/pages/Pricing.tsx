@@ -54,8 +54,12 @@ export default function Pricing() {
         icon={Calculator}
       />
 
-      <Tabs defaultValue="products" className="space-y-6">
+      <Tabs defaultValue="budgets" className="space-y-6">
         <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-grid rounded-xl">
+          <TabsTrigger value="budgets" className="gap-2">
+            <FileText className="w-4 h-4" />
+            <span className="hidden sm:inline">Orçamentos</span>
+          </TabsTrigger>
           <TabsTrigger value="products" className="gap-2">
             <Package className="w-4 h-4" />
             <span className="hidden sm:inline">Produtos</span>
@@ -68,11 +72,22 @@ export default function Pricing() {
             <Truck className="w-4 h-4" />
             <span className="hidden sm:inline">Transporte</span>
           </TabsTrigger>
-          <TabsTrigger value="budgets" className="gap-2">
-            <FileText className="w-4 h-4" />
-            <span className="hidden sm:inline">Orçamentos</span>
-          </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="budgets">
+          <BudgetTab
+            budgets={budgets}
+            products={products}
+            labor={labor}
+            transport={transport}
+            clients={clients}
+            projects={projects}
+            onCreateBudget={createBudget}
+            onUpdateBudget={updateBudget}
+            onDeleteBudget={deleteBudget}
+            createBudgetItem={createBudgetItem}
+          />
+        </TabsContent>
 
         <TabsContent value="products">
           <ProductsTab
@@ -98,21 +113,6 @@ export default function Pricing() {
             onAdd={addTransport}
             onUpdate={updateTransport}
             onDelete={deleteTransport}
-          />
-        </TabsContent>
-
-        <TabsContent value="budgets">
-          <BudgetTab
-            budgets={budgets}
-            products={products}
-            labor={labor}
-            transport={transport}
-            clients={clients}
-            projects={projects}
-            onCreateBudget={createBudget}
-            onUpdateBudget={updateBudget}
-            onDeleteBudget={deleteBudget}
-            createBudgetItem={createBudgetItem}
           />
         </TabsContent>
       </Tabs>
