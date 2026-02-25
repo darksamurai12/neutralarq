@@ -60,7 +60,6 @@ export function BudgetTab({ budgets, products, labor, transport, clients, projec
   const [newGroupName, setNewGroupName] = useState('');
   const [showNewGroupInput, setShowNewGroupInput] = useState(false);
 
-  // Atualizar margem padrão quando o item selecionado mudar
   useEffect(() => {
     if (selectedItemId) {
       let item: any;
@@ -95,15 +94,39 @@ export function BudgetTab({ budgets, products, labor, transport, clients, projec
 
   const removeItemFromBudget = (itemId: string) => { setBudgetItems(prev => prev.filter(item => item.id !== itemId)); };
 
-  const handleCreateOrUpdateBudget = () => { if (!budgetName || budgetItems.length === 0) return; if (isEditMode && editingBudgetId) onUpdateBudget(editingBudgetId, { name: budgetName, items: budgetItems }); else onCreateBudget({ name: budgetName, clientId: selectedClientId || null, projectId: selectedProjectId || null, items: budgetItems, status: 'draft' }); resetForm(); };
+  const handleCreateOrUpdateBudget = () => { 
+    if (!budgetName || budgetItems.length === 0) return; 
+    
+    const client = clients.find(c => c.id === selectedClientId);
+    
+    if (isEditMode && editingBudgetId) {
+      onUpdateBudget(editingBudgetId, { 
+        name: budgetName, 
+        items: budgetItems,
+        notes: budgetNotes,
+        clientName: client?.name || null
+      });
+    } else {
+      onCreateBudget({ 
+        name: budgetName, 
+        clientId: selectedClientId || null, 
+        clientName: client?.name || null,
+        projectId: selectedProjectId || null, 
+        items: budgetItems, 
+        status: 'draft',
+        notes: budgetNotes
+      }); 
+    }
+    resetForm(); 
+  };
 
-  const handleEditBudget = (budget: Budget) => { setIsEditMode(true); setEditingBudgetId(budget.id); setBudgetName(budget.name); setBudgetItems([...budget.items]); setSelectedClientId(budget.clientId || ''); setSelectedProjectId(budget.projectId || ''); const existingGroups = [...new Set(budget.items.map(i => i.groupName).filter(Boolean))] as string[]; setBudgetGroups(existingGroups); setIsDialogOpen(true); };
+  const handleEditBudget = (budget: Budget) => { setIsEditMode(true); setEditingBudgetId(budget.id); setBudgetName(budget.name); setBudgetNotes(budget.notes || ''); setBudgetItems([...budget.items]); setSelectedClientId(budget.clientId || ''); setSelectedProjectId(budget.projectId || ''); const existingGroups = [...new Set(budget.items.map(i => i.groupName).filter(Boolean))] as string[]; setBudgetGroups(existingGroups); setIsDialogOpen(true); };
 
-  const handleCloneBudget = (budget: Budget) => { setIsEditMode(false); setEditingBudgetId(null); setBudgetName(`${budget.name} (Cópia)`); setBudgetItems(budget.items.map(item => ({ ...item, id: crypto.randomUUID() }))); setSelectedClientId(budget.clientId || ''); setSelectedProjectId(budget.projectId || ''); const existingGroups = [...new Set(budget.items.map(i => i.groupName).filter(Boolean))] as string[]; setBudgetGroups(existingGroups); setIsDialogOpen(true); toast.success('Orçamento clonado — edite e guarde.'); };
+  const handleCloneBudget = (budget: Budget) => { setIsEditMode(false); setEditingBudgetId(null); setBudgetName(`${budget.name} (Cópia)`); setBudgetNotes(budget.notes || ''); setBudgetItems(budget.items.map(item => ({ ...item, id: crypto.randomUUID() }))); setSelectedClientId(budget.clientId || ''); setSelectedProjectId(budget.projectId || ''); const existingGroups = [...new Set(budget.items.map(i => i.groupName).filter(Boolean))] as string[]; setBudgetGroups(existingGroups); setIsDialogOpen(true); toast.success('Orçamento clonado — edite e guarde.'); };
 
   const handleExportPDF = (budget: Budget) => {
     const doc = new jsPDF();
-    const client = clients.find(c => c.id === budget.clientId);
+    const client = clients.find(c => c.id === budget.clientId) || { name: budget.clientName };
     const project = projects.find(p => p.id === budget.projectId);
     const grouped = groupItems(budget.items);
     const typeLabels: Record<string, string> = { product: 'Produto', labor: 'Mão de Obra', transport: 'Transporte' };
@@ -114,7 +137,7 @@ export function BudgetTab({ budgets, products, labor, transport, clients, projec
       doc.setFontSize(10); doc.setTextColor(108, 117, 125); doc.text(`Nº: ${budget.id.slice(0, 8).toUpperCase()}`, 14, 30); doc.text(`Data: ${format(new Date(budget.createdAt), "dd/MM/yyyy", { locale: pt })}`, 14, 36); doc.text(`Estado: ${statusLabels[budget.status] || budget.status}`, 14, 42);
       doc.setFontSize(12); doc.setTextColor(33, 37, 41); doc.text(budget.name, 14, 54);
       doc.setFontSize(9); doc.setTextColor(108, 117, 125); doc.text(subtitle, 14, 60);
-      let yPos = 68; if (client) { doc.setFontSize(10); doc.setTextColor(108, 117, 125); doc.text(`Cliente: ${client.name}`, 14, yPos); yPos += 6; } if (project) { doc.setFontSize(10); doc.setTextColor(108, 117, 125); doc.text(`Projecto: ${project.name}`, 14, yPos); yPos += 6; }
+      let yPos = 68; if (client?.name) { doc.setFontSize(10); doc.setTextColor(108, 117, 125); doc.text(`Cliente: ${client.name}`, 14, yPos); yPos += 6; } if (project) { doc.setFontSize(10); doc.setTextColor(108, 117, 125); doc.text(`Projecto: ${project.name}`, 14, yPos); yPos += 6; }
       return yPos + 4;
     };
 
@@ -267,7 +290,7 @@ export function BudgetTab({ budgets, products, labor, transport, clients, projec
           <Card><CardContent className="py-12 text-center text-muted-foreground"><FileText className="w-12 h-12 mx-auto mb-3 opacity-30" /><p className="font-medium">Nenhum orçamento criado</p><p className="text-sm">Clique em "Novo Orçamento" para começar.</p></CardContent></Card>
         ) : (
           budgets.map((budget) => {
-            const client = clients.find(c => c.id === budget.clientId);
+            const client = clients.find(c => c.id === budget.clientId) || { name: budget.clientName };
             const isExpanded = expandedBudget === budget.id;
             const statusConfig = getStatusBadge(budget.status);
             return (

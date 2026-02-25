@@ -49,18 +49,33 @@ export function usePricingDB() {
       budgetsData.map(async (budget) => {
         const { data: itemsData } = await supabase.from('budget_items').select('*').eq('budget_id', budget.id);
         const items: BudgetItem[] = (itemsData || []).map(item => ({
-          id: item.id, type: item.type as any, itemId: item.item_id || '', name: item.name,
-          quantity: Number(item.quantity), unitPrice: Number(item.unit_price), totalPrice: Number(item.total_price),
-          unitCost: Number(item.unit_cost), totalCost: Number(item.total_cost), profit: Number(item.profit),
-          marginPercent: Number(item.margin_percent || 0),
+          id: item.id, 
+          type: item.type as any, 
+          itemId: item.item_id || '', 
+          name: item.name,
+          quantity: Number(item.quantity), 
+          unitPrice: Number(item.unit_price), 
+          totalPrice: Number(item.total_price),
+          unitCost: Number(item.unit_cost), 
+          totalCost: Number(item.total_cost), 
+          profit: Number(item.profit),
+          marginPercent: 0, // Não existe na tabela budget_items
           groupName: item.group_name || undefined,
         }));
 
         return {
-          id: budget.id, name: budget.name, clientId: budget.client_id, projectId: budget.project_id,
-          items, status: budget.status as any, totalValue: Number(budget.total_value),
-          totalCost: Number(budget.total_cost), totalProfit: Number(budget.total_profit),
-          marginPercent: Number(budget.margin_percent), createdAt: new Date(budget.created_at),
+          id: budget.id, 
+          name: budget.name, 
+          clientId: null, // A tabela usa client_name
+          clientName: budget.client_name,
+          projectId: null,
+          items, 
+          status: budget.status as any, 
+          totalValue: Number(budget.total_value),
+          totalCost: Number(budget.total_cost), 
+          totalProfit: Number(budget.total_profit),
+          marginPercent: Number(budget.margin_percent), 
+          createdAt: new Date(budget.created_at),
         };
       })
     );
@@ -108,24 +123,48 @@ export function usePricingDB() {
     if (!user) return null;
     const totalValue = budget.items.reduce((sum, item) => sum + item.totalPrice, 0);
     const totalCost = budget.items.reduce((sum, item) => sum + item.totalCost, 0);
+    
+    // Ajustado para usar client_name e remover colunas inexistentes
     const { data: bData, error: bError } = await supabase.from('budgets').insert({
-      user_id: user.id, name: budget.name, client_id: budget.clientId, project_id: budget.projectId,
-      status: budget.status, total_value: totalValue, total_cost: totalCost,
-      total_profit: totalValue - totalCost, margin_percent: totalCost > 0 ? ((totalValue - totalCost) / totalCost) * 100 : 0,
+      user_id: user.id, 
+      name: budget.name, 
+      client_name: budget.clientName || null,
+      status: budget.status, 
+      total_value: totalValue, 
+      total_cost: totalCost,
+      total_profit: totalValue - totalCost, 
+      margin_percent: totalCost > 0 ? ((totalValue - totalCost) / totalCost) * 100 : 0,
+      notes: budget.notes || null
     }).select().single();
 
-    if (bError || !bData) return null;
+    if (bError || !bData) {
+      console.error('Erro ao criar orçamento:', bError);
+      toast({ title: 'Erro', description: 'Não foi possível guardar o orçamento.', variant: 'destructive' });
+      return null;
+    }
 
     const itemsToInsert = budget.items.map(item => ({
-      budget_id: bData.id, type: item.type, item_id: item.itemId || null, name: item.name,
-      quantity: item.quantity, unit_price: item.unitPrice, total_price: item.totalPrice,
-      unit_cost: item.unitCost, total_cost: item.totalCost, profit: item.profit, 
-      margin_percent: item.marginPercent, group_name: item.groupName || null,
+      budget_id: bData.id, 
+      type: item.type, 
+      item_id: item.itemId || null, 
+      name: item.name,
+      quantity: item.quantity, 
+      unit_price: item.unitPrice, 
+      total_price: item.totalPrice,
+      unit_cost: item.unitCost, 
+      total_cost: item.totalCost, 
+      profit: item.profit, 
+      group_name: item.groupName || null,
     }));
 
-    await supabase.from('budget_items').insert(itemsToInsert);
+    const { error: itemsError } = await supabase.from('budget_items').insert(itemsToInsert);
+    
+    if (itemsError) {
+      console.error('Erro ao inserir itens do orçamento:', itemsError);
+    }
+
     fetchBudgets();
-    toast({ title: 'Sucesso', description: 'Orçamento criado' });
+    toast({ title: 'Sucesso', description: 'Orçamento criado com sucesso!' });
     return { ...budget, id: bData.id, totalValue, totalCost, totalProfit: totalValue - totalCost, marginPercent: 0, createdAt: new Date() } as any;
   };
 
