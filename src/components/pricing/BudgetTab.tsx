@@ -18,6 +18,7 @@ import { pt } from 'date-fns/locale';
 import { toast } from 'sonner';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { ItemSelectionDialog } from './ItemSelectionDialog';
 
 interface BudgetTabProps {
   budgets: Budget[];
@@ -43,6 +44,7 @@ function groupItems(items: BudgetItem[]): { groupName: string; items: BudgetItem
 
 export function BudgetTab({ budgets, products, labor, transport, clients, projects, onCreateBudget, onUpdateBudget, onDeleteBudget, createBudgetItem }: BudgetTabProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isItemDialogOpen, setIsItemDialogOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [editingBudgetId, setEditingBudgetId] = useState<string | null>(null);
   const [expandedBudget, setExpandedBudget] = useState<string | null>(null);
@@ -51,45 +53,18 @@ export function BudgetTab({ budgets, products, labor, transport, clients, projec
   const [selectedClientId, setSelectedClientId] = useState<string>('');
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
   const [budgetItems, setBudgetItems] = useState<BudgetItem[]>([]);
-  const [selectedItemType, setSelectedItemType] = useState<'product' | 'labor' | 'transport'>('product');
-  const [selectedItemId, setSelectedItemId] = useState('');
-  const [itemQuantity, setItemQuantity] = useState('1');
-  const [itemMargin, setItemMargin] = useState('');
   const [budgetGroups, setBudgetGroups] = useState<string[]>([]);
   const [selectedGroup, setSelectedGroup] = useState<string>('');
   const [newGroupName, setNewGroupName] = useState('');
   const [showNewGroupInput, setShowNewGroupInput] = useState(false);
 
-  useEffect(() => {
-    if (selectedItemId) {
-      let item: any;
-      if (selectedItemType === 'product') item = products.find(p => p.id === selectedItemId);
-      else if (selectedItemType === 'labor') item = labor.find(l => l.id === selectedItemId);
-      else item = transport.find(t => t.id === selectedItemId);
-      
-      if (item) {
-        setItemMargin(item.marginPercent.toString());
-      }
-    } else {
-      setItemMargin('');
-    }
-  }, [selectedItemId, selectedItemType, products, labor, transport]);
-
-  const resetForm = () => { setBudgetName(''); setBudgetNotes(''); setSelectedClientId(''); setSelectedProjectId(''); setBudgetItems([]); setSelectedItemType('product'); setSelectedItemId(''); setItemQuantity('1'); setItemMargin(''); setBudgetGroups([]); setSelectedGroup(''); setNewGroupName(''); setShowNewGroupInput(false); setIsDialogOpen(false); setIsEditMode(false); setEditingBudgetId(null); };
+  const resetForm = () => { setBudgetName(''); setBudgetNotes(''); setSelectedClientId(''); setSelectedProjectId(''); setBudgetItems([]); setBudgetGroups([]); setSelectedGroup(''); setNewGroupName(''); setShowNewGroupInput(false); setIsDialogOpen(false); setIsEditMode(false); setEditingBudgetId(null); };
 
   const addGroup = () => { const name = newGroupName.trim(); if (!name || budgetGroups.includes(name)) return; setBudgetGroups(prev => [...prev, name]); setSelectedGroup(name); setNewGroupName(''); setShowNewGroupInput(false); toast.success(`Grupo "${name}" criado`); };
 
-  const addItemToBudget = () => { 
-    if (!selectedItemId || !itemQuantity) return; 
-    const margin = itemMargin ? parseFloat(itemMargin) : undefined;
-    const newItem = createBudgetItem(selectedItemType, selectedItemId, parseInt(itemQuantity), margin); 
-    if (newItem) { 
-      newItem.groupName = selectedGroup || undefined; 
-      setBudgetItems(prev => [...prev, newItem]); 
-      setSelectedItemId(''); 
-      setItemQuantity('1'); 
-      setItemMargin('');
-    } 
+  const handleAddItem = (newItem: BudgetItem) => {
+    setBudgetItems(prev => [...prev, newItem]);
+    toast.success('Item adicionado');
   };
 
   const updateItemInBudget = (id: string, field: 'quantity' | 'marginPercent', value: string) => {
@@ -220,7 +195,6 @@ export function BudgetTab({ budgets, products, labor, transport, clients, projec
       return y + 4;
     };
 
-    // --- FOLHA 1: ORÇAMENTO CLIENTE (COM MARGEM) ---
     let yPos = renderHeader('ORÇAMENTO (CLIENTE)', false);
 
     grouped.forEach((group) => {
@@ -273,7 +247,6 @@ export function BudgetTab({ budgets, products, labor, transport, clients, projec
       doc.text(splitNotes, 14, yPos + 6);
     }
 
-    // --- FOLHA 2: RELATÓRIO INTERNO (SEM MARGEM / CUSTO BASE) ---
     doc.addPage();
     yPos = renderHeader('RELATÓRIO DE CUSTOS (INTERNO)', true);
 
@@ -327,14 +300,6 @@ export function BudgetTab({ budgets, products, labor, transport, clients, projec
 
     doc.save(`orcamento-${budget.name.replace(/\s+/g, '-').toLowerCase()}.pdf`);
     toast.success('PDF exportado com folhas de cliente e interna!');
-  };
-
-  const getAvailableItems = () => {
-    switch (selectedItemType) {
-      case 'product': return products.map(p => ({ id: p.id, name: p.name, description: p.description, price: p.finalPrice }));
-      case 'labor': return labor.map(l => ({ id: l.id, name: l.name, description: l.description, price: l.finalPrice }));
-      case 'transport': return transport.map(t => ({ id: t.id, name: t.name, description: t.description, price: t.finalPrice }));
-    }
   };
 
   const currentTotalValue = budgetItems.reduce((sum, item) => sum + item.totalPrice, 0);
@@ -522,7 +487,17 @@ export function BudgetTab({ budgets, products, labor, transport, clients, projec
                 <div className="flex items-center gap-2 text-sm font-medium text-primary"><div className="h-6 w-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold">2</div>Adicionar Itens</div>
                 <div className="pl-8 space-y-3">
                   <Card className="border border-primary/20 bg-primary/5"><CardContent className="p-3"><div className="flex items-center gap-2 mb-2"><Folder className="w-4 h-4 text-primary" /><Label className="text-xs font-medium">Grupo (opcional)</Label></div><div className="flex flex-wrap items-center gap-2"><Badge variant={selectedGroup === '' ? 'default' : 'outline'} className="cursor-pointer" onClick={() => setSelectedGroup('')}>Sem grupo</Badge>{budgetGroups.map(g => (<Badge key={g} variant={selectedGroup === g ? 'default' : 'outline'} className="cursor-pointer" onClick={() => setSelectedGroup(g)}>{g}</Badge>))}{showNewGroupInput ? (<div className="flex items-center gap-1"><Input value={newGroupName} onChange={(e) => setNewGroupName(e.target.value)} placeholder="Nome do grupo" className="h-7 text-xs w-36" onKeyDown={(e) => e.key === 'Enter' && addGroup()} autoFocus /><Button size="sm" variant="ghost" className="h-7 px-2" onClick={addGroup}><Plus className="w-3 h-3" /></Button><Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => setShowNewGroupInput(false)}>✕</Button></div>) : (<Button size="sm" variant="outline" className="h-7 gap-1 text-xs" onClick={() => setShowNewGroupInput(true)}><FolderPlus className="w-3 h-3" /> Novo Grupo</Button>)}</div></CardContent></Card>
-                  <Card className="border-dashed border-2"><CardContent className="p-4"><div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3"><div className="space-y-1"><Label className="text-xs text-muted-foreground">Tipo</Label><Select value={selectedItemType} onValueChange={(v: any) => { setSelectedItemType(v); setSelectedItemId(''); }}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="product"><span className="flex items-center gap-2"><Package className="w-3.5 h-3.5" /> Produto</span></SelectItem><SelectItem value="labor"><span className="flex items-center gap-2"><Users className="w-3.5 h-3.5" /> Mão de Obra</span></SelectItem><SelectItem value="transport"><span className="flex items-center gap-2"><Truck className="w-3.5 h-3.5" /> Transporte</span></SelectItem></SelectContent></Select></div><div className="space-y-1 lg:col-span-1"><Label className="text-xs text-muted-foreground">Item</Label><Select value={selectedItemId || 'none'} onValueChange={(v) => setSelectedItemId(v === 'none' ? '' : v)}><SelectTrigger><SelectValue placeholder="Selecione item" /></SelectTrigger><SelectContent><SelectItem value="none">Selecione...</SelectItem>{getAvailableItems().map(item => (<SelectItem key={item.id} value={item.id}>{item.name} — {formatCurrency(item.price)}</SelectItem>))}</SelectContent></Select></div><div className="space-y-1"><Label className="text-xs text-muted-foreground">Quantidade</Label><Input type="number" min="1" value={itemQuantity} onChange={(e) => setItemQuantity(e.target.value)} placeholder="Qtd" /></div><div className="space-y-1"><Label className="text-xs text-muted-foreground">Margem (%)</Label><div className="relative"><Percent className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground" /><Input type="number" step="0.1" value={itemMargin} onChange={(e) => setItemMargin(e.target.value)} placeholder="Margem" className="pl-8" /></div></div><div className="flex items-end"><Button onClick={addItemToBudget} disabled={!selectedItemId} className="w-full gap-1"><Plus className="w-4 h-4" /> Adicionar</Button></div></div>{selectedGroup && (<p className="text-xs text-muted-foreground mt-2">Item será adicionado ao grupo: <strong className="text-primary">{selectedGroup}</strong></p>)}</CardContent></Card>
+                  
+                  <div className="flex justify-center py-4">
+                    <Button 
+                      variant="outline" 
+                      className="h-16 w-full max-w-md border-dashed border-2 gap-3 text-lg rounded-2xl hover:bg-primary/5 hover:border-primary/50 transition-all"
+                      onClick={() => setIsItemDialogOpen(true)}
+                    >
+                      <Plus className="w-6 h-6 text-primary" />
+                      Escolher Item para Adicionar
+                    </Button>
+                  </div>
                 </div>
               </div>
               {budgetItems.length > 0 && (<><Separator /><div className="space-y-4"><div className="flex items-center gap-2 text-sm font-medium text-primary"><div className="h-6 w-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold">3</div>Itens do Orçamento ({budgetItems.length})</div><div className="pl-8"><Card><CardContent className="p-0 overflow-x-auto">{renderGroupedItems(budgetItems, true)}</CardContent></Card><Card className="mt-4 border-primary/20 bg-primary/5"><CardContent className="p-4"><div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center"><div><p className="text-xs text-muted-foreground">Custo Total</p><p className="text-lg font-bold">{formatCurrency(currentTotalCost)}</p></div><div><p className="text-xs text-muted-foreground">Valor Cliente</p><p className="text-lg font-bold text-blue-600">{formatCurrency(currentTotalValue)}</p></div><div><p className="text-xs text-muted-foreground">Lucro Empresa</p><p className="text-lg font-bold text-emerald-600">{formatCurrency(currentTotalProfit)}</p></div><div><p className="text-xs text-muted-foreground">Margem</p><p className="text-lg font-bold text-violet-600">{currentMargin.toFixed(1)}%</p></div></div></CardContent></Card></div></div></>)}
@@ -531,6 +506,18 @@ export function BudgetTab({ budgets, products, labor, transport, clients, projec
           </DialogContent>
         </Dialog>
       </div>
+
+      <ItemSelectionDialog
+        open={isItemDialogOpen}
+        onOpenChange={setIsItemDialogOpen}
+        products={products}
+        labor={labor}
+        transport={transport}
+        groups={budgetGroups}
+        selectedGroup={selectedGroup}
+        onConfirm={handleAddItem}
+        createBudgetItem={createBudgetItem}
+      />
 
       <div className="space-y-4">
         {budgets.length === 0 ? (
