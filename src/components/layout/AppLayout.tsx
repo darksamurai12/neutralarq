@@ -32,11 +32,11 @@ export function AppLayout({ children }: AppLayoutProps) {
       
       {/* Main Content Area */}
       <div className={cn(
-        "flex-1 flex flex-col min-w-0 bg-card shadow-glass overflow-hidden transition-all duration-300",
+        "flex-1 flex flex-col min-w-0 bg-white dark:bg-card shadow-glass overflow-hidden transition-all duration-300",
         "lg:rounded-[1.5rem] lg:m-2 lg:border border-border"
       )}>
         {/* Top Header */}
-        <header className="h-16 md:h-20 px-4 md:px-8 flex items-center justify-between bg-card/50 backdrop-blur-sm border-b border-border/50">
+        <header className="h-16 md:h-20 px-4 md:px-8 flex items-center justify-between bg-white/50 dark:bg-card/50 backdrop-blur-sm border-b border-border/50">
           <div className="flex items-center gap-4 flex-1">
             {/* Mobile Menu Trigger */}
             <div className="lg:hidden">
@@ -76,13 +76,13 @@ export function AppLayout({ children }: AppLayoutProps) {
                 variant="ghost" 
                 size="icon" 
                 onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                className="h-8 w-8 md:h-9 md:w-9 rounded-xl transition-all bg-card text-primary shadow-sm"
+                className="h-8 w-8 md:h-9 md:w-9 rounded-xl transition-all bg-white dark:bg-card text-primary shadow-sm"
               >
                 {theme === 'dark' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
               </Button>
             </div>
 
-            <Button variant="ghost" size="icon" className="h-10 w-10 md:h-11 md:w-11 rounded-2xl hover:bg-accent overflow-hidden border-2 border-card shadow-sm">
+            <Button variant="ghost" size="icon" className="h-10 w-10 md:h-11 md:w-11 rounded-2xl hover:bg-accent overflow-hidden border-2 border-white dark:border-card shadow-sm">
               <div className="w-full h-full bg-muted flex items-center justify-center">
                 <User className="w-5 h-5 text-muted-foreground" />
               </div>
