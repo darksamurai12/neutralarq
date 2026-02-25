@@ -217,7 +217,6 @@ export interface Budget {
   id: string;
   name: string;
   clientId: string | null;
-  clientName?: string | null;
   projectId: string | null;
   items: BudgetItem[];
   status: 'draft' | 'sent' | 'approved' | 'rejected';
@@ -225,7 +224,6 @@ export interface Budget {
   totalCost: number;
   totalProfit: number;
   marginPercent: number;
-  notes?: string;
   createdAt: Date;
 }
 
