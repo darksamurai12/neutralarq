@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { useTheme } from 'next-themes';
 import { cn } from '@/lib/utils';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { useSidebarState } from '@/contexts/SidebarContext';
 
 interface AppLayoutProps { children: ReactNode; }
 
@@ -17,11 +18,15 @@ export function AppLayout({ children }: AppLayoutProps) {
   const location = useLocation();
   const { theme, setTheme } = useTheme();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { collapsed } = useSidebarState();
 
   return (
     <div className="flex h-screen w-full bg-[#F8FAFC] dark:bg-slate-950 overflow-hidden">
-      {/* Desktop Sidebar - Hidden on mobile/tablet, visible only on large screens (lg) */}
-      <div className="hidden lg:block w-64 h-full flex-shrink-0">
+      {/* Desktop Sidebar */}
+      <div className={cn(
+        "hidden lg:block h-full flex-shrink-0 transition-all duration-300 ease-in-out",
+        collapsed ? "w-20" : "w-64"
+      )}>
         <AppSidebar />
       </div>
       
@@ -33,7 +38,7 @@ export function AppLayout({ children }: AppLayoutProps) {
         {/* Top Header */}
         <header className="h-16 md:h-20 px-4 md:px-8 flex items-center justify-between bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm border-b border-slate-50 dark:border-slate-800">
           <div className="flex items-center gap-4 flex-1">
-            {/* Mobile Menu Trigger - Visible only on screens smaller than lg */}
+            {/* Mobile Menu Trigger */}
             <div className="lg:hidden">
               <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
                 <SheetTrigger asChild>
@@ -47,7 +52,7 @@ export function AppLayout({ children }: AppLayoutProps) {
               </Sheet>
             </div>
 
-            {/* Search Bar - Hidden on mobile, visible from sm up */}
+            {/* Search Bar */}
             <div className="relative w-full max-w-md hidden sm:block">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <Input 
