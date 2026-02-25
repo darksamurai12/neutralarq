@@ -92,6 +92,27 @@ export function BudgetTab({ budgets, products, labor, transport, clients, projec
     } 
   };
 
+  const updateItemInBudget = (id: string, field: 'quantity' | 'marginPercent', value: string) => {
+    const numValue = parseFloat(value) || 0;
+    setBudgetItems(prev => prev.map(item => {
+      if (item.id === id) {
+        const updated = { ...item, [field]: numValue };
+        // Recalcular valores dependentes
+        const unitCost = updated.unitCost;
+        const margin = updated.marginPercent;
+        const qty = updated.quantity;
+
+        updated.unitPrice = unitCost * (1 + margin / 100);
+        updated.totalPrice = updated.unitPrice * qty;
+        updated.totalCost = unitCost * qty;
+        updated.profit = updated.totalPrice - updated.totalCost;
+
+        return updated;
+      }
+      return item;
+    }));
+  };
+
   const removeItemFromBudget = (itemId: string) => { setBudgetItems(prev => prev.filter(item => item.id !== itemId)); };
 
   const handleCreateOrUpdateBudget = () => { 
@@ -191,16 +212,77 @@ export function BudgetTab({ budgets, products, labor, transport, clients, projec
 
   const getTypeLabel = (type: BudgetItem['type']) => { switch (type) { case 'product': return 'Produto'; case 'labor': return 'Mão de Obra'; case 'transport': return 'Transporte'; } };
 
-  const renderItemsTable = (items: BudgetItem[], showDelete = false) => (
+  const renderItemsTable = (items: BudgetItem[], isEditable = false) => (
     <Table>
-      <TableHeader><TableRow><TableHead>Item</TableHead><TableHead className="text-center">Tipo</TableHead><TableHead className="text-center">Qtd</TableHead><TableHead className="text-center">Margem</TableHead><TableHead className="text-right">Custo Unit.</TableHead><TableHead className="text-right">Preço Unit.</TableHead><TableHead className="text-right">Total</TableHead><TableHead className="text-right text-emerald-600">Lucro</TableHead>{showDelete && <TableHead className="w-[50px]"></TableHead>}</TableRow></TableHeader>
-      <TableBody>{items.map((item) => (<TableRow key={item.id}><TableCell><div className="flex items-center gap-2">{getItemIcon(item.type)}<span className="font-medium">{item.name}</span></div></TableCell><TableCell className="text-center text-xs text-muted-foreground">{getTypeLabel(item.type)}</TableCell><TableCell className="text-center">{item.quantity}</TableCell><TableCell className="text-center"><Badge variant="outline" className="text-[10px]">{item.marginPercent}%</Badge></TableCell><TableCell className="text-right text-muted-foreground">{formatCurrency(item.unitCost)}</TableCell><TableCell className="text-right">{formatCurrency(item.unitPrice)}</TableCell><TableCell className="text-right font-medium">{formatCurrency(item.totalPrice)}</TableCell><TableCell className="text-right text-emerald-600 font-medium">{formatCurrency(item.profit)}</TableCell>{showDelete && (<TableCell><Button variant="ghost" size="icon" onClick={() => removeItemFromBudget(item.id)} className="text-destructive h-8 w-8"><Trash2 className="w-3.5 h-3.5" /></Button></TableCell>)}</TableRow>))}</TableBody>
+      <TableHeader>
+        <TableRow>
+          <TableHead>Item</TableHead>
+          <TableHead className="text-center">Tipo</TableHead>
+          <TableHead className="text-center w-[100px]">Qtd</TableHead>
+          <TableHead className="text-center w-[100px]">Margem (%)</TableHead>
+          <TableHead className="text-right">Custo Unit.</TableHead>
+          <TableHead className="text-right">Preço Unit.</TableHead>
+          <TableHead className="text-right">Total</TableHead>
+          <TableHead className="text-right text-emerald-600">Lucro</TableHead>
+          {isEditable && <TableHead className="w-[50px]"></TableHead>}
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {items.map((item) => (
+          <TableRow key={item.id}>
+            <TableCell>
+              <div className="flex items-center gap-2">
+                {getItemIcon(item.type)}
+                <span className="font-medium">{item.name}</span>
+              </div>
+            </TableCell>
+            <TableCell className="text-center text-xs text-muted-foreground">{getTypeLabel(item.type)}</TableCell>
+            <TableCell className="text-center">
+              {isEditable ? (
+                <Input 
+                  type="number" 
+                  min="1" 
+                  value={item.quantity} 
+                  onChange={(e) => updateItemInBudget(item.id, 'quantity', e.target.value)}
+                  className="h-8 text-center px-1"
+                />
+              ) : (
+                item.quantity
+              )}
+            </TableCell>
+            <TableCell className="text-center">
+              {isEditable ? (
+                <Input 
+                  type="number" 
+                  step="0.1" 
+                  value={item.marginPercent} 
+                  onChange={(e) => updateItemInBudget(item.id, 'marginPercent', e.target.value)}
+                  className="h-8 text-center px-1"
+                />
+              ) : (
+                <Badge variant="outline" className="text-[10px]">{item.marginPercent}%</Badge>
+              )}
+            </TableCell>
+            <TableCell className="text-right text-muted-foreground">{formatCurrency(item.unitCost)}</TableCell>
+            <TableCell className="text-right">{formatCurrency(item.unitPrice)}</TableCell>
+            <TableCell className="text-right font-medium">{formatCurrency(item.totalPrice)}</TableCell>
+            <TableCell className="text-right text-emerald-600 font-medium">{formatCurrency(item.profit)}</TableCell>
+            {isEditable && (
+              <TableCell>
+                <Button variant="ghost" size="icon" onClick={() => removeItemFromBudget(item.id)} className="text-destructive h-8 w-8">
+                  <Trash2 className="w-3.5 h-3.5" />
+                </Button>
+              </TableCell>
+            )}
+          </TableRow>
+        ))}
+      </TableBody>
     </Table>
   );
 
-  const renderGroupedItems = (items: BudgetItem[], showDelete = false) => {
+  const renderGroupedItems = (items: BudgetItem[], isEditable = false) => {
     const grouped = groupItems(items);
-    if (grouped.length === 1 && !grouped[0].groupName) return renderItemsTable(items, showDelete);
+    if (grouped.length === 1 && !grouped[0].groupName) return renderItemsTable(items, isEditable);
     return (
       <div className="space-y-4">
         {grouped.map((group, idx) => {
@@ -210,7 +292,7 @@ export function BudgetTab({ budgets, products, labor, transport, clients, projec
             <div key={idx}>
               {group.groupName && (<div className="flex items-center justify-between px-2 py-2 bg-primary/5 rounded-lg mb-2"><div className="flex items-center gap-2"><Folder className="w-4 h-4 text-primary" /><span className="font-semibold text-sm">{group.groupName}</span><Badge variant="secondary" className="text-xs">{group.items.length} itens</Badge></div><div className="flex gap-4 text-xs"><span className="text-muted-foreground">Total: <strong className="text-foreground">{formatCurrency(groupTotal)}</strong></span><span className="text-muted-foreground">Lucro: <strong className="text-emerald-600">{formatCurrency(groupProfit)}</strong></span></div></div>)}
               {!group.groupName && grouped.length > 1 && (<div className="flex items-center gap-2 px-2 py-2 bg-muted/50 rounded-lg mb-2"><span className="font-medium text-sm text-muted-foreground">Sem grupo</span><Badge variant="secondary" className="text-xs">{group.items.length} itens</Badge></div>)}
-              {renderItemsTable(group.items, showDelete)}
+              {renderItemsTable(group.items, isEditable)}
             </div>
           );
         })}
