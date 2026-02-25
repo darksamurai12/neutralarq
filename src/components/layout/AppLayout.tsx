@@ -21,7 +21,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   const { collapsed } = useSidebarState();
 
   return (
-    <div className="flex h-screen w-full bg-background overflow-hidden">
+    <div className="flex h-screen w-full bg-[#F8FAFC] dark:bg-slate-950 overflow-hidden">
       {/* Desktop Sidebar */}
       <div className={cn(
         "hidden lg:block h-full flex-shrink-0 transition-all duration-300 ease-in-out",
@@ -32,21 +32,21 @@ export function AppLayout({ children }: AppLayoutProps) {
       
       {/* Main Content Area */}
       <div className={cn(
-        "flex-1 flex flex-col min-w-0 bg-white dark:bg-card shadow-glass overflow-hidden transition-all duration-300",
-        "lg:rounded-[1.5rem] lg:m-2 lg:border border-border"
+        "flex-1 flex flex-col min-w-0 bg-white dark:bg-slate-900 shadow-glass overflow-hidden transition-all duration-300",
+        "lg:rounded-[1.5rem] lg:m-2 lg:border border-slate-100 dark:border-slate-800"
       )}>
         {/* Top Header */}
-        <header className="h-16 md:h-20 px-4 md:px-8 flex items-center justify-between bg-white/50 dark:bg-card/50 backdrop-blur-sm border-b border-border/50">
+        <header className="h-16 md:h-20 px-4 md:px-8 flex items-center justify-between bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm border-b border-slate-50 dark:border-slate-800">
           <div className="flex items-center gap-4 flex-1">
             {/* Mobile Menu Trigger */}
             <div className="lg:hidden">
               <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
                 <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-accent">
-                    <Menu className="w-6 h-6 text-muted-foreground" />
+                  <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-slate-100">
+                    <Menu className="w-6 h-6 text-slate-600 dark:text-slate-300" />
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="left" className="p-0 w-72 border-none bg-background">
+                <SheetContent side="left" className="p-0 w-72 border-none">
                   <AppSidebar onNavigate={() => setIsMobileMenuOpen(false)} />
                 </SheetContent>
               </Sheet>
@@ -54,10 +54,10 @@ export function AppLayout({ children }: AppLayoutProps) {
 
             {/* Search Bar */}
             <div className="relative w-full max-w-md hidden sm:block">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <Input 
                 placeholder="Pesquisar..." 
-                className="pl-11 h-11 bg-muted/50 border-none rounded-2xl focus-visible:ring-primary/20 text-sm"
+                className="pl-11 h-11 bg-slate-50/50 dark:bg-slate-800/50 border-none rounded-2xl focus-visible:ring-primary/20 text-sm"
               />
             </div>
             
@@ -67,24 +67,24 @@ export function AppLayout({ children }: AppLayoutProps) {
 
           {/* Actions */}
           <div className="flex items-center gap-2 md:gap-3">
-            <Button variant="ghost" size="icon" className="h-10 w-10 md:h-11 md:w-11 rounded-2xl hover:bg-accent hidden xs:flex">
-              <Bell className="w-5 h-5 text-muted-foreground" />
+            <Button variant="ghost" size="icon" className="h-10 w-10 md:h-11 md:w-11 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800 hidden xs:flex">
+              <Bell className="w-5 h-5 text-slate-500 dark:text-slate-400" />
             </Button>
             
-            <div className="flex items-center bg-muted rounded-2xl p-1">
+            <div className="flex items-center bg-slate-50 dark:bg-slate-800 rounded-2xl p-1">
               <Button 
                 variant="ghost" 
                 size="icon" 
                 onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                className="h-8 w-8 md:h-9 md:w-9 rounded-xl transition-all bg-white dark:bg-card text-primary shadow-sm"
+                className="h-8 w-8 md:h-9 md:w-9 rounded-xl transition-all bg-white dark:bg-slate-700 text-primary shadow-sm"
               >
                 {theme === 'dark' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
               </Button>
             </div>
 
-            <Button variant="ghost" size="icon" className="h-10 w-10 md:h-11 md:w-11 rounded-2xl hover:bg-accent overflow-hidden border-2 border-white dark:border-card shadow-sm">
-              <div className="w-full h-full bg-muted flex items-center justify-center">
-                <User className="w-5 h-5 text-muted-foreground" />
+            <Button variant="ghost" size="icon" className="h-10 w-10 md:h-11 md:w-11 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800 overflow-hidden border-2 border-white dark:border-slate-700 shadow-sm">
+              <div className="w-full h-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+                <User className="w-5 h-5 text-slate-400 dark:text-slate-500" />
               </div>
             </Button>
           </div>

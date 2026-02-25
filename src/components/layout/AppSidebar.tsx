@@ -85,7 +85,7 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
 
   return (
     <aside className={cn(
-      "h-full bg-white dark:bg-background lg:bg-transparent flex flex-col border-r lg:border-none border-slate-100 dark:border-slate-800/50 transition-all duration-300",
+      "h-full bg-white dark:bg-slate-900 lg:bg-transparent flex flex-col border-r lg:border-none border-slate-100 dark:border-slate-800 transition-all duration-300",
       collapsed ? "w-20" : "w-full lg:w-64"
     )}>
       {/* Logo Section */}
@@ -135,7 +135,7 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
       </nav>
 
       {/* Footer Actions */}
-      <div className="p-4 mt-auto border-t border-slate-100 dark:border-slate-800/50 space-y-2">
+      <div className="p-4 mt-auto border-t border-slate-100 dark:border-slate-800 space-y-2">
         <Button 
           variant="ghost" 
           className={cn(
