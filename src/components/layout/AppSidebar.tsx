@@ -88,39 +88,8 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
       "h-full bg-white dark:bg-slate-900 lg:bg-transparent flex flex-col border-r lg:border-none border-slate-100 dark:border-slate-800 transition-all duration-300",
       collapsed ? "w-20" : "w-full lg:w-64"
     )}>
-      {/* Logo Section */}
-      <div className={cn(
-        "p-6 flex items-center justify-between",
-        collapsed && "px-4 justify-center"
-      )}>
-        {!collapsed ? (
-          <div className="flex items-center gap-3 overflow-hidden">
-            <img 
-              src="/logo02.png" 
-              alt="Logo" 
-              className="h-10 w-auto dark:invert"
-              onError={(e) => {
-                e.currentTarget.style.display = 'none';
-                const parent = e.currentTarget.parentElement;
-                if (parent) {
-                  const fallback = document.createElement('div');
-                  fallback.className = "w-8 h-8 bg-primary rounded-lg flex items-center justify-center shadow-lg shadow-primary/20 shrink-0";
-                  fallback.innerHTML = '<span class="text-white font-bold text-lg">G</span>';
-                  parent.appendChild(fallback);
-                  const text = document.createElement('span');
-                  text.className = "text-xl font-bold text-slate-800 dark:text-white tracking-tight truncate";
-                  text.innerText = "GestãoPro";
-                  parent.appendChild(text);
-                }
-              }}
-            />
-          </div>
-        ) : (
-          <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20 shrink-0">
-            <span className="text-white font-bold text-xl">G</span>
-          </div>
-        )}
-      </div>
+      {/* Espaçamento superior em vez do logo */}
+      <div className="h-6" />
 
       {/* Navigation */}
       <nav className="flex-1 px-4 space-y-8 overflow-y-auto custom-scrollbar">
