@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Task, TaskStatus, TaskPriority, ProjectPhase, Subtask, Comment } from '@/types';
-import { Trash2, X, FileText } from 'lucide-react';
+import { Task, TaskStatus, TaskPriority, TaskType, Subtask, Comment } from '@/types';
+import { Trash2, X, FileText, Paperclip } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -40,20 +40,18 @@ export function TaskEditDialog({
 }: TaskEditDialogProps) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [status, setStatus] = useState<TaskStatus>('todo');
+  const [status, setStatus] = useState<TaskStatus>('pending');
   const [metadata, setMetadata] = useState({
     deadline: '',
     startDate: '',
     priority: 'medium' as TaskPriority,
-    phase: 'projeto' as ProjectPhase,
+    type: 'internal' as TaskType,
+    responsible: '',
     estimatedTime: '',
     trackedTime: '',
     tags: [] as string[],
-    relatedTaskId: '',
   });
   const [subtasks, setSubtasks] = useState<Subtask[]>([]);
-  const [checklists, setChecklists] = useState<Checklist[]>([]);
-  const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [comments, setComments] = useState<Comment[]>([]);
 
   useEffect(() => {
@@ -63,18 +61,16 @@ export function TaskEditDialog({
       setStatus(task.status);
       setMetadata({
         deadline: task.deadline ? new Date(task.deadline).toISOString().split('T')[0] : '',
-        startDate: task.createdAt ? new Date(task.createdAt).toISOString().split('T')[0] : '',
+        startDate: task.startDate ? new Date(task.startDate).toISOString().split('T')[0] : '',
         priority: task.priority,
-        phase: task.phase,
+        type: task.type,
+        responsible: task.responsible,
         estimatedTime: '',
         trackedTime: '',
         tags: [],
-        relatedTaskId: '',
       });
       setSubtasks(task.subtasks || []);
       setComments(task.comments || []);
-      setChecklists([]);
-      setAttachments([]);
     }
   }, [task]);
 
@@ -85,8 +81,10 @@ export function TaskEditDialog({
       description,
       status,
       priority: metadata.priority,
-      phase: metadata.phase,
-      deadline: metadata.deadline ? new Date(metadata.deadline) : null,
+      type: metadata.type,
+      responsible: metadata.responsible,
+      deadline: metadata.deadline ? new Date(metadata.deadline) : task.deadline,
+      startDate: metadata.startDate ? new Date(metadata.startDate) : task.startDate,
       subtasks,
       comments,
       completionPercentage: calculateProgress(),
@@ -104,118 +102,31 @@ export function TaskEditDialog({
     setMetadata((prev) => ({ ...prev, [field]: value }));
   };
 
-  // Subtasks handlers
-  const addSubtask = (title: string) => {
-    setSubtasks((prev) => [
-      ...prev,
-      { id: crypto.randomUUID(), title, completed: false },
-    ]);
-  };
-
-  const toggleSubtask = (id: string) => {
-    setSubtasks((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, completed: !s.completed } : s))
-    );
-  };
-
-  const removeSubtask = (id: string) => {
-    setSubtasks((prev) => prev.filter((s) => s.id !== id));
-  };
-
-  // Checklists handlers
-  const addChecklist = (name: string) => {
-    setChecklists((prev) => [
-      ...prev,
-      { id: crypto.randomUUID(), name, items: [] },
-    ]);
-  };
-
-  const removeChecklist = (id: string) => {
-    setChecklists((prev) => prev.filter((c) => c.id !== id));
-  };
-
-  const addChecklistItem = (checklistId: string, title: string) => {
-    setChecklists((prev) =>
-      prev.map((c) =>
-        c.id === checklistId
-          ? {
-              ...c,
-              items: [
-                ...c.items,
-                { id: crypto.randomUUID(), title, completed: false },
-              ],
-            }
-          : c
-      )
-    );
-  };
-
-  const toggleChecklistItem = (checklistId: string, itemId: string) => {
-    setChecklists((prev) =>
-      prev.map((c) =>
-        c.id === checklistId
-          ? {
-              ...c,
-              items: c.items.map((i) =>
-                i.id === itemId ? { ...i, completed: !i.completed } : i
-              ),
-            }
-          : c
-      )
-    );
-  };
-
-  const removeChecklistItem = (checklistId: string, itemId: string) => {
-    setChecklists((prev) =>
-      prev.map((c) =>
-        c.id === checklistId
-          ? { ...c, items: c.items.filter((i) => i.id !== itemId) }
-          : c
-      )
-    );
-  };
-
-  // Attachments handlers
-  const handleAddAttachment = () => {
-    // TODO: Implement file upload
-    console.log('Add attachment clicked');
-  };
-
-  const removeAttachment = (id: string) => {
-    setAttachments((prev) => prev.filter((a) => a.id !== id));
-  };
-
-  // Calculate overall progress
   const calculateProgress = () => {
-    const allItems = [
-      ...subtasks,
-      ...checklists.flatMap((c) => c.items),
-    ];
-    if (allItems.length === 0) return 0;
-    const completed = allItems.filter((i) => i.completed).length;
-    return Math.round((completed / allItems.length) * 100);
+    if (subtasks.length === 0) return status === 'completed' ? 100 : 0;
+    const completed = subtasks.filter((s) => s.completed).length;
+    return Math.round((completed / subtasks.length) * 100);
   };
 
   const statusConfig: Record<TaskStatus, { label: string; color: string }> = {
-    todo: { label: 'A Fazer', color: 'bg-muted' },
-    doing: { label: 'Em Progresso', color: 'bg-blue-500' },
-    review: { label: 'Em Revisão', color: 'bg-yellow-500' },
-    done: { label: 'Concluído', color: 'bg-success' },
+    pending: { label: 'Pendente', color: 'bg-slate-400' },
+    in_progress: { label: 'Em andamento', color: 'bg-blue-500' },
+    completed: { label: 'Concluída', color: 'bg-emerald-500' },
+    canceled: { label: 'Cancelada', color: 'bg-rose-500' },
   };
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-full sm:max-w-2xl p-0 overflow-y-auto">
         <div className="flex flex-col h-full">
-          {/* Header */}
           <SheetHeader className="p-4 border-b border-border sticky top-0 bg-background z-10">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Select value={status} onValueChange={(v: TaskStatus) => setStatus(v)}>
-                  <SelectTrigger className="h-8 w-32 text-xs">
+                  <SelectTrigger className="h-8 w-40 text-xs bg-white dark:bg-slate-950">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-white dark:bg-slate-900 border shadow-xl">
                     {Object.entries(statusConfig).map(([key, config]) => (
                       <SelectItem key={key} value={key}>
                         <div className="flex items-center gap-2">
@@ -227,81 +138,62 @@ export function TaskEditDialog({
                   </SelectContent>
                 </Select>
               </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                  onClick={handleDelete}
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                onClick={handleDelete}
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
             </div>
           </SheetHeader>
 
-          {/* Content */}
-          <div className="flex-1 p-4 space-y-0">
-            {/* Title */}
+          <div className="flex-1 p-6 space-y-6">
             <Input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Nome da tarefa"
-              className="text-lg font-semibold border-none shadow-none px-0 h-auto focus-visible:ring-0"
+              className="text-2xl font-bold border-none shadow-none px-0 h-auto focus-visible:ring-0"
             />
 
-            {/* Metadata Grid */}
             <TaskMetadataGrid
               formData={metadata}
               onChange={handleMetadataChange}
             />
 
-            {/* Description */}
-            <div className="py-4 border-b border-border">
-              <div className="flex items-start gap-2">
-                <FileText className="w-4 h-4 text-muted-foreground mt-0.5" />
-                <Textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Adicionar descrição"
-                  className="flex-1 min-h-[100px] border-none shadow-none px-0 resize-none focus-visible:ring-0"
-                />
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-300">
+                <FileText className="w-4 h-4" /> Descrição
               </div>
+              <Textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Adicionar descrição detalhada..."
+                className="min-h-[120px] bg-slate-50 dark:bg-slate-900 border-none rounded-xl resize-none focus-visible:ring-primary/20"
+              />
             </div>
 
-            {/* Subtasks */}
             <TaskSubtasksSection
               subtasks={subtasks}
-              onAdd={addSubtask}
-              onToggle={toggleSubtask}
-              onRemove={removeSubtask}
+              onAdd={(title) => setSubtasks([...subtasks, { id: crypto.randomUUID(), title, completed: false }])}
+              onToggle={(id) => setSubtasks(subtasks.map(s => s.id === id ? { ...s, completed: !s.completed } : s))}
+              onRemove={(id) => setSubtasks(subtasks.filter(s => s.id !== id))}
             />
 
-            {/* Checklists */}
-            <TaskChecklistsSection
-              checklists={checklists}
-              onAddChecklist={addChecklist}
-              onRemoveChecklist={removeChecklist}
-              onAddItem={addChecklistItem}
-              onToggleItem={toggleChecklistItem}
-              onRemoveItem={removeChecklistItem}
-            />
-
-            {/* Attachments */}
-            <TaskAttachmentsSection
-              attachments={attachments}
-              onAdd={handleAddAttachment}
-              onRemove={removeAttachment}
-            />
+            <div className="pt-4">
+              <Button variant="outline" size="sm" className="gap-2 rounded-xl">
+                <Paperclip className="w-4 h-4" /> Anexar Ficheiro
+              </Button>
+            </div>
           </div>
 
-          {/* Footer */}
           <div className="p-4 border-t border-border sticky bottom-0 bg-background">
             <div className="flex items-center justify-end gap-2">
-              <Button variant="outline" onClick={() => onOpenChange(false)}>
+              <Button variant="outline" onClick={() => onOpenChange(false)} className="rounded-xl">
                 Cancelar
               </Button>
-              <Button onClick={handleSave}>Salvar Alterações</Button>
+              <Button onClick={handleSave} className="rounded-xl px-8">Salvar Alterações</Button>
             </div>
           </div>
         </div>

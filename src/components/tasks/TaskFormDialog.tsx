@@ -18,27 +18,26 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Project, TaskStatus, TaskPriority, ProjectPhase } from '@/types';
+import { TaskStatus, TaskPriority, TaskType } from '@/types';
 
 interface TaskFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  projects: Project[];
   onSubmit: (data: any) => void;
 }
 
 const emptyFormData = {
   title: '',
   description: '',
-  projectId: '',
+  type: 'internal' as TaskType,
   responsible: '',
+  startDate: new Date().toISOString().split('T')[0],
   deadline: '',
-  status: 'todo' as TaskStatus,
+  status: 'pending' as TaskStatus,
   priority: 'medium' as TaskPriority,
-  phase: 'projeto' as ProjectPhase,
 };
 
-export function TaskFormDialog({ open, onOpenChange, projects, onSubmit }: TaskFormDialogProps) {
+export function TaskFormDialog({ open, onOpenChange, onSubmit }: TaskFormDialogProps) {
   const [formData, setFormData] = useState(emptyFormData);
 
   useEffect(() => {
@@ -50,8 +49,8 @@ export function TaskFormDialog({ open, onOpenChange, projects, onSubmit }: TaskF
     
     onSubmit({
       ...formData,
-      projectId: formData.projectId || null,
-      deadline: formData.deadline ? new Date(formData.deadline) : null,
+      startDate: new Date(formData.startDate),
+      deadline: new Date(formData.deadline),
       completionPercentage: 0,
       subtasks: [],
       comments: [],
@@ -62,7 +61,7 @@ export function TaskFormDialog({ open, onOpenChange, projects, onSubmit }: TaskF
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-xl">
         <DialogHeader>
-          <DialogTitle>Nova Tarefa</DialogTitle>
+          <DialogTitle>Nova Tarefa Administrativa</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
           <div className="space-y-2">
@@ -71,53 +70,67 @@ export function TaskFormDialog({ open, onOpenChange, projects, onSubmit }: TaskF
               id="title"
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              placeholder="Ex: Revisão do projeto executivo"
+              placeholder="Ex: Organizar arquivos mensais"
+              className="bg-white dark:bg-slate-950"
               required
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="project">Projecto Associado (Opcional)</Label>
-            <Select
-              value={formData.projectId || "none"}
-              onValueChange={(value) => setFormData({ ...formData, projectId: value === "none" ? "" : value })}
-            >
-              <SelectTrigger className="bg-white dark:bg-slate-950">
-                <SelectValue placeholder="Tarefa Geral (Sem Projecto)" />
-              </SelectTrigger>
-              <SelectContent className="bg-white dark:bg-slate-900 border shadow-xl">
-                <SelectItem value="none">Tarefa Geral (Sem Projecto)</SelectItem>
-                {projects.map((project) => (
-                  <SelectItem key={project.id} value={project.id}>
-                    {project.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="responsible">Responsável</Label>
+              <Label>Tipo de Tarefa</Label>
+              <Select
+                value={formData.type}
+                onValueChange={(value: TaskType) => setFormData({ ...formData, type: value })}
+              >
+                <SelectTrigger className="bg-white dark:bg-slate-950">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-white dark:bg-slate-900 border shadow-xl">
+                  <SelectItem value="internal">🏢 Tarefa Interna (Escritório)</SelectItem>
+                  <SelectItem value="personal">👤 Tarefa Pessoal</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="responsible">Responsável *</Label>
               <Input
                 id="responsible"
                 value={formData.responsible}
                 onChange={(e) => setFormData({ ...formData, responsible: e.target.value })}
-                placeholder="Nome do responsável"
+                placeholder="Nome do colaborador"
+                className="bg-white dark:bg-slate-950"
+                required
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="startDate">Data de Início *</Label>
+              <Input
+                id="startDate"
+                type="date"
+                value={formData.startDate}
+                onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                className="bg-white dark:bg-slate-950"
+                required
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="deadline">Prazo</Label>
+              <Label htmlFor="deadline">Data de Conclusão *</Label>
               <Input
                 id="deadline"
                 type="date"
                 value={formData.deadline}
                 onChange={(e) => setFormData({ ...formData, deadline: e.target.value })}
+                className="bg-white dark:bg-slate-950"
+                required
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Prioridade</Label>
               <Select
@@ -131,29 +144,12 @@ export function TaskFormDialog({ open, onOpenChange, projects, onSubmit }: TaskF
                   <SelectItem value="low">Baixa</SelectItem>
                   <SelectItem value="medium">Média</SelectItem>
                   <SelectItem value="high">Alta</SelectItem>
-                  <SelectItem value="critical">Crítica</SelectItem>
+                  <SelectItem value="urgent">🚨 Urgente</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Fase</Label>
-              <Select
-                value={formData.phase}
-                onValueChange={(value: ProjectPhase) => setFormData({ ...formData, phase: value })}
-              >
-                <SelectTrigger className="bg-white dark:bg-slate-950">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-white dark:bg-slate-900 border shadow-xl">
-                  <SelectItem value="projeto">Projecto</SelectItem>
-                  <SelectItem value="obra">Obra</SelectItem>
-                  <SelectItem value="acabamento">Acabamento</SelectItem>
-                  <SelectItem value="entrega">Entrega</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Estado</Label>
+              <Label>Estado Inicial</Label>
               <Select
                 value={formData.status}
                 onValueChange={(value: TaskStatus) => setFormData({ ...formData, status: value })}
@@ -162,23 +158,25 @@ export function TaskFormDialog({ open, onOpenChange, projects, onSubmit }: TaskF
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="bg-white dark:bg-slate-900 border shadow-xl">
-                  <SelectItem value="todo">A Fazer</SelectItem>
-                  <SelectItem value="doing">Em Curso</SelectItem>
-                  <SelectItem value="review">Revisão</SelectItem>
-                  <SelectItem value="done">Concluído</SelectItem>
+                  <SelectItem value="pending">Pendente</SelectItem>
+                  <SelectItem value="in_progress">Em andamento</SelectItem>
+                  <SelectItem value="completed">Concluída</SelectItem>
+                  <SelectItem value="canceled">Cancelada</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description">Descrição</Label>
+            <Label htmlFor="description">Descrição *</Label>
             <Textarea
               id="description"
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               placeholder="Detalhes da tarefa..."
               rows={3}
+              className="bg-white dark:bg-slate-950"
+              required
             />
           </div>
 

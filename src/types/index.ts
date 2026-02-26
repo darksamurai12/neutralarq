@@ -29,19 +29,25 @@ export interface Client {
   createdAt: Date;
 }
 
+export type TaskType = 'internal' | 'personal';
+export type TaskStatus = 'pending' | 'in_progress' | 'completed' | 'canceled';
+export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent';
+
 export interface Task {
   id: string;
-  projectId?: string | null;
   title: string;
-  description?: string;
-  responsible?: string;
-  deadline: Date | null;
-  status: 'todo' | 'doing' | 'review' | 'done';
-  priority: 'low' | 'medium' | 'high' | 'critical';
-  phase: 'projeto' | 'obra' | 'acabamento' | 'entrega';
+  description: string;
+  type: TaskType;
+  responsible: string;
+  priority: TaskPriority;
+  status: TaskStatus;
+  startDate: Date;
+  deadline: Date;
   completionPercentage: number;
   subtasks: any[];
   comments: any[];
+  attachments?: any[];
+  notes?: string;
   createdAt: Date;
 }
 

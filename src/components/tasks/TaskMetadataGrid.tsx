@@ -1,5 +1,5 @@
-import { Calendar, Clock, Flag, Tags, Link2, Timer } from 'lucide-react';
-import { Task, TaskPriority, ProjectPhase } from '@/types';
+import { Calendar, Clock, Flag, Tags, Link2, Timer, Briefcase, User } from 'lucide-react';
+import { TaskPriority, TaskType } from '@/types';
 import { Input } from '@/components/ui/input';
 import {
   Select,
@@ -8,20 +8,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-import { cn } from '@/lib/utils';
 
 interface TaskMetadataGridProps {
   formData: {
     deadline: string;
     startDate: string;
     priority: TaskPriority;
-    phase: ProjectPhase;
+    type: TaskType;
+    responsible: string;
     estimatedTime: string;
     trackedTime: string;
     tags: string[];
-    relatedTaskId: string;
   };
   onChange: (field: string, value: any) => void;
 }
@@ -30,41 +27,64 @@ const priorityConfig: Record<TaskPriority, { label: string; color: string }> = {
   low: { label: 'Baixa', color: 'text-success' },
   medium: { label: 'Média', color: 'text-warning' },
   high: { label: 'Alta', color: 'text-orange-500' },
-  critical: { label: 'Crítica', color: 'text-destructive' },
+  urgent: { label: 'Urgente', color: 'text-destructive' },
 };
 
 export function TaskMetadataGrid({ formData, onChange }: TaskMetadataGridProps) {
   return (
-    <div className="grid grid-cols-2 gap-x-8 gap-y-3 py-4 border-b border-border">
-      {/* Row 1 */}
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 py-6 border-b border-border">
+      {/* Tipo e Responsável */}
       <div className="flex items-center gap-3">
-        <Calendar className="w-4 h-4 text-muted-foreground shrink-0" />
-        <span className="text-sm text-muted-foreground w-20 shrink-0">Datas</span>
-        <div className="flex items-center gap-2 text-sm">
-          <div className="flex items-center gap-1">
-            <Calendar className="w-3 h-3 text-muted-foreground" />
-            <span className="text-muted-foreground">Início</span>
-          </div>
-          <Input
-            type="date"
-            value={formData.startDate}
-            onChange={(e) => onChange('startDate', e.target.value)}
-            className="h-7 w-32 text-xs bg-white dark:bg-slate-950"
-          />
-          <span className="text-muted-foreground">→</span>
-          <div className="flex items-center gap-1">
-            <Calendar className="w-3 h-3 text-muted-foreground" />
-            <span className="text-muted-foreground">Vencimento</span>
-          </div>
-          <Input
-            type="date"
-            value={formData.deadline}
-            onChange={(e) => onChange('deadline', e.target.value)}
-            className="h-7 w-32 text-xs bg-white dark:bg-slate-950"
-          />
-        </div>
+        <Briefcase className="w-4 h-4 text-muted-foreground shrink-0" />
+        <span className="text-sm text-muted-foreground w-24 shrink-0">Tipo</span>
+        <Select
+          value={formData.type}
+          onValueChange={(value: TaskType) => onChange('type', value)}
+        >
+          <SelectTrigger className="h-8 w-full text-xs bg-white dark:bg-slate-950">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent className="bg-white dark:bg-slate-900 border shadow-xl">
+            <SelectItem value="internal">Tarefa Interna</SelectItem>
+            <SelectItem value="personal">Tarefa Pessoal</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
+      <div className="flex items-center gap-3">
+        <User className="w-4 h-4 text-muted-foreground shrink-0" />
+        <span className="text-sm text-muted-foreground w-24 shrink-0">Responsável</span>
+        <Input
+          value={formData.responsible}
+          onChange={(e) => onChange('responsible', e.target.value)}
+          className="h-8 text-xs bg-white dark:bg-slate-950"
+        />
+      </div>
+
+      {/* Datas */}
+      <div className="flex items-center gap-3">
+        <Calendar className="w-4 h-4 text-muted-foreground shrink-0" />
+        <span className="text-sm text-muted-foreground w-24 shrink-0">Início</span>
+        <Input
+          type="date"
+          value={formData.startDate}
+          onChange={(e) => onChange('startDate', e.target.value)}
+          className="h-8 text-xs bg-white dark:bg-slate-950"
+        />
+      </div>
+
+      <div className="flex items-center gap-3">
+        <Clock className="w-4 h-4 text-muted-foreground shrink-0" />
+        <span className="text-sm text-muted-foreground w-24 shrink-0">Conclusão</span>
+        <Input
+          type="date"
+          value={formData.deadline}
+          onChange={(e) => onChange('deadline', e.target.value)}
+          className="h-8 text-xs bg-white dark:bg-slate-950"
+        />
+      </div>
+
+      {/* Prioridade */}
       <div className="flex items-center gap-3">
         <Flag className="w-4 h-4 text-muted-foreground shrink-0" />
         <span className="text-sm text-muted-foreground w-24 shrink-0">Prioridade</span>
@@ -72,7 +92,7 @@ export function TaskMetadataGrid({ formData, onChange }: TaskMetadataGridProps) 
           value={formData.priority}
           onValueChange={(value: TaskPriority) => onChange('priority', value)}
         >
-          <SelectTrigger className="h-7 w-28 text-xs bg-white dark:bg-slate-950">
+          <SelectTrigger className="h-8 w-full text-xs bg-white dark:bg-slate-950">
             <SelectValue />
           </SelectTrigger>
           <SelectContent className="bg-white dark:bg-slate-900 border shadow-xl">
@@ -85,38 +105,15 @@ export function TaskMetadataGrid({ formData, onChange }: TaskMetadataGridProps) 
         </Select>
       </div>
 
-      {/* Row 2 */}
-      <div className="flex items-center gap-3">
-        <Clock className="w-4 h-4 text-muted-foreground shrink-0" />
-        <span className="text-sm text-muted-foreground w-20 shrink-0">Tempo estimado</span>
-        <Input
-          type="text"
-          value={formData.estimatedTime}
-          onChange={(e) => onChange('estimatedTime', e.target.value)}
-          placeholder="Vazio"
-          className="h-7 w-24 text-xs bg-white dark:bg-slate-950"
-        />
-      </div>
-
       <div className="flex items-center gap-3">
         <Timer className="w-4 h-4 text-muted-foreground shrink-0" />
-        <span className="text-sm text-muted-foreground w-24 shrink-0">Tempo rastreado</span>
-        <span className="text-sm text-primary cursor-pointer hover:underline">
-          + Adicionar hora
-        </span>
-      </div>
-
-      {/* Row 3 */}
-      <div className="flex items-center gap-3">
-        <Tags className="w-4 h-4 text-muted-foreground shrink-0" />
-        <span className="text-sm text-muted-foreground w-20 shrink-0">Etiquetas</span>
-        <span className="text-sm text-muted-foreground">Vazio</span>
-      </div>
-
-      <div className="flex items-center gap-3">
-        <Link2 className="w-4 h-4 text-muted-foreground shrink-0" />
-        <span className="text-sm text-muted-foreground w-24 shrink-0">Relacionamentos</span>
-        <span className="text-sm text-muted-foreground">Vazio</span>
+        <span className="text-sm text-muted-foreground w-24 shrink-0">Tempo Est.</span>
+        <Input
+          placeholder="Ex: 2h"
+          value={formData.estimatedTime}
+          onChange={(e) => onChange('estimatedTime', e.target.value)}
+          className="h-8 text-xs bg-white dark:bg-slate-950"
+        />
       </div>
     </div>
   );

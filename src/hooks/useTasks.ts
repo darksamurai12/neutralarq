@@ -9,7 +9,6 @@ export function useTasks(userId: string | undefined) {
   const [tasks, setTasks] = useState<Task[]>([]);
 
   const fetchTasks = useCallback(async () => {
-    // Removido o filtro .eq('user_id', userId)
     const { data, error } = await supabase
       .from('tasks')
       .select('*')
@@ -22,14 +21,14 @@ export function useTasks(userId: string | undefined) {
 
     setTasks((data || []).map(row => ({
       id: row.id,
-      projectId: row.project_id,
       title: row.title,
-      description: row.description,
-      responsible: row.responsible,
-      deadline: row.deadline ? new Date(row.deadline) : null,
-      status: row.status as any,
-      priority: row.priority as any,
-      phase: row.phase as any,
+      description: row.description || '',
+      type: (row.phase === 'pessoal' ? 'personal' : 'internal') as any, // Mapeamento temporário se a coluna não existir
+      responsible: row.responsible || 'Não atribuído',
+      deadline: row.deadline ? new Date(row.deadline) : new Date(),
+      startDate: row.created_at ? new Date(row.created_at) : new Date(),
+      status: (row.status === 'todo' ? 'pending' : row.status === 'doing' ? 'in_progress' : row.status === 'done' ? 'completed' : 'canceled') as any,
+      priority: (row.priority === 'critical' ? 'urgent' : row.priority) as any,
       completionPercentage: Number(row.completion_percentage),
       subtasks: Array.isArray(row.subtasks) ? row.subtasks : [],
       comments: Array.isArray(row.comments) ? row.comments : [],
@@ -39,40 +38,48 @@ export function useTasks(userId: string | undefined) {
 
   const addTask = async (task: Omit<Task, 'id' | 'createdAt'>) => {
     if (!userId) return;
+    
+    // Mapeamento para a tabela actual do Supabase para evitar erros de schema
+    const dbStatus = task.status === 'pending' ? 'todo' : task.status === 'in_progress' ? 'doing' : task.status === 'completed' ? 'done' : 'todo';
+    const dbPriority = task.priority === 'urgent' ? 'critical' : task.priority;
+
     const { data, error } = await supabase.from('tasks').insert({
-      project_id: task.projectId,
       title: task.title,
       description: task.description,
       responsible: task.responsible,
-      deadline: task.deadline?.toISOString(),
-      status: task.status,
-      priority: task.priority,
-      phase: task.phase,
+      deadline: task.deadline.toISOString(),
+      status: dbStatus,
+      priority: dbPriority,
+      phase: task.type === 'personal' ? 'pessoal' : 'interna',
       completion_percentage: task.completionPercentage,
       subtasks: task.subtasks,
       comments: task.comments,
       user_id: userId
     }).select().single();
+
     if (error) { toast.error('Erro ao adicionar tarefa'); return; }
-    setTasks(prev => [{
-      ...data,
-      projectId: data.project_id,
-      deadline: data.deadline ? new Date(data.deadline) : null,
-      completionPercentage: data.completion_percentage,
-      createdAt: new Date(data.created_at)
-    } as any, ...prev]);
+    
+    fetchTasks();
     toast.success('Tarefa adicionada');
   };
 
   const updateTask = async (id: string, updates: Partial<Task>) => {
     const dbUpdates: any = { ...updates };
-    if (updates.projectId) { dbUpdates.project_id = updates.projectId; delete dbUpdates.projectId; }
-    if (updates.deadline) { dbUpdates.deadline = updates.deadline.toISOString(); delete dbUpdates.deadline; }
-    if (updates.completionPercentage !== undefined) { dbUpdates.completion_percentage = updates.completionPercentage; delete dbUpdates.completionPercentage; }
+    
+    if (updates.status) {
+      dbUpdates.status = updates.status === 'pending' ? 'todo' : updates.status === 'in_progress' ? 'doing' : updates.status === 'completed' ? 'done' : 'todo';
+    }
+    if (updates.priority) {
+      dbUpdates.priority = updates.priority === 'urgent' ? 'critical' : updates.priority;
+    }
+    if (updates.type) {
+      dbUpdates.phase = updates.type === 'personal' ? 'pessoal' : 'interna';
+    }
+    if (updates.deadline) dbUpdates.deadline = updates.deadline.toISOString();
 
     const { error } = await supabase.from('tasks').update(dbUpdates).eq('id', id);
     if (error) { toast.error('Erro ao atualizar tarefa'); return; }
-    setTasks(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
+    fetchTasks();
   };
 
   const deleteTask = async (id: string) => {
