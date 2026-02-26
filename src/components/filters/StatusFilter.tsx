@@ -24,10 +24,10 @@ export function StatusFilter<T extends string>({
       value={value} 
       onValueChange={(v: string) => onChange(v as T | 'all')}
     >
-      <SelectTrigger className="w-[180px]">
+      <SelectTrigger className="w-[180px] bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800">
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>
-      <SelectContent>
+      <SelectContent className="bg-white dark:bg-slate-900 border shadow-xl">
         <SelectItem value="all">Todos</SelectItem>
         {options.map((option) => (
           <SelectItem key={option.value} value={option.value}>

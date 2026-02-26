@@ -78,6 +78,7 @@ export function ClientFormDialog({ open, onOpenChange, editingClient, onSubmit }
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 placeholder="Nome completo"
+                className="bg-white dark:bg-slate-950"
                 required
               />
             </div>
@@ -89,6 +90,7 @@ export function ClientFormDialog({ open, onOpenChange, editingClient, onSubmit }
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 placeholder="email@exemplo.com"
+                className="bg-white dark:bg-slate-950"
                 required
               />
             </div>
@@ -101,6 +103,7 @@ export function ClientFormDialog({ open, onOpenChange, editingClient, onSubmit }
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 placeholder="+244 9XX XXX XXX"
+                className="bg-white dark:bg-slate-950"
               />
             </div>
             <div className="space-y-2">
@@ -110,6 +113,7 @@ export function ClientFormDialog({ open, onOpenChange, editingClient, onSubmit }
                 value={formData.company}
                 onChange={(e) => setFormData({ ...formData, company: e.target.value })}
                 placeholder="Nome da empresa"
+                className="bg-white dark:bg-slate-950"
               />
             </div>
           </div>
@@ -121,6 +125,7 @@ export function ClientFormDialog({ open, onOpenChange, editingClient, onSubmit }
                 value={formData.position}
                 onChange={(e) => setFormData({ ...formData, position: e.target.value })}
                 placeholder="Ex: Director Comercial"
+                className="bg-white dark:bg-slate-950"
               />
             </div>
             <div className="space-y-2">
@@ -129,10 +134,10 @@ export function ClientFormDialog({ open, onOpenChange, editingClient, onSubmit }
                 value={formData.status}
                 onValueChange={(value: ClientStatus) => setFormData({ ...formData, status: value })}
               >
-                <SelectTrigger>
+                <SelectTrigger className="bg-white dark:bg-slate-950">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-white dark:bg-slate-900 border shadow-xl">
                   <SelectItem value="lead">Lead</SelectItem>
                   <SelectItem value="active">Activo</SelectItem>
                   <SelectItem value="inactive">Inactivo</SelectItem>
@@ -147,6 +152,7 @@ export function ClientFormDialog({ open, onOpenChange, editingClient, onSubmit }
               value={formData.address}
               onChange={(e) => setFormData({ ...formData, address: e.target.value })}
               placeholder="Endereço completo"
+              className="bg-white dark:bg-slate-950"
             />
           </div>
           <div className="space-y-2">
@@ -156,6 +162,7 @@ export function ClientFormDialog({ open, onOpenChange, editingClient, onSubmit }
               value={formData.notes}
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
               placeholder="Observações sobre o cliente..."
+              className="bg-white dark:bg-slate-950"
               rows={3}
             />
           </div>

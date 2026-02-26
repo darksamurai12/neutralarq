@@ -87,6 +87,7 @@ export function ProjectFormDialog({ open, onOpenChange, editingProject, clients,
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 placeholder="Ex: Edifício Comercial Talatona"
+                className="bg-white dark:bg-slate-950"
                 required
               />
             </div>
@@ -98,10 +99,10 @@ export function ProjectFormDialog({ open, onOpenChange, editingProject, clients,
                 onValueChange={(value) => setFormData({ ...formData, clientId: value })}
                 required
               >
-                <SelectTrigger>
+                <SelectTrigger className="bg-white dark:bg-slate-950">
                   <SelectValue placeholder="Selecione um cliente" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-white dark:bg-slate-900 border shadow-xl">
                   {clients.filter(c => c.status !== 'inactive').map((client) => (
                     <SelectItem key={client.id} value={client.id}>
                       {client.name}
@@ -117,10 +118,10 @@ export function ProjectFormDialog({ open, onOpenChange, editingProject, clients,
                 value={formData.type}
                 onValueChange={(value: ProjectType) => setFormData({ ...formData, type: value })}
               >
-                <SelectTrigger>
+                <SelectTrigger className="bg-white dark:bg-slate-950">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-white dark:bg-slate-900 border shadow-xl">
                   <SelectItem value="architecture">🏛️ Arquitectura</SelectItem>
                   <SelectItem value="construction">🏗️ Construção Civil</SelectItem>
                   <SelectItem value="interior_design">🎨 Design de Interiores</SelectItem>
@@ -135,6 +136,7 @@ export function ProjectFormDialog({ open, onOpenChange, editingProject, clients,
                 value={formData.location}
                 onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                 placeholder="Ex: Talatona, Luanda Sul"
+                className="bg-white dark:bg-slate-950"
                 required
               />
             </div>
@@ -146,6 +148,7 @@ export function ProjectFormDialog({ open, onOpenChange, editingProject, clients,
                 type="date"
                 value={formData.startDate}
                 onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                className="bg-white dark:bg-slate-950"
                 required
               />
             </div>
@@ -157,6 +160,7 @@ export function ProjectFormDialog({ open, onOpenChange, editingProject, clients,
                 type="date"
                 value={formData.deadline}
                 onChange={(e) => setFormData({ ...formData, deadline: e.target.value })}
+                className="bg-white dark:bg-slate-950"
                 required
               />
             </div>
@@ -170,6 +174,7 @@ export function ProjectFormDialog({ open, onOpenChange, editingProject, clients,
                 value={formData.budget}
                 onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
                 placeholder="0,00"
+                className="bg-white dark:bg-slate-950"
                 required
               />
             </div>
@@ -180,10 +185,10 @@ export function ProjectFormDialog({ open, onOpenChange, editingProject, clients,
                 value={formData.status}
                 onValueChange={(value: ProjectStatus) => setFormData({ ...formData, status: value })}
               >
-                <SelectTrigger>
+                <SelectTrigger className="bg-white dark:bg-slate-950">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-white dark:bg-slate-900 border shadow-xl">
                   <SelectItem value="planning">Planeamento</SelectItem>
                   <SelectItem value="in_progress">Em Execução</SelectItem>
                   <SelectItem value="paused">Parado</SelectItem>
@@ -199,6 +204,7 @@ export function ProjectFormDialog({ open, onOpenChange, editingProject, clients,
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 placeholder="Descreva o projecto..."
+                className="bg-white dark:bg-slate-950"
                 rows={3}
               />
             </div>

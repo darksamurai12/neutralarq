@@ -134,21 +134,21 @@ export function CRMCalendar() {
         <CardContent className="p-4">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-start">
-              <div className="flex items-center gap-1 bg-slate-50 p-1 rounded-xl border border-slate-100">
+              <div className="flex items-center gap-1 bg-slate-50 dark:bg-slate-900 p-1 rounded-xl border border-slate-100 dark:border-slate-800">
                 <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg" onClick={navigatePrevious}><ChevronLeft className="w-4 h-4" /></Button>
-                <Button variant="ghost" size="sm" className="h-9 px-4 font-semibold text-slate-600" onClick={goToToday}>Hoje</Button>
+                <Button variant="ghost" size="sm" className="h-9 px-4 font-semibold text-slate-600 dark:text-slate-400" onClick={goToToday}>Hoje</Button>
                 <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg" onClick={navigateNext}><ChevronRight className="w-4 h-4" /></Button>
               </div>
-              <h2 className="text-lg font-bold text-slate-800 capitalize">{getViewTitle()}</h2>
+              <h2 className="text-lg font-bold text-slate-800 dark:text-white capitalize">{getViewTitle()}</h2>
             </div>
 
             <div className="flex items-center gap-3 w-full sm:w-auto">
-              <div className="flex bg-slate-50 p-1 rounded-xl border border-slate-100 flex-1 sm:flex-none">
-                <Button variant={view === 'day' ? 'secondary' : 'ghost'} size="sm" onClick={() => setView('day')} className={cn("flex-1 rounded-lg h-9 text-xs font-bold", view === 'day' && "bg-white shadow-sm")}>Dia</Button>
+              <div className="flex bg-slate-50 dark:bg-slate-900 p-1 rounded-xl border border-slate-100 dark:border-slate-800 flex-1 sm:flex-none">
+                <Button variant={view === 'day' ? 'secondary' : 'ghost'} size="sm" onClick={() => setView('day')} className={cn("flex-1 rounded-lg h-9 text-xs font-bold", view === 'day' && "bg-white dark:bg-slate-800 shadow-sm")}>Dia</Button>
                 {!isMobile && (
                   <>
-                    <Button variant={view === 'week' ? 'secondary' : 'ghost'} size="sm" onClick={() => setView('week')} className={cn("flex-1 rounded-lg h-9 text-xs font-bold", view === 'week' && "bg-white shadow-sm")}>Semana</Button>
-                    <Button variant={view === 'month' ? 'secondary' : 'ghost'} size="sm" onClick={() => setView('month')} className={cn("flex-1 rounded-lg h-9 text-xs font-bold", view === 'month' && "bg-white shadow-sm")}>Mês</Button>
+                    <Button variant={view === 'week' ? 'secondary' : 'ghost'} size="sm" onClick={() => setView('week')} className={cn("flex-1 rounded-lg h-9 text-xs font-bold", view === 'week' && "bg-white dark:bg-slate-800 shadow-sm")}>Semana</Button>
+                    <Button variant={view === 'month' ? 'secondary' : 'ghost'} size="sm" onClick={() => setView('month')} className={cn("flex-1 rounded-lg h-9 text-xs font-bold", view === 'month' && "bg-white dark:bg-slate-800 shadow-sm")}>Mês</Button>
                   </>
                 )}
               </div>
@@ -162,14 +162,14 @@ export function CRMCalendar() {
                   <form onSubmit={handleSubmit} className="space-y-4 mt-4">
                     <div className="space-y-2">
                       <Label htmlFor="title">Título do Evento *</Label>
-                      <Input id="title" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} placeholder="Ex: Reunião de Projecto" className="h-11 rounded-xl" required />
+                      <Input id="title" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} placeholder="Ex: Reunião de Projecto" className="h-11 rounded-xl bg-white dark:bg-slate-950" required />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label>Tipo</Label>
                         <Select value={formData.type} onValueChange={(value: CalendarEventType) => setFormData({ ...formData, type: value })}>
-                          <SelectTrigger className="h-11 rounded-xl"><SelectValue /></SelectTrigger>
-                          <SelectContent>
+                          <SelectTrigger className="h-11 rounded-xl bg-white dark:bg-slate-950"><SelectValue /></SelectTrigger>
+                          <SelectContent className="bg-white dark:bg-slate-900 border shadow-xl">
                             {Object.entries(eventTypeConfig).map(([key, config]) => (
                               <SelectItem key={key} value={key}><div className="flex items-center gap-2">{config.icon && <config.icon className={cn('w-4 h-4', config.color)} />}{config.label}</div></SelectItem>
                             ))}
@@ -179,33 +179,33 @@ export function CRMCalendar() {
                       <div className="space-y-2">
                         <Label>Lembrete</Label>
                         <Select value={formData.reminder?.toString() || '0'} onValueChange={(value) => setFormData({ ...formData, reminder: value === '0' ? null : parseInt(value) })}>
-                          <SelectTrigger className="h-11 rounded-xl"><SelectValue /></SelectTrigger>
-                          <SelectContent>{reminderOptions.map((opt) => (<SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>))}</SelectContent>
+                          <SelectTrigger className="h-11 rounded-xl bg-white dark:bg-slate-950"><SelectValue /></SelectTrigger>
+                          <SelectContent className="bg-white dark:bg-slate-900 border shadow-xl">{reminderOptions.map((opt) => (<SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>))}</SelectContent>
                         </Select>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100">
+                    <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800">
                       <Switch id="allDay" checked={formData.allDay} onCheckedChange={(checked) => setFormData({ ...formData, allDay: checked })} />
-                      <Label htmlFor="allDay" className="font-semibold text-slate-600">Evento de dia inteiro</Label>
+                      <Label htmlFor="allDay" className="font-semibold text-slate-600 dark:text-slate-400">Evento de dia inteiro</Label>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label>Data</Label>
                         <Popover>
-                          <PopoverTrigger asChild><Button variant="outline" className="w-full h-11 justify-start text-left font-normal rounded-xl"><CalendarIcon className="mr-2 h-4 w-4" />{format(formData.startDate, 'dd/MM/yyyy')}</Button></PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={formData.startDate} onSelect={(date) => date && setFormData({ ...formData, startDate: date, endDate: date })} initialFocus /></PopoverContent>
+                          <PopoverTrigger asChild><Button variant="outline" className="w-full h-11 justify-start text-left font-normal rounded-xl bg-white dark:bg-slate-950"><CalendarIcon className="mr-2 h-4 w-4" />{format(formData.startDate, 'dd/MM/yyyy')}</Button></PopoverTrigger>
+                          <PopoverContent className="w-auto p-0 bg-white dark:bg-slate-900 border shadow-xl" align="start"><Calendar mode="single" selected={formData.startDate} onSelect={(date) => date && setFormData({ ...formData, startDate: date, endDate: date })} initialFocus /></PopoverContent>
                         </Popover>
                       </div>
                       {!formData.allDay && (
                         <div className="space-y-2">
                           <Label>Hora</Label>
-                          <Input type="time" value={format(formData.startDate, 'HH:mm')} className="h-11 rounded-xl" onChange={(e) => { const [hours, minutes] = e.target.value.split(':').map(Number); setFormData({ ...formData, startDate: setMinutes(setHours(formData.startDate, hours), minutes) }); }} />
+                          <Input type="time" value={format(formData.startDate, 'HH:mm')} className="h-11 rounded-xl bg-white dark:bg-slate-950" onChange={(e) => { const [hours, minutes] = e.target.value.split(':').map(Number); setFormData({ ...formData, startDate: setMinutes(setHours(formData.startDate, hours), minutes) }); }} />
                         </div>
                       )}
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="description">Descrição / Notas</Label>
-                      <Textarea id="description" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} placeholder="Detalhes adicionais..." className="rounded-xl resize-none" rows={3} />
+                      <Textarea id="description" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} placeholder="Detalhes adicionais..." className="rounded-xl resize-none bg-white dark:bg-slate-950" rows={3} />
                     </div>
                     <div className="flex justify-end gap-3 pt-4">
                       <Button type="button" variant="outline" className="h-11 rounded-xl px-6" onClick={resetForm}>Cancelar</Button>
@@ -224,8 +224,8 @@ export function CRMCalendar() {
           <Card className="shadow-card border-none rounded-3xl overflow-hidden">
             <CardContent className="p-0">
               {view === 'month' && !isMobile && (
-                <div className="divide-y divide-slate-100">
-                  <div className="grid grid-cols-7 bg-slate-50/50">
+                <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                  <div className="grid grid-cols-7 bg-slate-50/50 dark:bg-slate-900/50">
                     {['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'].map((day) => (
                       <div key={day} className="py-4 text-center text-xs font-bold uppercase tracking-widest text-slate-400">{day}</div>
                     ))}
@@ -235,7 +235,7 @@ export function CRMCalendar() {
                       const dayEvents = calendarEvents.filter(e => isSameDay(new Date(e.startDate), day));
                       const isCurrMonth = isSameMonth(day, currentDate);
                       return (
-                        <div key={idx} className={cn('min-h-[120px] p-2 border-r border-b border-slate-50 cursor-pointer hover:bg-slate-50/50 transition-colors group', !isCurrMonth && 'bg-slate-50/20 text-slate-300', isToday(day) && 'bg-primary/5')} onClick={() => handleDayClick(day)}>
+                        <div key={idx} className={cn('min-h-[120px] p-2 border-r border-b border-slate-50 dark:border-slate-800 cursor-pointer hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors group', !isCurrMonth && 'bg-slate-50/20 dark:bg-slate-900/20 text-slate-300 dark:text-slate-700', isToday(day) && 'bg-primary/5')} onClick={() => handleDayClick(day)}>
                           <div className={cn('text-sm font-bold mb-2 w-8 h-8 flex items-center justify-center rounded-xl transition-all', isToday(day) ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-slate-500 group-hover:text-primary')}>{format(day, 'd')}</div>
                           <div className="space-y-1.5">
                             {dayEvents.slice(0, 3).map((event) => (
@@ -250,12 +250,12 @@ export function CRMCalendar() {
                 </div>
               )}
               {view === 'day' && (
-                <div className="divide-y divide-slate-100">
+                <div className="divide-y divide-slate-100 dark:divide-slate-800">
                   <div className="max-h-[700px] overflow-y-auto custom-scrollbar">
                     {hours.map((hour) => {
                       const hourEvents = displayedEvents.filter(e => getHours(new Date(e.startDate)) === hour);
                       return (
-                        <div key={hour} className="grid grid-cols-12 border-b border-slate-50 hover:bg-slate-50/30 transition-colors">
+                        <div key={hour} className="grid grid-cols-12 border-b border-slate-50 dark:border-slate-800 hover:bg-slate-50/30 dark:hover:bg-slate-800/30 transition-colors">
                           <div className="col-span-2 md:col-span-1 py-6 px-2 text-right text-xs font-bold text-slate-400">{hour.toString().padStart(2, '0')}:00</div>
                           <div className="col-span-10 md:col-span-11 py-3 px-4 min-h-[100px] cursor-pointer" onClick={() => { setFormData({ ...emptyFormData, startDate: setHours(setMinutes(currentDate, 0), hour), endDate: setHours(setMinutes(currentDate, 0), hour + 1) }); setIsDialogOpen(true); }}>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -282,11 +282,11 @@ export function CRMCalendar() {
               </CardContent>
             </Card>
             <Card className="shadow-card border-none rounded-3xl bg-pastel-lavender/30">
-              <CardHeader className="pb-3"><CardTitle className="text-sm font-bold text-slate-800 flex items-center gap-2"><Clock className="w-4 h-4 text-primary" />Próximos Compromissos</CardTitle></CardHeader>
+              <CardHeader className="pb-3"><CardTitle className="text-sm font-bold text-slate-800 dark:text-white flex items-center gap-2"><Clock className="w-4 h-4 text-primary" />Próximos Compromissos</CardTitle></CardHeader>
               <CardContent className="space-y-3">
                 {calendarEvents.filter(e => !e.completed && new Date(e.startDate) >= new Date()).sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime()).slice(0, 4).map((event) => (
-                  <div key={event.id} className="p-3 rounded-2xl bg-white shadow-sm border border-slate-100 cursor-pointer hover:border-primary/20 transition-all" onClick={() => handleEdit(event)}>
-                    <p className="text-xs font-bold text-slate-700 truncate">{event.title}</p>
+                  <div key={event.id} className="p-3 rounded-2xl bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700 cursor-pointer hover:border-primary/20 transition-all" onClick={() => handleEdit(event)}>
+                    <p className="text-xs font-bold text-slate-700 dark:text-slate-200 truncate">{event.title}</p>
                     <div className="flex items-center justify-between mt-2">
                       <span className="text-[10px] text-slate-400 font-medium">{format(new Date(event.startDate), "d 'de' MMM", { locale: ptBR })}</span>
                       <Badge variant="outline" className={cn("text-[9px] px-1.5 py-0 border-none", eventTypeConfig[event.type].pastelClass, eventTypeConfig[event.type].color)}>{eventTypeConfig[event.type].label}</Badge>

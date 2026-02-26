@@ -16,7 +16,7 @@ export function SearchFilter({ value, onChange, placeholder = 'Pesquisar...' }: 
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="pl-9 pr-9"
+        className="pl-9 pr-9 bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800"
       />
       {value && (
         <Button

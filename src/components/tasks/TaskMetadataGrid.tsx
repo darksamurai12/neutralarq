@@ -49,7 +49,7 @@ export function TaskMetadataGrid({ formData, onChange }: TaskMetadataGridProps) 
             type="date"
             value={formData.startDate}
             onChange={(e) => onChange('startDate', e.target.value)}
-            className="h-7 w-32 text-xs"
+            className="h-7 w-32 text-xs bg-white dark:bg-slate-950"
           />
           <span className="text-muted-foreground">→</span>
           <div className="flex items-center gap-1">
@@ -60,7 +60,7 @@ export function TaskMetadataGrid({ formData, onChange }: TaskMetadataGridProps) 
             type="date"
             value={formData.deadline}
             onChange={(e) => onChange('deadline', e.target.value)}
-            className="h-7 w-32 text-xs"
+            className="h-7 w-32 text-xs bg-white dark:bg-slate-950"
           />
         </div>
       </div>
@@ -72,10 +72,10 @@ export function TaskMetadataGrid({ formData, onChange }: TaskMetadataGridProps) 
           value={formData.priority}
           onValueChange={(value: TaskPriority) => onChange('priority', value)}
         >
-          <SelectTrigger className="h-7 w-28 text-xs">
+          <SelectTrigger className="h-7 w-28 text-xs bg-white dark:bg-slate-950">
             <SelectValue />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="bg-white dark:bg-slate-900 border shadow-xl">
             {Object.entries(priorityConfig).map(([key, config]) => (
               <SelectItem key={key} value={key}>
                 <span className={config.color}>{config.label}</span>
@@ -94,7 +94,7 @@ export function TaskMetadataGrid({ formData, onChange }: TaskMetadataGridProps) 
           value={formData.estimatedTime}
           onChange={(e) => onChange('estimatedTime', e.target.value)}
           placeholder="Vazio"
-          className="h-7 w-24 text-xs"
+          className="h-7 w-24 text-xs bg-white dark:bg-slate-950"
         />
       </div>
 
