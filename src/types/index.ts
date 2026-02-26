@@ -263,28 +263,24 @@ export interface Comment {
   date: Date;
 }
 
-// --- NOVOS TIPOS PARA DOCUMENTOS ---
+// --- NOVOS TIPOS PARA DOCUMENTOS INTERNOS ---
 
-export type DocumentCategory = 'Administrativo' | 'Financeiro' | 'RH' | 'Contratos' | 'Templates' | 'Geral';
+export type DocumentCategory = 'administrativo' | 'financeiro' | 'rh' | 'contratos' | 'projetos' | 'templates' | 'outros';
+export type DocumentStatus = 'active' | 'archived' | 'expired' | 'deleted';
 
 export interface Document {
   id: string;
   name: string;
-  fileId: string;
-  webViewLink: string;
-  downloadLink: string;
-  mimeType: string;
-  size: number;
+  description?: string;
   category: DocumentCategory;
   department?: string;
-  year: number;
+  filePath: string;
+  size: number;
+  fileType: string;
   version: number;
-  isArchived: boolean;
+  status: DocumentStatus;
+  expiryDate?: Date | null;
+  createdBy: string;
   createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface GoogleDriveSettings {
-  isConnected: boolean;
   updatedAt: Date;
 }

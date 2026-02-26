@@ -1,74 +1,46 @@
 "use client";
 
-import { useState, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { useDocuments } from '@/hooks/useDocuments';
-import { FileText, Upload, Search, Filter, HardDrive, AlertCircle, Loader2, Plus, ShieldAlert } from 'lucide-react';
+import { FileText, Search, Filter, Loader2, Plus, LayoutGrid, List, Trash2, Archive } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { DocumentCard } from '@/components/documents/DocumentCard';
-import { DocumentCategory } from '@/types';
-import { toast } from 'sonner';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-
-const categories: DocumentCategory[] = ['Administrativo', 'Financeiro', 'RH', 'Contratos', 'Templates', 'Geral'];
+import { DocumentCategory, Document } from '@/types';
+import { DocumentFormDialog } from '@/components/documents/DocumentFormDialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { cn } from '@/lib/utils';
 
 export default function Documents() {
-  const { documents, settings, loading, connectGoogleDrive, uploadFile, deleteDocument } = useDocuments();
+  const { documents, loading, uploadFile, getDownloadUrl, updateDocument, deleteDocument } = useDocuments();
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<DocumentCategory | 'all'>('all');
-  const [isUploadOpen, setIsUploadOpen] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [uploadCategory, setUploadCategory] = useState<DocumentCategory>('Geral');
-  
-  const location = useLocation();
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const error = params.get('error');
-    const success = params.get('success');
-
-    if (error === 'unauthorized_account') {
-      toast.error('Conta não autorizada! Utilize apenas neutralarqd@gmail.com', { duration: 5000 });
-      navigate('/documentos', { replace: true });
-    } else if (error) {
-      toast.error('Erro na autenticação com o Google Drive');
-      navigate('/documentos', { replace: true });
-    }
-
-    if (success === 'connected') {
-      toast.success('Google Drive conectado com sucesso!');
-      navigate('/documentos', { replace: true });
-    }
-  }, [location, navigate]);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingDoc, setEditingDoc] = useState<Document | null>(null);
 
   const filteredDocs = documents.filter(doc => {
-    const matchesSearch = doc.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = doc.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         (doc.description && doc.description.toLowerCase().includes(searchQuery.toLowerCase()));
     const matchesCategory = categoryFilter === 'all' || doc.category === categoryFilter;
     return matchesSearch && matchesCategory;
   });
 
-  const handleUpload = async () => {
-    if (!selectedFile) return;
-    await uploadFile(selectedFile, uploadCategory);
-    setIsUploadOpen(false);
-    setSelectedFile(null);
+  const handleFormSubmit = async (file: File | null, data: any) => {
+    if (editingDoc) {
+      await updateDocument(editingDoc.id, data);
+    } else if (file) {
+      await uploadFile(file, data);
+    }
+    setIsFormOpen(false);
+    setEditingDoc(null);
+  };
+
+  const handleDownload = async (filePath: string) => {
+    const url = await getDownloadUrl(filePath);
+    if (url) window.open(url, '_blank');
   };
 
   if (loading) {
@@ -85,98 +57,108 @@ export default function Documents() {
     <AppLayout>
       <PageHeader
         title="Gestão de Documentos"
-        description="Armazenamento centralizado e seguro no Google Drive"
+        description="Armazenamento interno seguro e organizado por categorias"
         icon={FileText}
       >
-        {!settings.isConnected ? (
-          <Button onClick={connectGoogleDrive} className="gap-2 bg-emerald-600 hover:bg-emerald-700 rounded-xl">
-            <HardDrive className="w-4 h-4" /> Conectar neutralarqd@gmail.com
-          </Button>
-        ) : (
-          <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>
-            <DialogTrigger asChild>
-              <Button className="gap-2 shadow-lg rounded-xl h-11 px-6">
-                <Plus className="w-4 h-4" /> Novo Documento
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader><DialogTitle>Upload para o Google Drive</DialogTitle></DialogHeader>
-              <div className="space-y-4 mt-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-bold text-slate-500">Ficheiro</label>
-                  <Input type="file" onChange={e => setSelectedFile(e.target.files?.[0] || null)} className="rounded-xl" />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-bold text-slate-500">Categoria / Pasta</label>
-                  <Select value={uploadCategory} onValueChange={(v: any) => setUploadCategory(v)}>
-                    <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {categories.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <Button onClick={handleUpload} disabled={!selectedFile} className="w-full rounded-xl h-11">
-                  Iniciar Upload
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-        )}
+        <Button 
+          className="gap-2 shadow-lg rounded-2xl h-12 px-6 font-bold"
+          onClick={() => { setEditingDoc(null); setIsFormOpen(true); }}
+        >
+          <Plus className="w-5 h-5" /> Novo Documento
+        </Button>
       </PageHeader>
 
-      {!settings.isConnected && (
-        <div className="bg-amber-50 border border-amber-100 p-6 rounded-3xl flex items-center gap-4 mb-8">
-          <ShieldAlert className="w-8 h-8 text-amber-500" />
-          <div>
-            <h3 className="font-bold text-amber-800">Acesso Restrito</h3>
-            <p className="text-sm text-amber-700">Apenas a conta oficial <strong>neutralarqd@gmail.com</strong> pode ser conectada para armazenamento.</p>
-          </div>
+      {/* Dashboard de Documentos */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="bg-pastel-sky p-5 rounded-3xl border border-blue-100/50">
+          <p className="text-[10px] font-black text-blue-600/60 uppercase tracking-widest">Total Ficheiros</p>
+          <p className="text-2xl font-black text-slate-800">{documents.length}</p>
         </div>
-      )}
+        <div className="bg-pastel-mint p-5 rounded-3xl border border-emerald-100/50">
+          <p className="text-[10px] font-black text-emerald-600/60 uppercase tracking-widest">Ativos</p>
+          <p className="text-2xl font-black text-slate-800">{documents.filter(d => d.status === 'active').length}</p>
+        </div>
+        <div className="bg-pastel-rose p-5 rounded-3xl border border-rose-100/50">
+          <p className="text-[10px] font-black text-rose-600/60 uppercase tracking-widest">Expirados</p>
+          <p className="text-2xl font-black text-slate-800">{documents.filter(d => d.status === 'expired').length}</p>
+        </div>
+        <div className="bg-pastel-slate p-5 rounded-3xl border border-slate-200">
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Arquivados</p>
+          <p className="text-2xl font-black text-slate-800">{documents.filter(d => d.status === 'archived').length}</p>
+        </div>
+      </div>
 
       <div className="flex flex-col md:flex-row gap-4 mb-8">
         <div className="relative flex-1">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <Input
-            placeholder="Pesquisar documentos..."
+            placeholder="Pesquisar por nome ou descrição..."
             className="pl-11 h-12 rounded-2xl bg-white dark:bg-slate-800 border-none shadow-sm"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-        <Select value={categoryFilter} onValueChange={(v: any) => setCategoryFilter(v)}>
-          <SelectTrigger className="w-[200px] h-12 rounded-2xl bg-white dark:bg-slate-800 border-none shadow-sm">
-            <Filter className="w-4 h-4 mr-2 text-slate-400" />
-            <SelectValue placeholder="Categoria" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todas as Categorias</SelectItem>
-            {categories.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-          </SelectContent>
-        </Select>
+        <div className="flex gap-2">
+          <Select value={categoryFilter} onValueChange={(v: any) => setCategoryFilter(v)}>
+            <SelectTrigger className="w-[200px] h-12 rounded-2xl bg-white dark:bg-slate-800 border-none shadow-sm">
+              <Filter className="w-4 h-4 mr-2 text-slate-400" />
+              <SelectValue placeholder="Categoria" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas as Categorias</SelectItem>
+              <SelectItem value="administrativo">Administrativo</SelectItem>
+              <SelectItem value="financeiro">Financeiro</SelectItem>
+              <SelectItem value="rh">Recursos Humanos</SelectItem>
+              <SelectItem value="contratos">Contratos</SelectItem>
+              <SelectItem value="projetos">Projectos</SelectItem>
+              <SelectItem value="templates">Templates</SelectItem>
+              <SelectItem value="outros">Outros</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
+            <Button variant="ghost" size="icon" className={cn("h-10 w-10 rounded-lg", viewMode === 'grid' && "bg-white dark:bg-slate-700 shadow-sm")} onClick={() => setViewMode('grid')}><LayoutGrid className="w-4 h-4" /></Button>
+            <Button variant="ghost" size="icon" className={cn("h-10 w-10 rounded-lg", viewMode === 'list' && "bg-white dark:bg-slate-700 shadow-sm")} onClick={() => setViewMode('list')}><List className="w-4 h-4" /></Button>
+          </div>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <div className={cn(
+        viewMode === 'grid' 
+          ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" 
+          : "flex flex-col gap-3"
+      )}>
         {filteredDocs.map(doc => (
           <DocumentCard 
             key={doc.id} 
             doc={doc} 
-            onDelete={(id, fileId) => {
-              if (confirm('Deseja remover também do Google Drive?')) {
-                deleteDocument(id, fileId, true);
+            onDownload={handleDownload}
+            onEdit={(d) => { setEditingDoc(d); setIsFormOpen(true); }}
+            onArchive={(d) => updateDocument(d.id, { status: d.status === 'archived' ? 'active' : 'archived' })}
+            onDelete={(id, filePath) => {
+              if (confirm('Deseja eliminar permanentemente do servidor?')) {
+                deleteDocument(id, filePath, true);
               } else {
-                deleteDocument(id, fileId, false);
+                deleteDocument(id, filePath, false);
               }
             }} 
           />
         ))}
         {filteredDocs.length === 0 && (
-          <div className="col-span-full py-20 text-center bg-white dark:bg-slate-800/50 rounded-[2.5rem] border-2 border-dashed border-slate-100 dark:border-slate-800">
-            <FileText className="w-12 h-12 text-slate-200 mx-auto mb-4" />
-            <p className="text-slate-400 font-medium">Nenhum documento encontrado</p>
+          <div className="col-span-full py-32 text-center bg-white dark:bg-slate-800/50 rounded-[2.5rem] border-2 border-dashed border-slate-100 dark:border-slate-800">
+            <FileText className="w-16 h-16 text-slate-200 mx-auto mb-4" />
+            <p className="text-slate-400 font-black text-xl">Nenhum documento encontrado</p>
+            <p className="text-sm text-slate-300 mt-2">Ajuste os filtros ou carregue um novo ficheiro.</p>
           </div>
         )}
       </div>
+
+      <DocumentFormDialog 
+        open={isFormOpen}
+        onOpenChange={setIsFormOpen}
+        editingDoc={editingDoc}
+        onSubmit={handleFormSubmit}
+      />
     </AppLayout>
   );
 }
