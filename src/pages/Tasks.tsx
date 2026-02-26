@@ -4,18 +4,18 @@ import { useState } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { useApp } from '@/contexts/AppContext';
-import { CheckSquare, Plus, Search, Filter, Calendar, User, Flag } from 'lucide-react';
+import { CheckSquare, Plus, Search, Calendar, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Task, TaskStatus, TaskPriority } from '@/types';
 import { format, isPast } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { TaskEditDialog } from '@/components/tasks/TaskEditDialog';
+import { TaskFormDialog } from '@/components/tasks/TaskFormDialog';
 
 const priorityConfig: Record<TaskPriority, { label: string; color: string; bg: string }> = {
   low: { label: 'Baixa', color: 'text-slate-600', bg: 'bg-slate-100' },
@@ -32,11 +32,12 @@ const statusConfig: Record<TaskStatus, { label: string; color: string }> = {
 };
 
 export default function Tasks() {
-  const { tasks, projects, updateTask, deleteTask } = useApp();
+  const { tasks, projects, addTask, updateTask, deleteTask } = useApp();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<TaskStatus | 'all'>('all');
   const [priorityFilter, setPriorityFilter] = useState<TaskPriority | 'all'>('all');
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
 
   const filteredTasks = tasks.filter(task => {
     const matchesSearch = task.title.toLowerCase().includes(searchQuery.toLowerCase());
@@ -49,13 +50,26 @@ export default function Tasks() {
     return projects.find(p => p.id === projectId)?.name || 'Projecto Desconhecido';
   };
 
+  const handleCreateTask = (data: any) => {
+    addTask(data);
+    setIsCreateOpen(false);
+  };
+
   return (
     <AppLayout>
       <PageHeader
         title="Tarefas"
         description="Gestão centralizada de todas as atividades"
         icon={CheckSquare}
-      />
+      >
+        <Button 
+          className="w-full md:w-auto gap-2 shadow-lg hover:shadow-xl transition-all duration-300 rounded-xl"
+          onClick={() => setIsCreateOpen(true)}
+        >
+          <Plus className="w-4 h-4" />
+          Nova Tarefa
+        </Button>
+      </PageHeader>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
         <Card className="lg:col-span-3 shadow-sm border-none rounded-2xl">
@@ -183,6 +197,13 @@ export default function Tasks() {
           })
         )}
       </div>
+
+      <TaskFormDialog
+        open={isCreateOpen}
+        onOpenChange={setIsCreateOpen}
+        projects={projects}
+        onSubmit={handleCreateTask}
+      />
 
       <TaskEditDialog
         task={editingTask}
