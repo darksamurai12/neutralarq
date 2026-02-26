@@ -230,22 +230,37 @@ export interface Budget {
 }
 
 export type NoteColor = 'default' | 'blue' | 'green' | 'yellow' | 'purple' | 'rose';
-export type NoteType = 'personal' | 'office' | 'procedure' | 'meeting' | 'idea' | 'reminder';
+export type NoteType = 'text' | 'checklist';
+export type NotePriority = 'low' | 'medium' | 'high' | 'urgent';
+
+export interface NoteList {
+  id: string;
+  name: string;
+  color: string;
+  icon: string;
+  userId: string;
+}
+
+export interface NoteChecklistItem {
+  id: string;
+  noteId: string;
+  description: string;
+  isCompleted: boolean;
+  orderIndex: number;
+}
 
 export interface Note {
   id: string;
   userId: string;
+  listId: string | null;
   title: string;
   content: string;
-  color: NoteColor;
   type: NoteType;
-  category?: string;
+  priority: NotePriority;
   isPinned: boolean;
-  isImportant: boolean;
   isArchived: boolean;
-  reminderDate?: Date | null;
-  authorName?: string;
-  attachments?: any[];
+  reminderDate: Date | null;
+  checklistItems?: NoteChecklistItem[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -262,8 +277,6 @@ export interface Comment {
   author: string;
   date: Date;
 }
-
-// --- NOVOS TIPOS PARA DOCUMENTOS INTERNOS ---
 
 export type DocumentCategory = 'administrativo' | 'financeiro' | 'rh' | 'contratos' | 'projetos' | 'templates' | 'outros';
 export type DocumentStatus = 'active' | 'archived' | 'expired' | 'deleted';
