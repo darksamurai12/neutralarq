@@ -102,17 +102,6 @@ const categoryIcons: Record<ExpenseCategory, React.ElementType> = {
   outros: HelpCircle,
 };
 
-const categoryColors: Record<ExpenseCategory, string> = {
-  alimentacao: 'hsl(38, 92%, 50%)',
-  transporte: 'hsl(217, 91%, 60%)',
-  material: 'hsl(142, 76%, 36%)',
-  servicos: 'hsl(280, 84%, 60%)',
-  equipamento: 'hsl(0, 84%, 60%)',
-  comunicacao: 'hsl(190, 80%, 45%)',
-  renda: 'hsl(340, 65%, 60%)',
-  outros: 'hsl(220, 10%, 50%)',
-};
-
 export default function Finance() {
   const { transactions, projects, clients, addTransaction, updateTransaction, deleteTransaction, getDashboardMetrics } = useApp();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -202,19 +191,9 @@ export default function Finance() {
   const totalIncome = transactions.filter((t) => t.type === 'income').reduce((sum, t) => sum + t.value, 0);
   const totalExpenses = transactions.filter((t) => t.type === 'expense').reduce((sum, t) => sum + t.value, 0);
   const balance = totalIncome - totalExpenses;
-  const savingsRate = totalIncome > 0 ? ((balance / totalIncome) * 100).toFixed(1) : '0';
 
-  const cashflowIncome = cashflowTransactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.value, 0);
   const cashflowExpenses = cashflowTransactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.value, 0);
-  const cashflowBalance = cashflowIncome - cashflowExpenses;
   const cashflowTotal = cashflowExpenses;
-
-  const cashflowByCategory = Object.entries(categoryLabels).map(([key, label]) => {
-    const total = cashflowTransactions
-      .filter(t => t.category === key)
-      .reduce((sum, t) => sum + t.value, 0);
-    return { category: key as ExpenseCategory, label, value: total };
-  }).filter(c => c.value > 0);
 
   const areaChartData = dashboardMetrics.monthlyFlow.map(item => ({
     ...item,
@@ -231,7 +210,6 @@ export default function Finance() {
 
   const renderTransactionRow = (transaction: Transaction, index: number) => {
     const project = projects.find((p) => p.id === transaction.projectId);
-    const client = clients.find((c) => c.id === transaction.clientId);
     const CategoryIcon = transaction.category ? categoryIcons[transaction.category] : null;
     
     return (
@@ -287,7 +265,7 @@ export default function Finance() {
                 <MoreHorizontal className="w-4 h-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-40">
+            <DropdownMenuContent align="end" className="w-40 bg-white dark:bg-slate-900 border shadow-xl">
               <DropdownMenuItem onClick={() => handleEdit(transaction)}>
                 <Pencil className="w-4 h-4 mr-2" />
                 Editar
@@ -332,6 +310,7 @@ export default function Finance() {
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   placeholder="Ex: Pagamento parcela 1"
+                  className="bg-white dark:bg-slate-950"
                   required
                 />
               </div>
@@ -345,6 +324,7 @@ export default function Finance() {
                     value={formData.value}
                     onChange={(e) => setFormData({ ...formData, value: e.target.value })}
                     placeholder="0,00"
+                    className="bg-white dark:bg-slate-950"
                     required
                   />
                 </div>
@@ -355,6 +335,7 @@ export default function Finance() {
                     type="date"
                     value={formData.date}
                     onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                    className="bg-white dark:bg-slate-950"
                     required
                   />
                 </div>
@@ -365,10 +346,10 @@ export default function Finance() {
                   value={formData.type}
                   onValueChange={(value: TransactionType) => setFormData({ ...formData, type: value })}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="bg-white dark:bg-slate-950">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-white dark:bg-slate-900 border shadow-xl">
                     <SelectItem value="income">
                       <div className="flex items-center gap-2">
                         <TrendingUp className="w-4 h-4 text-emerald-500" />
@@ -391,10 +372,10 @@ export default function Finance() {
                   value={formData.destination}
                   onValueChange={(value: TransactionDestination) => setFormData({ ...formData, destination: value, projectId: value === 'cashflow' ? '' : formData.projectId })}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="bg-white dark:bg-slate-950">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-white dark:bg-slate-900 border shadow-xl">
                     <SelectItem value="project">
                       <div className="flex items-center gap-2">
                         <Receipt className="w-4 h-4 text-primary" />
@@ -418,10 +399,10 @@ export default function Finance() {
                     value={formData.category || "none"}
                     onValueChange={(value) => setFormData({ ...formData, category: value === "none" ? "" : value })}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="bg-white dark:bg-slate-950">
                       <SelectValue placeholder="Selecione uma categoria" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-white dark:bg-slate-900 border shadow-xl">
                       <SelectItem value="none">Sem categoria</SelectItem>
                       {Object.entries(categoryLabels).map(([key, label]) => {
                         const Icon = categoryIcons[key as ExpenseCategory];
@@ -446,10 +427,10 @@ export default function Finance() {
                     value={formData.projectId || "none"}
                     onValueChange={(value) => setFormData({ ...formData, projectId: value === "none" ? "" : value })}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="bg-white dark:bg-slate-950">
                       <SelectValue placeholder="Selecione um projeto" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-white dark:bg-slate-900 border shadow-xl">
                       <SelectItem value="none">Sem vínculo</SelectItem>
                       {projects.map((project) => {
                         const client = clients.find((c) => c.id === project.clientId);
@@ -475,7 +456,7 @@ export default function Finance() {
         </Dialog>
       </PageHeader>
 
-      {/* Summary Cards - Responsive Grid */}
+      {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <div className="rounded-2xl p-5 bg-pastel-mint transition-all duration-300 hover:shadow-glass hover:-translate-y-0.5">
           <div className="flex items-center justify-between mb-3">

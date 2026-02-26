@@ -97,17 +97,17 @@ export default function Inventory() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 placeholder="Pesquisar itens..."
-                className="pl-9 h-11 rounded-xl"
+                className="pl-9 h-11 rounded-xl bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
             <div className="w-full sm:w-48">
               <Select value={categoryFilter} onValueChange={(v: any) => setCategoryFilter(v)}>
-                <SelectTrigger className="h-11 rounded-xl">
+                <SelectTrigger className="h-11 rounded-xl bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800">
                   <SelectValue placeholder="Categoria" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-white dark:bg-slate-900 border shadow-xl">
                   <SelectItem value="all">Todas</SelectItem>
                   <SelectItem value="material">Material</SelectItem>
                   <SelectItem value="ferramenta">Ferramenta</SelectItem>
@@ -122,10 +122,9 @@ export default function Inventory() {
 
       <Card className="shadow-lg border-0 overflow-hidden">
         <CardContent className="p-0">
-          {/* Wrapper para scroll horizontal em mobile */}
           <div className="overflow-x-auto custom-scrollbar">
             <Table className="min-w-[800px] md:min-w-full">
-              <TableHeader className="bg-slate-50/50">
+              <TableHeader className="bg-slate-50/50 dark:bg-slate-900/50">
                 <TableRow>
                   <TableHead className="font-bold">Item</TableHead>
                   <TableHead className="font-bold">Categoria</TableHead>
@@ -144,10 +143,10 @@ export default function Inventory() {
                   </TableRow>
                 ) : (
                   filteredItems.map((item) => (
-                    <TableRow key={item.id} className="group hover:bg-slate-50/50 transition-colors">
+                    <TableRow key={item.id} className="group hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
                       <TableCell>
                         <div>
-                          <p className="font-semibold text-slate-700">{item.name}</p>
+                          <p className="font-semibold text-slate-700 dark:text-slate-200">{item.name}</p>
                           <p className="text-[10px] text-muted-foreground uppercase">{item.location || 'Sem local'}</p>
                         </div>
                       </TableCell>
@@ -160,13 +159,13 @@ export default function Inventory() {
                         <div className="flex flex-col items-center">
                           <span className={cn(
                             "font-bold",
-                            item.quantity <= item.minStock ? "text-rose-600" : "text-slate-700"
+                            item.quantity <= item.minStock ? "text-rose-600" : "text-slate-700 dark:text-slate-300"
                           )}>
                             {item.quantity} {item.unit}
                           </span>
                         </div>
                       </TableCell>
-                      <TableCell className="text-right font-medium text-slate-600">
+                      <TableCell className="text-right font-medium text-slate-600 dark:text-slate-400">
                         {formatCurrency(item.unitCost)}
                       </TableCell>
                       <TableCell className="text-right font-bold text-primary">
@@ -179,7 +178,7 @@ export default function Inventory() {
                               <MoreHorizontal className="w-4 h-4" />
                             </Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
+                          <DropdownMenuContent align="end" className="bg-white dark:bg-slate-900 border shadow-xl">
                             <DropdownMenuItem onClick={() => adjustStock(item.id, 1, 'in', 'Entrada manual')}>
                               <ArrowUpRight className="w-4 h-4 mr-2 text-emerald-500" />
                               Entrada (+1)

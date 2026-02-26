@@ -80,17 +80,17 @@ export default function Tasks() {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <Input
                   placeholder="Pesquisar tarefas..."
-                  className="pl-9 h-11 rounded-xl bg-slate-50/50 border-none"
+                  className="pl-9 h-11 rounded-xl bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
               <div className="flex gap-2">
                 <Select value={statusFilter} onValueChange={(v: any) => setStatusFilter(v)}>
-                  <SelectTrigger className="w-[140px] h-11 rounded-xl">
+                  <SelectTrigger className="w-[140px] h-11 rounded-xl bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800">
                     <SelectValue placeholder="Estado" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-white dark:bg-slate-900 border shadow-xl">
                     <SelectItem value="all">Todos Estados</SelectItem>
                     <SelectItem value="todo">A Fazer</SelectItem>
                     <SelectItem value="doing">Em Curso</SelectItem>
@@ -99,10 +99,10 @@ export default function Tasks() {
                   </SelectContent>
                 </Select>
                 <Select value={priorityFilter} onValueChange={(v: any) => setPriorityFilter(v)}>
-                  <SelectTrigger className="w-[140px] h-11 rounded-xl">
+                  <SelectTrigger className="w-[140px] h-11 rounded-xl bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800">
                     <SelectValue placeholder="Prioridade" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-white dark:bg-slate-900 border shadow-xl">
                     <SelectItem value="all">Todas</SelectItem>
                     <SelectItem value="low">Baixa</SelectItem>
                     <SelectItem value="medium">Média</SelectItem>
@@ -127,8 +127,8 @@ export default function Tasks() {
 
       <div className="space-y-3">
         {filteredTasks.length === 0 ? (
-          <div className="py-20 text-center bg-white rounded-3xl border-2 border-dashed border-slate-100">
-            <CheckSquare className="w-12 h-12 text-slate-200 mx-auto mb-4" />
+          <div className="py-20 text-center bg-white dark:bg-slate-900 rounded-3xl border-2 border-dashed border-slate-100 dark:border-slate-800">
+            <CheckSquare className="w-12 h-12 text-slate-200 dark:text-slate-800 mx-auto mb-4" />
             <p className="text-slate-400 font-medium">Nenhuma tarefa encontrada</p>
           </div>
         ) : (
@@ -139,7 +139,7 @@ export default function Tasks() {
             return (
               <Card 
                 key={task.id} 
-                className="group hover:shadow-md transition-all duration-200 border-none shadow-sm cursor-pointer rounded-2xl overflow-hidden"
+                className="group hover:shadow-md transition-all duration-200 border-none shadow-sm cursor-pointer rounded-2xl overflow-hidden bg-white dark:bg-slate-900"
                 onClick={() => setEditingTask(task)}
               >
                 <CardContent className="p-0">
@@ -155,7 +155,7 @@ export default function Tasks() {
                             {getProjectName(task.projectId)}
                           </span>
                         </div>
-                        <h3 className={cn("font-bold text-slate-700 truncate", task.status === 'done' && "line-through opacity-50")}>
+                        <h3 className={cn("font-bold text-slate-700 dark:text-slate-200 truncate", task.status === 'done' && "line-through opacity-50")}>
                           {task.title}
                         </h3>
                       </div>
@@ -182,7 +182,7 @@ export default function Tasks() {
                           <div className="flex items-center justify-between text-[10px] font-bold text-slate-400 mb-1">
                             <span>{task.completionPercentage}%</span>
                           </div>
-                          <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                          <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                             <div 
                               className={cn("h-full transition-all duration-500", statusConfig[task.status].color)}
                               style={{ width: `${task.completionPercentage}%` }}
