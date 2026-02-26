@@ -230,6 +230,7 @@ export interface Budget {
 }
 
 export type NoteColor = 'default' | 'blue' | 'green' | 'yellow' | 'purple' | 'rose';
+export type NoteType = 'personal' | 'office' | 'procedure' | 'meeting' | 'idea' | 'reminder';
 
 export interface Note {
   id: string;
@@ -237,7 +238,14 @@ export interface Note {
   title: string;
   content: string;
   color: NoteColor;
+  type: NoteType;
+  category?: string;
   isPinned: boolean;
+  isImportant: boolean;
+  isArchived: boolean;
+  reminderDate?: Date | null;
+  authorName?: string;
+  attachments?: any[];
   createdAt: Date;
   updatedAt: Date;
 }

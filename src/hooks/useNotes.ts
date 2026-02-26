@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Note, NoteColor } from '@/types';
+import { Note, NoteColor, NoteType } from '@/types';
 import { toast } from 'sonner';
 
 export function useNotes(userId: string | undefined) {
@@ -27,7 +27,14 @@ export function useNotes(userId: string | undefined) {
         title: row.title,
         content: row.content || '',
         color: (row.color as NoteColor) || 'default',
+        type: (row.type as NoteType) || 'office',
+        category: row.category || '',
         isPinned: row.is_pinned || false,
+        isImportant: row.is_important || false,
+        isArchived: row.is_archived || false,
+        reminderDate: row.reminder_date ? new Date(row.reminder_date) : null,
+        authorName: row.author_name || '',
+        attachments: row.attachments || [],
         createdAt: new Date(row.created_at),
         updatedAt: new Date(row.updated_at)
       })));
@@ -48,36 +55,40 @@ export function useNotes(userId: string | undefined) {
         title: note.title,
         content: note.content,
         color: note.color,
-        is_pinned: note.isPinned
+        type: note.type,
+        category: note.category,
+        is_pinned: note.isPinned,
+        is_important: note.isImportant,
+        is_archived: note.isArchived,
+        reminder_date: note.reminderDate?.toISOString(),
+        author_name: note.authorName,
+        attachments: note.attachments
       })
       .select()
       .single();
 
     if (error) {
-      console.error('Erro detalhado ao criar nota:', error);
+      console.error('Erro ao criar nota:', error);
       toast.error(`Erro ao criar nota: ${error.message}`);
     } else {
-      setNotes(prev => [{
-        id: data.id,
-        userId: data.user_id || '',
-        title: data.title,
-        content: data.content || '',
-        color: (data.color as NoteColor) || 'default',
-        isPinned: data.is_pinned || false,
-        createdAt: new Date(data.created_at),
-        updatedAt: new Date(data.updated_at)
-      }, ...prev]);
-      toast.success('Nota criada');
+      fetchNotes();
+      toast.success('Nota criada com sucesso');
     }
   };
 
   const updateNote = async (id: string, updates: Partial<Note>) => {
-    // Mapear apenas os campos que existem na base de dados (snake_case)
     const dbUpdates: any = {};
     if (updates.title !== undefined) dbUpdates.title = updates.title;
     if (updates.content !== undefined) dbUpdates.content = updates.content;
     if (updates.color !== undefined) dbUpdates.color = updates.color;
+    if (updates.type !== undefined) dbUpdates.type = updates.type;
+    if (updates.category !== undefined) dbUpdates.category = updates.category;
     if (updates.isPinned !== undefined) dbUpdates.is_pinned = updates.isPinned;
+    if (updates.isImportant !== undefined) dbUpdates.is_important = updates.isImportant;
+    if (updates.isArchived !== undefined) dbUpdates.is_archived = updates.isArchived;
+    if (updates.reminderDate !== undefined) dbUpdates.reminder_date = updates.reminderDate?.toISOString();
+    if (updates.authorName !== undefined) dbUpdates.author_name = updates.authorName;
+    if (updates.attachments !== undefined) dbUpdates.attachments = updates.attachments;
     
     dbUpdates.updated_at = new Date().toISOString();
 
@@ -87,7 +98,7 @@ export function useNotes(userId: string | undefined) {
       .eq('id', id);
 
     if (error) {
-      console.error('Erro ao atualizar nota no Supabase:', error);
+      console.error('Erro ao atualizar nota:', error);
       toast.error('Erro ao atualizar nota');
     } else {
       setNotes(prev => prev.map(n => n.id === id ? { ...n, ...updates, updatedAt: new Date() } : n));
