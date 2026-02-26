@@ -47,10 +47,10 @@ export function TaskFormDialog({ open, onOpenChange, projects, onSubmit }: TaskF
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.projectId) return;
     
     onSubmit({
       ...formData,
+      projectId: formData.projectId || null,
       deadline: formData.deadline ? new Date(formData.deadline) : null,
       completionPercentage: 0,
       subtasks: [],
@@ -77,16 +77,16 @@ export function TaskFormDialog({ open, onOpenChange, projects, onSubmit }: TaskF
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="project">Projecto Associado *</Label>
+            <Label htmlFor="project">Projecto Associado (Opcional)</Label>
             <Select
-              value={formData.projectId}
-              onValueChange={(value) => setFormData({ ...formData, projectId: value })}
-              required
+              value={formData.projectId || "none"}
+              onValueChange={(value) => setFormData({ ...formData, projectId: value === "none" ? "" : value })}
             >
               <SelectTrigger className="bg-white dark:bg-slate-950">
-                <SelectValue placeholder="Seleccione o projecto" />
+                <SelectValue placeholder="Tarefa Geral (Sem Projecto)" />
               </SelectTrigger>
               <SelectContent className="bg-white dark:bg-slate-900 border shadow-xl">
+                <SelectItem value="none">Tarefa Geral (Sem Projecto)</SelectItem>
                 {projects.map((project) => (
                   <SelectItem key={project.id} value={project.id}>
                     {project.name}
@@ -186,7 +186,7 @@ export function TaskFormDialog({ open, onOpenChange, projects, onSubmit }: TaskF
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancelar
             </Button>
-            <Button type="submit" disabled={!formData.projectId}>
+            <Button type="submit">
               Criar Tarefa
             </Button>
           </div>

@@ -31,7 +31,7 @@ export interface Client {
 
 export interface Task {
   id: string;
-  projectId: string;
+  projectId?: string | null;
   title: string;
   description?: string;
   responsible?: string;

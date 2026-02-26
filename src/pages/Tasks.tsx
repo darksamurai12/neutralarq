@@ -46,7 +46,8 @@ export default function Tasks() {
     return matchesSearch && matchesStatus && matchesPriority;
   });
 
-  const getProjectName = (projectId: string) => {
+  const getProjectName = (projectId?: string | null) => {
+    if (!projectId) return 'Tarefa Geral';
     return projects.find(p => p.id === projectId)?.name || 'Projecto Desconhecido';
   };
 
