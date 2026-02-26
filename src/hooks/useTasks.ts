@@ -58,7 +58,7 @@ export function useTasks(userId: string | undefined) {
       subtasks: task.subtasks,
       comments: task.comments,
       user_id: userId,
-      project_id: null // Garantir que é nulo para tarefas administrativas
+      project_id: null // Explicitamente nulo para evitar erros de UUID vazio
     }).select().single();
 
     if (error) { 
