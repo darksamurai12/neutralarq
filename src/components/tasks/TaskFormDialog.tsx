@@ -55,6 +55,7 @@ export function TaskFormDialog({ open, onOpenChange, onSubmit }: TaskFormDialogP
       subtasks: [],
       comments: [],
     });
+    onOpenChange(false);
   };
 
   return (

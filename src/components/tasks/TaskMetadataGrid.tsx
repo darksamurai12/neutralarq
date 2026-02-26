@@ -1,4 +1,4 @@
-import { Calendar, Clock, Flag, Tags, Link2, Timer, Briefcase, User } from 'lucide-react';
+import { Calendar, Clock, Flag, Timer, Briefcase, User } from 'lucide-react';
 import { TaskPriority, TaskType } from '@/types';
 import { Input } from '@/components/ui/input';
 import {
@@ -17,23 +17,20 @@ interface TaskMetadataGridProps {
     type: TaskType;
     responsible: string;
     estimatedTime: string;
-    trackedTime: string;
-    tags: string[];
   };
   onChange: (field: string, value: any) => void;
 }
 
 const priorityConfig: Record<TaskPriority, { label: string; color: string }> = {
-  low: { label: 'Baixa', color: 'text-success' },
-  medium: { label: 'Média', color: 'text-warning' },
-  high: { label: 'Alta', color: 'text-orange-500' },
-  urgent: { label: 'Urgente', color: 'text-destructive' },
+  low: { label: 'Baixa', color: 'text-emerald-600' },
+  medium: { label: 'Média', color: 'text-blue-600' },
+  high: { label: 'Alta', color: 'text-amber-600' },
+  urgent: { label: 'Urgente', color: 'text-rose-600' },
 };
 
 export function TaskMetadataGrid({ formData, onChange }: TaskMetadataGridProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 py-6 border-b border-border">
-      {/* Tipo e Responsável */}
       <div className="flex items-center gap-3">
         <Briefcase className="w-4 h-4 text-muted-foreground shrink-0" />
         <span className="text-sm text-muted-foreground w-24 shrink-0">Tipo</span>
@@ -61,7 +58,6 @@ export function TaskMetadataGrid({ formData, onChange }: TaskMetadataGridProps) 
         />
       </div>
 
-      {/* Datas */}
       <div className="flex items-center gap-3">
         <Calendar className="w-4 h-4 text-muted-foreground shrink-0" />
         <span className="text-sm text-muted-foreground w-24 shrink-0">Início</span>
@@ -84,7 +80,6 @@ export function TaskMetadataGrid({ formData, onChange }: TaskMetadataGridProps) 
         />
       </div>
 
-      {/* Prioridade */}
       <div className="flex items-center gap-3">
         <Flag className="w-4 h-4 text-muted-foreground shrink-0" />
         <span className="text-sm text-muted-foreground w-24 shrink-0">Prioridade</span>

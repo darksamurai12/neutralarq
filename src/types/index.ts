@@ -49,6 +49,7 @@ export interface Task {
   attachments?: any[];
   notes?: string;
   createdAt: Date;
+  projectId?: string | null;
 }
 
 export interface Transaction {
@@ -239,4 +240,17 @@ export interface Note {
   isPinned: boolean;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface Subtask {
+  id: string;
+  title: string;
+  completed: boolean;
+}
+
+export interface Comment {
+  id: string;
+  text: string;
+  author: string;
+  date: Date;
 }

@@ -23,24 +23,27 @@ export function useTasks(userId: string | undefined) {
       id: row.id,
       title: row.title,
       description: row.description || '',
-      type: (row.phase === 'pessoal' ? 'personal' : 'internal') as any, // Mapeamento temporário se a coluna não existir
+      type: (row.phase === 'pessoal' ? 'personal' : 'internal') as any,
       responsible: row.responsible || 'Não atribuído',
       deadline: row.deadline ? new Date(row.deadline) : new Date(),
       startDate: row.created_at ? new Date(row.created_at) : new Date(),
-      status: (row.status === 'todo' ? 'pending' : row.status === 'doing' ? 'in_progress' : row.status === 'done' ? 'completed' : 'canceled') as any,
+      status: (row.status === 'todo' ? 'pending' : row.status === 'doing' ? 'in_progress' : row.status === 'done' ? 'completed' : row.status === 'canceled' ? 'canceled' : 'pending') as any,
       priority: (row.priority === 'critical' ? 'urgent' : row.priority) as any,
-      completionPercentage: Number(row.completion_percentage),
+      completionPercentage: Number(row.completion_percentage || 0),
       subtasks: Array.isArray(row.subtasks) ? row.subtasks : [],
       comments: Array.isArray(row.comments) ? row.comments : [],
-      createdAt: new Date(row.created_at)
+      createdAt: new Date(row.created_at),
+      projectId: row.project_id
     })));
   }, []);
 
   const addTask = async (task: Omit<Task, 'id' | 'createdAt'>) => {
-    if (!userId) return;
+    if (!userId) {
+      toast.error('Utilizador não autenticado');
+      return;
+    }
     
-    // Mapeamento para a tabela actual do Supabase para evitar erros de schema
-    const dbStatus = task.status === 'pending' ? 'todo' : task.status === 'in_progress' ? 'doing' : task.status === 'completed' ? 'done' : 'todo';
+    const dbStatus = task.status === 'pending' ? 'todo' : task.status === 'in_progress' ? 'doing' : task.status === 'completed' ? 'done' : 'canceled';
     const dbPriority = task.priority === 'urgent' ? 'critical' : task.priority;
 
     const { data, error } = await supabase.from('tasks').insert({
@@ -54,20 +57,25 @@ export function useTasks(userId: string | undefined) {
       completion_percentage: task.completionPercentage,
       subtasks: task.subtasks,
       comments: task.comments,
-      user_id: userId
+      user_id: userId,
+      project_id: null // Garantir que é nulo para tarefas administrativas
     }).select().single();
 
-    if (error) { toast.error('Erro ao adicionar tarefa'); return; }
+    if (error) { 
+      console.error('Erro Supabase:', error);
+      toast.error(`Erro ao adicionar tarefa: ${error.message}`); 
+      return; 
+    }
     
     fetchTasks();
-    toast.success('Tarefa adicionada');
+    toast.success('Tarefa adicionada com sucesso');
   };
 
   const updateTask = async (id: string, updates: Partial<Task>) => {
     const dbUpdates: any = { ...updates };
     
     if (updates.status) {
-      dbUpdates.status = updates.status === 'pending' ? 'todo' : updates.status === 'in_progress' ? 'doing' : updates.status === 'completed' ? 'done' : 'todo';
+      dbUpdates.status = updates.status === 'pending' ? 'todo' : updates.status === 'in_progress' ? 'doing' : updates.status === 'completed' ? 'done' : 'canceled';
     }
     if (updates.priority) {
       dbUpdates.priority = updates.priority === 'urgent' ? 'critical' : updates.priority;
@@ -76,9 +84,13 @@ export function useTasks(userId: string | undefined) {
       dbUpdates.phase = updates.type === 'personal' ? 'pessoal' : 'interna';
     }
     if (updates.deadline) dbUpdates.deadline = updates.deadline.toISOString();
+    if (updates.startDate) dbUpdates.created_at = updates.startDate.toISOString();
 
     const { error } = await supabase.from('tasks').update(dbUpdates).eq('id', id);
-    if (error) { toast.error('Erro ao atualizar tarefa'); return; }
+    if (error) { 
+      toast.error('Erro ao atualizar tarefa'); 
+      return; 
+    }
     fetchTasks();
   };
 

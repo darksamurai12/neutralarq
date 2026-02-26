@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Task, TaskStatus, TaskPriority, TaskType, Subtask, Comment } from '@/types';
-import { Trash2, X, FileText, Paperclip } from 'lucide-react';
+import { Trash2, FileText, Paperclip } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -8,7 +8,6 @@ import {
   Sheet,
   SheetContent,
   SheetHeader,
-  SheetTitle,
 } from '@/components/ui/sheet';
 import {
   Select,
@@ -19,8 +18,6 @@ import {
 } from '@/components/ui/select';
 import { TaskMetadataGrid } from './TaskMetadataGrid';
 import { TaskSubtasksSection } from './TaskSubtasksSection';
-import { TaskChecklistsSection, Checklist } from './TaskChecklistsSection';
-import { TaskAttachmentsSection, Attachment } from './TaskAttachmentsSection';
 import { cn } from '@/lib/utils';
 
 interface TaskEditDialogProps {
@@ -48,11 +45,8 @@ export function TaskEditDialog({
     type: 'internal' as TaskType,
     responsible: '',
     estimatedTime: '',
-    trackedTime: '',
-    tags: [] as string[],
   });
   const [subtasks, setSubtasks] = useState<Subtask[]>([]);
-  const [comments, setComments] = useState<Comment[]>([]);
 
   useEffect(() => {
     if (task) {
@@ -66,11 +60,8 @@ export function TaskEditDialog({
         type: task.type,
         responsible: task.responsible,
         estimatedTime: '',
-        trackedTime: '',
-        tags: [],
       });
       setSubtasks(task.subtasks || []);
-      setComments(task.comments || []);
     }
   }, [task]);
 
@@ -86,20 +77,9 @@ export function TaskEditDialog({
       deadline: metadata.deadline ? new Date(metadata.deadline) : task.deadline,
       startDate: metadata.startDate ? new Date(metadata.startDate) : task.startDate,
       subtasks,
-      comments,
       completionPercentage: calculateProgress(),
     });
     onOpenChange(false);
-  };
-
-  const handleDelete = () => {
-    if (!task) return;
-    onDelete(task.id);
-    onOpenChange(false);
-  };
-
-  const handleMetadataChange = (field: string, value: any) => {
-    setMetadata((prev) => ({ ...prev, [field]: value }));
   };
 
   const calculateProgress = () => {
@@ -142,7 +122,7 @@ export function TaskEditDialog({
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                onClick={handleDelete}
+                onClick={() => task && onDelete(task.id)}
               >
                 <Trash2 className="w-4 h-4" />
               </Button>
@@ -159,7 +139,7 @@ export function TaskEditDialog({
 
             <TaskMetadataGrid
               formData={metadata}
-              onChange={handleMetadataChange}
+              onChange={(field, value) => setMetadata(prev => ({ ...prev, [field]: value }))}
             />
 
             <div className="space-y-2">

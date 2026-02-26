@@ -10,7 +10,6 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Task, TaskStatus, TaskPriority, TaskType } from '@/types';
 import { format, isPast, isToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -44,7 +43,6 @@ export default function Tasks() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'list' | 'kanban'>('list');
 
-  // Métricas
   const metrics = useMemo(() => {
     const pending = tasks.filter(t => t.status === 'pending' || t.status === 'in_progress').length;
     const overdue = tasks.filter(t => t.status !== 'completed' && t.status !== 'canceled' && isPast(new Date(t.deadline)) && !isToday(new Date(t.deadline))).length;
@@ -170,7 +168,6 @@ export default function Tasks() {
         </div>
       </PageHeader>
 
-      {/* Dashboard de Métricas */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
         <div className="rounded-2xl p-5 bg-pastel-sky transition-all duration-300 hover:shadow-glass hover:-translate-y-0.5">
           <div className="flex items-center justify-between mb-3">
@@ -203,7 +200,6 @@ export default function Tasks() {
         </div>
       </div>
 
-      {/* Filtros */}
       <Card className="shadow-sm border-none rounded-2xl mb-6">
         <CardContent className="p-4">
           <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
@@ -255,7 +251,6 @@ export default function Tasks() {
         </CardContent>
       </Card>
 
-      {/* Visualizações */}
       {viewMode === 'list' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredTasks.map(renderTaskCard)}
