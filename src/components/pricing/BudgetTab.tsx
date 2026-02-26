@@ -20,25 +20,36 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { ItemSelectionDialog } from './ItemSelectionDialog';
 
-interface BudgetTabProps {
-  budgets: Budget[];
-  products: PricingProduct[];
-  labor: PricingLabor[];
-  transport: PricingTransport[];
-  clients: Client[];
-  projects: Project[];
-  onCreateBudget: (budget: Omit<Budget, 'id' | 'createdAt' | 'totalValue' | 'totalCost' | 'totalProfit' | 'marginPercent'>) => Budget | Promise<Budget | null>;
-  onUpdateBudget: (id: string, updates: Partial<Budget>) => void;
-  onDeleteBudget: (id: string) => void;
-  createBudgetItem: (type: 'product' | 'labor' | 'transport', itemId: string, quantity: number, customMargin?: number) => BudgetItem | null;
-}
-
+// Função de agrupamento melhorada com ordenação alfabética
 function groupItems(items: BudgetItem[]): { groupName: string; items: BudgetItem[] }[] {
   const groups: Record<string, BudgetItem[]> = {};
-  items.forEach(item => { const key = item.groupName || '__ungrouped__'; if (!groups[key]) groups[key] = []; groups[key].push(item); });
+  
+  // 1. Ordenar todos os itens por nome (A-Z)
+  const sortedItems = [...items].sort((a, b) => a.name.localeCompare(b.name, 'pt-PT'));
+  
+  // 2. Agrupar os itens já ordenados
+  sortedItems.forEach(item => { 
+    const key = item.groupName || '__ungrouped__'; 
+    if (!groups[key]) groups[key] = []; 
+    groups[key].push(item); 
+  });
+  
   const result: { groupName: string; items: BudgetItem[] }[] = [];
-  Object.entries(groups).forEach(([key, items]) => { if (key !== '__ungrouped__') result.push({ groupName: key, items }); });
-  if (groups['__ungrouped__']) result.push({ groupName: '', items: groups['__ungrouped__'] });
+  
+  // 3. Obter e ordenar os nomes dos grupos alfabeticamente
+  const groupNames = Object.keys(groups)
+    .filter(k => k !== '__ungrouped__')
+    .sort((a, b) => a.localeCompare(b, 'pt-PT'));
+  
+  groupNames.forEach(name => { 
+    result.push({ groupName: name, items: groups[name] }); 
+  });
+  
+  // 4. Adicionar itens sem grupo no final
+  if (groups['__ungrouped__']) { 
+    result.push({ groupName: '', items: groups['__ungrouped__'] }); 
+  }
+  
   return result;
 }
 
@@ -276,7 +287,6 @@ export function BudgetTab({ budgets, products, labor, transport, clients, projec
                 <div className="pl-8 space-y-3">
                   <Card className="border border-primary/20 bg-primary/5"><CardContent className="p-3"><div className="flex items-center gap-2 mb-2"><Folder className="w-4 h-4 text-primary" /><Label className="text-xs font-medium">Grupo (opcional)</Label></div><div className="flex flex-wrap items-center gap-2"><Badge variant={selectedGroup === '' ? 'default' : 'outline'} className="cursor-pointer" onClick={() => setSelectedGroup('')}>Sem grupo</Badge>{budgetGroups.map(g => (<Badge key={g} variant={selectedGroup === g ? 'default' : 'outline'} className="cursor-pointer" onClick={() => setSelectedGroup(g)}>{g}</Badge>))}{showNewGroupInput ? (<div className="flex items-center gap-1"><Input value={newGroupName} onChange={(e) => setNewGroupName(e.target.value)} placeholder="Nome do grupo" className="h-7 text-xs w-36 bg-white" onKeyDown={(e) => e.key === 'Enter' && addGroup()} autoFocus /><Button size="sm" variant="ghost" className="h-7 px-2" onClick={addGroup}><Plus className="w-3 h-3" /></Button><Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => setShowNewGroupInput(false)}>✕</Button></div>) : (<Button size="sm" variant="outline" className="h-7 gap-1 text-xs bg-white" onClick={() => setShowNewGroupInput(true)}><FolderPlus className="w-3 h-3" /> Novo Grupo</Button>)}</div></CardContent></Card>
                   
-                  {/* Botão para abrir a Modal de Seleção Avançada */}
                   <div className="flex flex-col gap-2">
                     <Button 
                       variant="outline" 
@@ -309,7 +319,6 @@ export function BudgetTab({ budgets, products, labor, transport, clients, projec
         </Dialog>
       </div>
 
-      {/* Modal de Seleção Avançada */}
       <ItemSelectionDialog
         open={isItemModalOpen}
         onOpenChange={setIsItemModalOpen}
