@@ -5,11 +5,12 @@ import { useNavigate } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { useApp } from '@/contexts/AppContext';
-import { StickyNote, Plus, BookOpen, Star, Archive as ArchiveIcon, ShieldCheck } from 'lucide-react';
+import { StickyNote, Plus, BookOpen, Star, Archive as ArchiveIcon, ShieldCheck, Pin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { NoteCard } from '@/components/notes/NoteCard';
 import { NoteFilters } from '@/components/notes/NoteFilters';
 import { Note, NoteType } from '@/types';
+import { cn } from '@/lib/utils';
 
 export default function Notes() {
   const { notes, updateNote, deleteNote } = useApp();
