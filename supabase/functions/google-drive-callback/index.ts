@@ -4,7 +4,8 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0'
 serve(async (req) => {
   const url = new URL(req.url)
   const code = url.searchParams.get('code')
-  const userId = url.searchParams.get('state') // Passamos o userId no state
+  const userId = url.searchParams.get('state')
+  const APP_URL = Deno.env.get('APP_URL') || 'http://localhost:8080'
 
   if (!code || !userId) return new Response('Código ou Estado ausente', { status: 400 })
 
@@ -14,8 +15,8 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // Trocar código por tokens
-    const response = await fetch('https://oauth2.googleapis.com/token', {
+    // 1. Trocar código por tokens
+    const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
@@ -27,11 +28,26 @@ serve(async (req) => {
       }),
     })
 
-    const tokens = await response.json()
-
+    const tokens = await tokenResponse.json()
     if (tokens.error) throw new Error(tokens.error_description)
 
-    // Guardar na base de dados
+    // 2. Validar o email da conta autenticada
+    const userResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+      headers: { Authorization: `Bearer ${tokens.access_token}` }
+    })
+    const googleUser = await userResponse.json()
+
+    const AUTHORIZED_EMAIL = 'neutralarqd@gmail.com'
+    
+    if (googleUser.email !== AUTHORIZED_EMAIL) {
+      console.error(`[google-drive-callback] Tentativa de login não autorizada: ${googleUser.email}`);
+      return new Response(null, {
+        status: 302,
+        headers: { Location: `${APP_URL}/documentos?error=unauthorized_account` }
+      })
+    }
+
+    // 3. Guardar tokens se for a conta correta
     const { error: dbError } = await supabaseClient
       .from('google_drive_settings')
       .upsert({
@@ -45,15 +61,17 @@ serve(async (req) => {
 
     if (dbError) throw dbError
 
-    console.log("[google-drive-callback] Tokens guardados para o utilizador:", userId);
+    console.log("[google-drive-callback] Conta oficial neutralarqd@gmail.com conectada com sucesso.");
 
-    // Redirecionar de volta para a app
     return new Response(null, {
       status: 302,
-      headers: { Location: `${Deno.env.get('APP_URL') || 'http://localhost:8080'}/documentos` }
+      headers: { Location: `${APP_URL}/documentos?success=connected` }
     })
   } catch (error) {
     console.error("[google-drive-callback] Erro fatal:", error.message);
-    return new Response(`Erro na autenticação: ${error.message}`, { status: 500 })
+    return new Response(null, {
+      status: 302,
+      headers: { Location: `${APP_URL}/documentos?error=auth_failed` }
+    })
   }
 })

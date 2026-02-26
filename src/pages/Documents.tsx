@@ -1,15 +1,16 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { useDocuments } from '@/hooks/useDocuments';
-import { FileText, Upload, Search, Filter, HardDrive, AlertCircle, Loader2, Plus } from 'lucide-react';
+import { FileText, Upload, Search, Filter, HardDrive, AlertCircle, Loader2, Plus, ShieldAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { DocumentCard } from '@/components/documents/DocumentCard';
 import { DocumentCategory } from '@/types';
-import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 import {
   Dialog,
   DialogContent,
@@ -34,6 +35,28 @@ export default function Documents() {
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadCategory, setUploadCategory] = useState<DocumentCategory>('Geral');
+  
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const error = params.get('error');
+    const success = params.get('success');
+
+    if (error === 'unauthorized_account') {
+      toast.error('Conta não autorizada! Utilize apenas neutralarqd@gmail.com', { duration: 5000 });
+      navigate('/documentos', { replace: true });
+    } else if (error) {
+      toast.error('Erro na autenticação com o Google Drive');
+      navigate('/documentos', { replace: true });
+    }
+
+    if (success === 'connected') {
+      toast.success('Google Drive conectado com sucesso!');
+      navigate('/documentos', { replace: true });
+    }
+  }, [location, navigate]);
 
   const filteredDocs = documents.filter(doc => {
     const matchesSearch = doc.name.toLowerCase().includes(searchQuery.toLowerCase());
@@ -67,7 +90,7 @@ export default function Documents() {
       >
         {!settings.isConnected ? (
           <Button onClick={connectGoogleDrive} className="gap-2 bg-emerald-600 hover:bg-emerald-700 rounded-xl">
-            <HardDrive className="w-4 h-4" /> Conectar Google Drive
+            <HardDrive className="w-4 h-4" /> Conectar neutralarqd@gmail.com
           </Button>
         ) : (
           <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>
@@ -103,10 +126,10 @@ export default function Documents() {
 
       {!settings.isConnected && (
         <div className="bg-amber-50 border border-amber-100 p-6 rounded-3xl flex items-center gap-4 mb-8">
-          <AlertCircle className="w-8 h-8 text-amber-500" />
+          <ShieldAlert className="w-8 h-8 text-amber-500" />
           <div>
-            <h3 className="font-bold text-amber-800">Google Drive não conectado</h3>
-            <p className="text-sm text-amber-700">Conecte a sua conta para começar a armazenar ficheiros diretamente na nuvem.</p>
+            <h3 className="font-bold text-amber-800">Acesso Restrito</h3>
+            <p className="text-sm text-amber-700">Apenas a conta oficial <strong>neutralarqd@gmail.com</strong> pode ser conectada para armazenamento.</p>
           </div>
         </div>
       )}
