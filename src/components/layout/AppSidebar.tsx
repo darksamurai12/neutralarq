@@ -12,7 +12,8 @@ import {
   CheckSquare,
   LogOut,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  FileText
 } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useAuth } from '@/hooks/useAuth';
@@ -28,6 +29,7 @@ const menuItems = [
   { title: 'Calendário', url: '/calendario', icon: CalendarDays },
   { title: 'Tarefas', url: '/tarefas', icon: CheckSquare },
   { title: 'Notas', url: '/notas', icon: StickyNote },
+  { title: 'Documentos', url: '/documentos', icon: FileText },
 ];
 
 const managementItems = [

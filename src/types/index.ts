@@ -262,3 +262,29 @@ export interface Comment {
   author: string;
   date: Date;
 }
+
+// --- NOVOS TIPOS PARA DOCUMENTOS ---
+
+export type DocumentCategory = 'Administrativo' | 'Financeiro' | 'RH' | 'Contratos' | 'Templates' | 'Geral';
+
+export interface Document {
+  id: string;
+  name: string;
+  fileId: string;
+  webViewLink: string;
+  downloadLink: string;
+  mimeType: string;
+  size: number;
+  category: DocumentCategory;
+  department?: string;
+  year: number;
+  version: number;
+  isArchived: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface GoogleDriveSettings {
+  isConnected: boolean;
+  updatedAt: Date;
+}
