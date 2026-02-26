@@ -25,13 +25,13 @@
     --ring: 221 83% 53%;
     --radius: 1.25rem;
 
-    /* Pastel Colors Light */
-    --pastel-lavender: #F3F0FF;
-    --pastel-peach: #FFF4E6;
-    --pastel-mint: #EBFBEE;
-    --pastel-sky: #E7F5FF;
-    --pastel-amber: #FFF9DB;
-    --pastel-rose: #FFF0F6;
+    /* Pastel Colors Light - More solid */
+    --pastel-lavender: #F8F7FF;
+    --pastel-peach: #FFF9F2;
+    --pastel-mint: #F2FBF4;
+    --pastel-sky: #F2F9FF;
+    --pastel-amber: #FFFCF0;
+    --pastel-rose: #FFF5F9;
     --pastel-slate: #F8FAFC;
   }
 
@@ -40,7 +40,7 @@
     --foreground: 210 40% 98%;
     --card: 222 47% 7%;
     --card-foreground: 210 40% 98%;
-    --popover: 222 47% 7%;
+    --popover: 222 47% 8%;
     --popover-foreground: 210 40% 98%;
     --primary: 217.2 91.2% 59.8%;
     --primary-foreground: 222.2 47.4% 11.2%;
@@ -56,13 +56,13 @@
     --input: 217.2 32.6% 16%;
     --ring: 224.3 76.3% 48%;
 
-    /* Pastel Colors Dark - More muted and deep */
-    --pastel-lavender: #1e1b4b;
-    --pastel-peach: #2d1a10;
-    --pastel-mint: #062016;
-    --pastel-sky: #081e2d;
-    --pastel-amber: #2d2305;
-    --pastel-rose: #2d101b;
+    /* Pastel Colors Dark - More solid and deep */
+    --pastel-lavender: #1a1a3a;
+    --pastel-peach: #2a1a10;
+    --pastel-mint: #0a1a12;
+    --pastel-sky: #0a1a25;
+    --pastel-amber: #2a2005;
+    --pastel-rose: #2a0a15;
     --pastel-slate: #0f172a;
   }
 }
@@ -79,11 +79,11 @@
 
 @layer utilities {
   .shadow-glass {
-    @apply shadow-[0_8px_32px_-4px_rgba(0,0,0,0.05)] dark:shadow-[0_8px_32px_-4px_rgba(0,0,0,0.4)];
+    @apply shadow-[0_4px_20px_-2px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_20px_-2px_rgba(0,0,0,0.5)];
   }
   
   .main-card {
-    @apply bg-white dark:bg-slate-900 rounded-3xl shadow-glass border-none p-8 transition-all duration-300 hover:shadow-card-hover;
+    @apply bg-white dark:bg-slate-900 rounded-3xl shadow-glass border border-slate-100 dark:border-slate-800 p-8 transition-all duration-300 hover:shadow-card-hover;
   }
 
   .custom-scrollbar::-webkit-scrollbar {
@@ -92,83 +92,5 @@
   .custom-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
-  }
-
-  /* Tiptap Table Styles */
-  .prose table {
-    border-collapse: collapse;
-    table-layout: fixed;
-    width: 100%;
-    margin: 0;
-    overflow: hidden;
-  }
-
-  .prose table td,
-  .prose table th {
-    min-width: 1em;
-    border: 2px solid #ced4da;
-    padding: 3px 5px;
-    vertical-align: top;
-    box-sizing: border-box;
-    position: relative;
-  }
-
-  .prose table th {
-    font-weight: bold;
-    text-align: left;
-    background-color: #f1f3f5;
-  }
-
-  .prose table .selectedCell:after {
-    z-index: 2;
-    content: "";
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: 0;
-    bottom: 0;
-    background: rgba(200, 200, 255, 0.4);
-    pointer-events: none;
-  }
-
-  .prose table .column-resize-handle {
-    position: absolute;
-    right: -2px;
-    top: 0;
-    bottom: -2px;
-    width: 4px;
-    background-color: #adf;
-    pointer-events: none;
-  }
-
-  /* Tiptap Task List Styles */
-  .prose ul[data-type="taskList"] {
-    list-style: none;
-    padding: 0;
-  }
-
-  .prose ul[data-type="taskList"] li {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.5rem;
-    margin-bottom: 0.25rem;
-  }
-
-  .prose ul[data-type="taskList"] li > label {
-    flex: 0 0 auto;
-    user-select: none;
-    margin-top: 0.25rem;
-  }
-
-  .prose ul[data-type="taskList"] li > div {
-    flex: 1 1 auto;
-  }
-
-  .prose ul[data-type="taskList"] input[type="checkbox"] {
-    cursor: pointer;
-    width: 1.1rem;
-    height: 1.1rem;
-    border-radius: 0.25rem;
-    border: 2px solid #ced4da;
   }
 }
