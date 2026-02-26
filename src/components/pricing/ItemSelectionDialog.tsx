@@ -133,10 +133,10 @@ export function ItemSelectionDialog({
           <div className="space-y-2">
             <Label>Tipo de Item</Label>
             <Select value={type} onValueChange={(v: any) => { setType(v); setItemId(''); }}>
-              <SelectTrigger className="h-11 rounded-xl">
+              <SelectTrigger className="h-11 rounded-xl bg-white dark:bg-slate-950">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="bg-popover">
+              <SelectContent className="bg-white dark:bg-slate-900 border shadow-xl">
                 <SelectItem value="product">
                   <div className="flex items-center gap-2"><Package className="w-4 h-4 text-blue-500" /> Produto</div>
                 </SelectItem>
@@ -158,7 +158,7 @@ export function ItemSelectionDialog({
                   variant="outline"
                   role="combobox"
                   aria-expanded={isComboboxOpen}
-                  className="w-full justify-between h-11 rounded-xl font-normal bg-background"
+                  className="w-full justify-between h-11 rounded-xl font-normal bg-white dark:bg-slate-950"
                 >
                   {itemId
                     ? availableItems.find((item) => item.id === itemId)?.name
@@ -166,10 +166,10 @@ export function ItemSelectionDialog({
                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0 bg-popover border shadow-xl" align="start">
-                <Command className="bg-popover">
+              <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0 bg-white dark:bg-slate-900 border shadow-2xl z-50" align="start">
+                <Command className="bg-white dark:bg-slate-900">
                   <CommandInput placeholder="Digite para pesquisar..." className="h-11" />
-                  <CommandList className="max-h-[200px] overflow-y-auto">
+                  <CommandList className="max-h-[300px] overflow-y-auto custom-scrollbar">
                     <CommandEmpty>Nenhum item encontrado.</CommandEmpty>
                     <CommandGroup>
                       {availableItems.map((item) => (
@@ -180,7 +180,7 @@ export function ItemSelectionDialog({
                             setItemId(item.id);
                             setIsComboboxOpen(false);
                           }}
-                          className="cursor-pointer hover:bg-accent"
+                          className="cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800"
                         >
                           <Check
                             className={cn(
@@ -211,7 +211,7 @@ export function ItemSelectionDialog({
                 min="1" 
                 value={quantity} 
                 onChange={(e) => setQuantity(e.target.value)}
-                className="h-11 rounded-xl"
+                className="h-11 rounded-xl bg-white dark:bg-slate-950"
               />
             </div>
             <div className="space-y-2">
@@ -223,7 +223,7 @@ export function ItemSelectionDialog({
                   step="0.1" 
                   value={margin} 
                   onChange={(e) => setMargin(e.target.value)}
-                  className="pl-10 h-11 rounded-xl"
+                  className="pl-10 h-11 rounded-xl bg-white dark:bg-slate-950"
                 />
               </div>
             </div>
@@ -232,10 +232,10 @@ export function ItemSelectionDialog({
           <div className="space-y-2">
             <Label>Grupo (Opcional)</Label>
             <Select value={group || 'none'} onValueChange={(v) => setGroup(v === 'none' ? '' : v)}>
-              <SelectTrigger className="h-11 rounded-xl">
+              <SelectTrigger className="h-11 rounded-xl bg-white dark:bg-slate-950">
                 <SelectValue placeholder="Sem grupo" />
               </SelectTrigger>
-              <SelectContent className="bg-popover">
+              <SelectContent className="bg-white dark:bg-slate-900 border shadow-xl">
                 <SelectItem value="none">Sem grupo</SelectItem>
                 {groups.map(g => (
                   <SelectItem key={g} value={g}>{g}</SelectItem>

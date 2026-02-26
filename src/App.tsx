@@ -15,6 +15,7 @@ import CalendarPage from "./pages/Calendar";
 import Inventory from "./pages/Inventory";
 import Notes from "./pages/Notes";
 import NoteEditor from "./pages/NoteEditor";
+import Tasks from "./pages/Tasks";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -33,12 +34,13 @@ const App = () => (
               <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
               <Route path="/crm" element={<ProtectedRoute><CRM /></ProtectedRoute>} />
               <Route path="/calendario" element={<ProtectedRoute><CalendarPage /></ProtectedRoute>} />
+              <Route path="/tarefas" element={<ProtectedRoute><Tasks /></ProtectedRoute>} />
+              <Route path="/notas" element={<ProtectedRoute><Notes /></ProtectedRoute>} />
+              <Route path="/notas/:id" element={<ProtectedRoute><NoteEditor /></ProtectedRoute>} />
               <Route path="/projetos" element={<ProtectedRoute><Projects /></ProtectedRoute>} />
               <Route path="/financas" element={<ProtectedRoute><Finance /></ProtectedRoute>} />
               <Route path="/inventario" element={<ProtectedRoute><Inventory /></ProtectedRoute>} />
               <Route path="/precificacao" element={<ProtectedRoute><Pricing /></ProtectedRoute>} />
-              <Route path="/notas" element={<ProtectedRoute><Notes /></ProtectedRoute>} />
-              <Route path="/notas/:id" element={<ProtectedRoute><NoteEditor /></ProtectedRoute>} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

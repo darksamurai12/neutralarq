@@ -9,6 +9,7 @@ import {
   CalendarDays, 
   Package,
   StickyNote,
+  CheckSquare,
   LogOut,
   ChevronLeft,
   ChevronRight
@@ -25,6 +26,7 @@ const menuItems = [
   { title: 'Dashboard', url: '/', icon: LayoutDashboard },
   { title: 'CRM', url: '/crm', icon: Users },
   { title: 'Calendário', url: '/calendario', icon: CalendarDays },
+  { title: 'Tarefas', url: '/tarefas', icon: CheckSquare },
   { title: 'Notas', url: '/notas', icon: StickyNote },
 ];
 
