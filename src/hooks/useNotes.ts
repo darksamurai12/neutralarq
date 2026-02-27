@@ -130,6 +130,6 @@ export function useNotes(userId: string | undefined) {
     notes, lists, loading, 
     addNote, updateNote, deleteNote, 
     addChecklistItem, toggleChecklistItem, deleteChecklistItem,
-    addList, refresh: fetchNotes 
+    addList, fetchNotes, fetchLists 
   };
 }
