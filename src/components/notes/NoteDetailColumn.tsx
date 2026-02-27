@@ -1,5 +1,6 @@
 "use client";
 
+import React, { useState } from 'react';
 import { Note, NoteList, NotePriority, NoteType } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -33,7 +34,7 @@ export function NoteDetailColumn({
   onAddChecklistItem, onToggleChecklistItem, onDeleteChecklistItem,
   onConvertToTask
 }: NoteDetailColumnProps) {
-  const [newItem, setNewItem] = (window as any).React.useState('');
+  const [newItem, setNewItem] = useState('');
 
   if (!note) {
     return (
