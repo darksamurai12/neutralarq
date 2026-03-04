@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/tabs';
 import { Client, ClientStatus, Project, ClientInteraction } from '@/types';
 import { cn } from '@/lib/utils';
 import { ClientInteractions } from './ClientInteractions';
@@ -59,7 +59,8 @@ export function ClientDetailsDialog({
 
   const infoItems = [
     { icon: Mail, label: 'Email', value: client.email },
-    { icon: Phone, label: 'Telefone', value: client.phone || 'Não registado' },
+    { icon: Phone, label: 'Telefone 1', value: client.phone || 'Não registado' },
+    { icon: Phone, label: 'Telefone 2', value: client.phone2 || 'Não registado' },
     { icon: Building, label: 'Empresa', value: client.company || 'Individual' },
     { icon: User, label: 'Cargo', value: client.position || 'N/A' },
     { icon: MapPin, label: 'Endereço', value: client.address || 'Sem endereço' },

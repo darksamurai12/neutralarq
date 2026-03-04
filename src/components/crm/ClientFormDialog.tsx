@@ -31,6 +31,7 @@ const emptyFormData = {
   name: '',
   email: '',
   phone: '',
+  phone2: '',
   company: '',
   position: '',
   address: '',
@@ -46,11 +47,12 @@ export function ClientFormDialog({ open, onOpenChange, editingClient, onSubmit }
       setFormData({
         name: editingClient.name,
         email: editingClient.email,
-        phone: editingClient.phone,
+        phone: editingClient.phone || '',
+        phone2: editingClient.phone2 || '',
         company: editingClient.company,
-        position: editingClient.position,
-        address: editingClient.address,
-        notes: editingClient.notes,
+        position: editingClient.position || '',
+        address: editingClient.address || '',
+        notes: editingClient.notes || '',
         status: editingClient.status,
       });
     } else {
@@ -97,7 +99,7 @@ export function ClientFormDialog({ open, onOpenChange, editingClient, onSubmit }
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="phone">Telefone</Label>
+              <Label htmlFor="phone">Telefone 1</Label>
               <Input
                 id="phone"
                 value={formData.phone}
@@ -106,6 +108,18 @@ export function ClientFormDialog({ open, onOpenChange, editingClient, onSubmit }
                 className="bg-white dark:bg-slate-950"
               />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="phone2">Telefone 2</Label>
+              <Input
+                id="phone2"
+                value={formData.phone2}
+                onChange={(e) => setFormData({ ...formData, phone2: e.target.value })}
+                placeholder="+244 9XX XXX XXX"
+                className="bg-white dark:bg-slate-950"
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="company">Empresa</Label>
               <Input
@@ -116,8 +130,6 @@ export function ClientFormDialog({ open, onOpenChange, editingClient, onSubmit }
                 className="bg-white dark:bg-slate-950"
               />
             </div>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="position">Cargo</Label>
               <Input
@@ -128,6 +140,8 @@ export function ClientFormDialog({ open, onOpenChange, editingClient, onSubmit }
                 className="bg-white dark:bg-slate-950"
               />
             </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="status">Status</Label>
               <Select
@@ -144,16 +158,16 @@ export function ClientFormDialog({ open, onOpenChange, editingClient, onSubmit }
                 </SelectContent>
               </Select>
             </div>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="address">Endereço</Label>
-            <Input
-              id="address"
-              value={formData.address}
-              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-              placeholder="Endereço completo"
-              className="bg-white dark:bg-slate-950"
-            />
+            <div className="space-y-2">
+              <Label htmlFor="address">Endereço</Label>
+              <Input
+                id="address"
+                value={formData.address}
+                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                placeholder="Endereço completo"
+                className="bg-white dark:bg-slate-950"
+              />
+            </div>
           </div>
           <div className="space-y-2">
             <Label htmlFor="notes">Notas</Label>

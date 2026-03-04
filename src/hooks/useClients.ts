@@ -9,7 +9,6 @@ export function useClients(userId: string | undefined) {
   const [clients, setClients] = useState<Client[]>([]);
 
   const fetchClients = useCallback(async () => {
-    // Removido o filtro .eq('user_id', userId) para que todos vejam os mesmos dados
     const { data, error } = await supabase
       .from('clients')
       .select('*')
@@ -25,6 +24,7 @@ export function useClients(userId: string | undefined) {
       name: row.name,
       email: row.email,
       phone: row.phone,
+      phone2: (row as any).phone2,
       company: row.company,
       position: row.position,
       address: row.address,

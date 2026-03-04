@@ -21,6 +21,7 @@ export interface Client {
   name: string;
   email: string;
   phone?: string;
+  phone2?: string;
   company: string;
   position?: string;
   address?: string;
