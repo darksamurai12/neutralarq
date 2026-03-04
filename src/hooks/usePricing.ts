@@ -236,22 +236,26 @@ export function usePricing() {
     let item: PricingProduct | PricingLabor | PricingTransport | undefined;
     let unitCost: number;
     let unitPrice: number;
+    let marginPercent: number;
 
     if (type === 'product') {
       item = products.find(p => p.id === itemId);
       if (!item) return null;
       unitCost = (item as PricingProduct).basePrice;
       unitPrice = item.finalPrice;
+      marginPercent = item.marginPercent;
     } else if (type === 'labor') {
       item = labor.find(l => l.id === itemId);
       if (!item) return null;
       unitCost = (item as PricingLabor).providerValue;
       unitPrice = item.finalPrice;
+      marginPercent = item.marginPercent;
     } else {
       item = transport.find(t => t.id === itemId);
       if (!item) return null;
       unitCost = (item as PricingTransport).baseCost;
       unitPrice = item.finalPrice;
+      marginPercent = item.marginPercent;
     }
 
     const totalPrice = unitPrice * quantity;
@@ -268,6 +272,7 @@ export function usePricing() {
       unitCost,
       totalCost,
       profit: totalPrice - totalCost,
+      marginPercent,
     };
   }, [products, labor, transport]);
 

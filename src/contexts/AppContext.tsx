@@ -73,7 +73,7 @@ interface AppContextType {
   deleteInventoryItem: (id: string) => Promise<void>;
   adjustStock: (itemId: string, amount: number, type: 'in' | 'out', reason: string) => Promise<void>;
 
-  addNote: (note: Omit<Note, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+  addNote: (note: Partial<Note>) => Promise<string | null>;
   updateNote: (id: string, updates: Partial<Note>) => Promise<void>;
   deleteNote: (id: string) => Promise<void>;
 
@@ -123,7 +123,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const project = projects.find(p => p.id === projectId);
 
     const totalTasks = projectTasks.length;
-    const completedTasks = projectTasks.filter(t => t.status === 'done').length;
+    const completedTasks = projectTasks.filter(t => t.status === 'completed').length;
     const progressPercentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
     const totalIncome = projectTransactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.value, 0);
@@ -135,12 +135,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return {
       progressPercentage,
       tasksByStatus: {
-        todo: projectTasks.filter(t => t.status === 'todo').length,
-        doing: projectTasks.filter(t => t.status === 'doing').length,
-        review: projectTasks.filter(t => t.status === 'review').length,
+        todo: projectTasks.filter(t => t.status === 'pending').length,
+        doing: projectTasks.filter(t => t.status === 'in_progress').length,
+        review: 0, // Review não existe no TaskStatus simplificado
         done: completedTasks,
       },
-      overdueTasks: projectTasks.filter(t => t.deadline && isPast(new Date(t.deadline)) && t.status !== 'done').length,
+      overdueTasks: projectTasks.filter(t => t.deadline && isPast(new Date(t.deadline)) && t.status !== 'completed').length,
       totalIncome,
       totalExpenses,
       profit: totalIncome - totalExpenses,
@@ -285,7 +285,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     getEventsForDay, getEventsForWeek, getEventsForMonth, getUpcomingEvents
   ]);
 
-  return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
+  return <AppContext.Provider value={value as any}>{children}</AppContext.Provider>;
 }
 
 export const useApp = () => {

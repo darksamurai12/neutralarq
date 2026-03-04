@@ -1,5 +1,6 @@
 export type ProjectStatus = 'planning' | 'in_progress' | 'paused' | 'completed';
 export type ProjectType = 'architecture' | 'construction' | 'interior_design';
+export type ProjectPhase = 'projeto' | 'obra' | 'acabamento' | 'entrega';
 
 export interface Project {
   id: string;
@@ -16,6 +17,16 @@ export interface Project {
   createdAt: Date;
 }
 
+export interface ProjectHistory {
+  id: string;
+  projectId: string;
+  action: string;
+  description: string;
+  date: Date;
+}
+
+export type ClientStatus = 'lead' | 'active' | 'inactive';
+
 export interface Client {
   id: string;
   name: string;
@@ -26,7 +37,7 @@ export interface Client {
   position?: string;
   address?: string;
   notes?: string;
-  status: 'lead' | 'active' | 'inactive';
+  status: ClientStatus;
   createdAt: Date;
 }
 
@@ -53,13 +64,17 @@ export interface Task {
   projectId?: string | null;
 }
 
+export type TransactionType = 'income' | 'expense';
+export type TransactionDestination = 'project' | 'cashflow';
+export type ExpenseCategory = 'alimentacao' | 'transporte' | 'material' | 'servicos' | 'equipamento' | 'comunicacao' | 'renda' | 'outros';
+
 export interface Transaction {
   id: string;
   description: string;
   value: number;
-  type: 'income' | 'expense';
-  destination: 'project' | 'cashflow';
-  category?: string | null;
+  type: TransactionType;
+  destination: TransactionDestination;
+  category?: ExpenseCategory | null;
   projectId?: string | null;
   clientId?: string | null;
   date: Date;
@@ -88,7 +103,7 @@ export interface ProjectWithDetails extends Project {
   client: Client | null;
   tasks: Task[];
   transactions: Transaction[];
-  history: any[];
+  history: ProjectHistory[];
   kpis: ProjectKPIs;
 }
 
@@ -130,6 +145,13 @@ export interface CalendarEvent {
 
 export type DealStage = 'lead' | 'contacted' | 'proposal' | 'negotiation' | 'won' | 'lost';
 
+export interface DealStageConfig {
+  id: DealStage;
+  label: string;
+  probability: number;
+  color: string;
+}
+
 export interface Deal {
   id: string;
   title: string;
@@ -142,10 +164,12 @@ export interface Deal {
   createdAt: Date;
 }
 
+export type InteractionType = 'call' | 'meeting' | 'email' | 'whatsapp' | 'note';
+
 export interface ClientInteraction {
   id: string;
   clientId: string;
-  type: 'call' | 'meeting' | 'email' | 'whatsapp' | 'note';
+  type: InteractionType;
   description: string;
   date: Date;
   createdAt: Date;
@@ -231,7 +255,7 @@ export interface Budget {
 }
 
 export type NoteColor = 'default' | 'blue' | 'green' | 'yellow' | 'purple' | 'rose';
-export type NoteType = 'text' | 'checklist';
+export type NoteType = 'text' | 'checklist' | 'office' | 'procedure' | 'meeting' | 'idea' | 'reminder' | 'personal';
 export type NotePriority = 'low' | 'medium' | 'high' | 'urgent';
 
 export interface NoteList {
@@ -258,9 +282,13 @@ export interface Note {
   content: string;
   type: NoteType;
   priority: NotePriority;
+  color: NoteColor;
+  category?: string;
   isPinned: boolean;
+  isImportant: boolean;
   isArchived: boolean;
   reminderDate: Date | null;
+  authorName?: string;
   checklistItems?: NoteChecklistItem[];
   createdAt: Date;
   updatedAt: Date;
@@ -297,4 +325,20 @@ export interface Document {
   createdBy: string;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export type AlertType = 'event_reminder' | 'task_overdue' | 'task_due_soon' | 'deal_inactive' | 'project_paused' | 'budget_warning';
+export type AlertSeverity = 'critical' | 'warning' | 'info';
+
+export interface Alert {
+  id: string;
+  type: AlertType;
+  severity: AlertSeverity;
+  title: string;
+  description: string;
+  entityId?: string;
+  entityType?: 'event' | 'task' | 'deal' | 'project' | 'budget';
+  createdAt: Date;
+  read: boolean;
+  dismissed: boolean;
 }
