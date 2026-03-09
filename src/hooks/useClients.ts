@@ -37,21 +37,41 @@ export function useClients(userId: string | undefined) {
   const addClient = async (client: Omit<Client, 'id' | 'createdAt'>) => {
     if (!userId) return;
     const { data, error } = await supabase.from('clients').insert({ ...client, user_id: userId }).select().single();
-    if (error) { toast.error('Erro ao adicionar cliente'); return; }
+    if (error) { 
+      console.error('Erro ao adicionar cliente:', error);
+      toast.error('Erro ao adicionar cliente: ' + error.message); 
+      return; 
+    }
     setClients(prev => [{ ...data, createdAt: new Date(data.created_at) } as any, ...prev]);
     toast.success('Cliente adicionado');
   };
 
   const updateClient = async (id: string, updates: Partial<Client>) => {
-    const { error } = await supabase.from('clients').update(updates).eq('id', id);
-    if (error) { toast.error('Erro ao atualizar cliente'); return; }
+    // Remove campos que não devem ser enviados na atualização
+    const { id: _, createdAt: __, ...updatableFields } = updates as any;
+    
+    const { error } = await supabase
+      .from('clients')
+      .update(updatableFields)
+      .eq('id', id);
+
+    if (error) { 
+      console.error('Erro ao atualizar cliente:', error);
+      toast.error('Erro ao atualizar cliente: ' + error.message); 
+      return; 
+    }
+    
     setClients(prev => prev.map(c => c.id === id ? { ...c, ...updates } : c));
     toast.success('Cliente atualizado');
   };
 
   const deleteClient = async (id: string) => {
     const { error } = await supabase.from('clients').delete().eq('id', id);
-    if (error) { toast.error('Erro ao eliminar cliente'); return; }
+    if (error) { 
+      console.error('Erro ao eliminar cliente:', error);
+      toast.error('Erro ao eliminar cliente'); 
+      return; 
+    }
     setClients(prev => prev.filter(c => c.id !== id));
     toast.success('Cliente eliminado');
   };
