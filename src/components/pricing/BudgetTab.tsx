@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, FileText, TrendingUp, ChevronDown, ChevronUp, Package, Users, Truck, Edit, Copy, Download, Banknote, FolderPlus, Folder, Percent, AlertCircle, Search } from 'lucide-react';
+import { Plus, Trash2, FileText, TrendingUp, ChevronDown, ChevronUp, Package, Users, Truck, Edit, Copy, Download, Banknote, FolderPlus, Folder, Percent, AlertCircle, Search, MoveHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -78,10 +78,14 @@ export function BudgetTab({ budgets, products, labor, transport, clients, projec
     toast.success(`Item "${item.name}" adicionado`);
   };
 
-  const updateItemInBudget = (id: string, field: 'quantity' | 'marginPercent', value: string) => {
-    const numValue = parseFloat(value) || 0;
+  const updateItemInBudget = (id: string, field: 'quantity' | 'marginPercent' | 'groupName', value: string) => {
     setBudgetItems(prev => prev.map(item => {
       if (item.id === id) {
+        if (field === 'groupName') {
+          return { ...item, groupName: value === 'none' ? undefined : value };
+        }
+
+        const numValue = parseFloat(value) || 0;
         const updated = { ...item, [field]: numValue };
         const unitCost = updated.unitCost;
         const margin = updated.marginPercent;
@@ -155,10 +159,34 @@ export function BudgetTab({ budgets, products, labor, transport, clients, projec
     grouped.forEach((group) => {
       if (yPos > pageHeight - 40) { doc.addPage(); yPos = 20; }
       if (group.groupName) { doc.setFontSize(11); doc.setTextColor(79, 70, 229); doc.text(`▸ ${group.groupName}`, 14, yPos); yPos += 6; }
+      
+      const groupTotal = group.items.reduce((s, i) => s + i.totalPrice, 0);
       const tableData = group.items.map(item => [item.name, typeLabels[item.type] || item.type, item.quantity.toString(), formatCurrency(item.unitPrice), formatCurrency(item.totalPrice)]);
-      autoTable(doc, { startY: yPos, head: [['Item', 'Tipo', 'Qtd', 'Preço Unit.', 'Total']], body: tableData, theme: 'striped', headStyles: { fillColor: [79, 70, 229], textColor: 255, fontSize: 9 }, bodyStyles: { fontSize: 8 }, columnStyles: { 2: { halign: 'center' }, 3: { halign: 'right' }, 4: { halign: 'right' } }, margin: { bottom: 20 } });
-      yPos = (doc as any).lastAutoTable.finalY + 10;
+      
+      autoTable(doc, { 
+        startY: yPos, 
+        head: [['Item', 'Tipo', 'Qtd', 'Preço Unit.', 'Total']], 
+        body: tableData, 
+        theme: 'striped', 
+        headStyles: { fillColor: [79, 70, 229], textColor: 255, fontSize: 9 }, 
+        bodyStyles: { fontSize: 8 }, 
+        columnStyles: { 2: { halign: 'center' }, 3: { halign: 'right' }, 4: { halign: 'right' } }, 
+        margin: { bottom: 20 } 
+      });
+      
+      yPos = (doc as any).lastAutoTable.finalY + 6;
+      if (group.groupName) {
+        doc.setFontSize(9);
+        doc.setTextColor(33, 37, 41);
+        doc.setFont('helvetica', 'bold');
+        doc.text(`Subtotal ${group.groupName}: ${formatCurrency(groupTotal)}`, 196, yPos, { align: 'right' });
+        doc.setFont('helvetica', 'normal');
+        yPos += 10;
+      } else {
+        yPos += 4;
+      }
     });
+
     if (yPos > pageHeight - 40) { doc.addPage(); yPos = 20; }
     doc.setDrawColor(200, 200, 200); doc.setFillColor(248, 249, 250); doc.roundedRect(14, yPos, 182, 20, 3, 3, 'FD'); 
     doc.setFontSize(10); doc.setTextColor(108, 117, 125); doc.text('VALOR TOTAL DO ORÇAMENTO:', 20, yPos + 12); 
@@ -170,17 +198,44 @@ export function BudgetTab({ budgets, products, labor, transport, clients, projec
     grouped.forEach((group) => {
       if (yPos > pageHeight - 40) { doc.addPage(); yPos = 20; }
       if (group.groupName) { doc.setFontSize(11); doc.setTextColor(220, 38, 38); doc.text(`▸ ${group.groupName}`, 14, yPos); yPos += 6; }
+      
+      const groupTotalCost = group.items.reduce((s, i) => s + i.totalCost, 0);
+      const groupTotalValue = group.items.reduce((s, i) => s + i.totalPrice, 0);
+      const groupProfit = groupTotalValue - groupTotalCost;
+      
       const tableData = group.items.map(item => [item.name, item.quantity.toString(), formatCurrency(item.unitCost), formatCurrency(item.totalCost), `${item.marginPercent}%`, formatCurrency(item.profit)]);
-      autoTable(doc, { startY: yPos, head: [['Item', 'Qtd', 'Custo Unit.', 'Custo Total', 'Margem', 'Lucro']], body: tableData, theme: 'grid', headStyles: { fillColor: [220, 38, 38], textColor: 255, fontSize: 9 }, bodyStyles: { fontSize: 8 }, columnStyles: { 1: { halign: 'center' }, 2: { halign: 'right' }, 3: { halign: 'right' }, 4: { halign: 'center' }, 5: { halign: 'right' } }, margin: { bottom: 20 } });
-      yPos = (doc as any).lastAutoTable.finalY + 10;
+      
+      autoTable(doc, { 
+        startY: yPos, 
+        head: [['Item', 'Qtd', 'Custo Unit.', 'Custo Total', 'Margem', 'Lucro']], 
+        body: tableData, 
+        theme: 'grid', 
+        headStyles: { fillColor: [220, 38, 38], textColor: 255, fontSize: 9 }, 
+        bodyStyles: { fontSize: 8 }, 
+        columnStyles: { 1: { halign: 'center' }, 2: { halign: 'right' }, 3: { halign: 'right' }, 4: { halign: 'center' }, 5: { halign: 'right' } }, 
+        margin: { bottom: 20 } 
+      });
+      
+      yPos = (doc as any).lastAutoTable.finalY + 6;
+      if (group.groupName) {
+        doc.setFontSize(8);
+        doc.setTextColor(220, 38, 38);
+        doc.setFont('helvetica', 'bold');
+        doc.text(`Subtotal Custo ${group.groupName}: ${formatCurrency(groupTotalCost)} | Lucro: ${formatCurrency(groupProfit)}`, 196, yPos, { align: 'right' });
+        doc.setFont('helvetica', 'normal');
+        yPos += 10;
+      } else {
+        yPos += 4;
+      }
     });
+
     if (yPos > pageHeight - 60) { doc.addPage(); yPos = 20; }
     doc.setDrawColor(200, 200, 200); doc.setFillColor(254, 242, 242); doc.roundedRect(14, yPos, 182, 40, 3, 3, 'FD'); 
     doc.setFontSize(10); doc.setTextColor(108, 117, 125); doc.text('RESUMO FINANCEIRO INTERNO:', 20, yPos + 10); doc.text('Custo Total de Execução:', 20, yPos + 20); doc.text('Lucro Bruto Previsto:', 20, yPos + 28); doc.text('Margem Média Global:', 20, yPos + 36);
     doc.setFontSize(11); doc.setTextColor(33, 37, 41); doc.text(formatCurrency(budget.totalCost), 100, yPos + 20); doc.setTextColor(22, 163, 74); doc.text(formatCurrency(budget.totalProfit), 100, yPos + 28); doc.text(`${budget.marginPercent.toFixed(1)}%`, 100, yPos + 36);
 
     doc.save(`orcamento-${budget.name.replace(/\s+/g, '-').toLowerCase()}.pdf`);
-    toast.success('PDF exportado com folhas de cliente e interna!');
+    toast.success('PDF exportado com subtotais por grupo!');
   };
 
   const currentTotalValue = budgetItems.reduce((sum, item) => sum + item.totalPrice, 0);
@@ -216,12 +271,43 @@ export function BudgetTab({ budgets, products, labor, transport, clients, projec
     if (items.length === 0) return (<div className="py-8 text-center text-muted-foreground flex flex-col items-center gap-2"><AlertCircle className="w-8 h-8 opacity-20" /><p className="text-sm">Este orçamento não tem itens.</p></div>);
     return (
       <Table>
-        <TableHeader><TableRow><TableHead>Item</TableHead><TableHead className="text-center">Tipo</TableHead><TableHead className="text-center w-[100px]">Qtd</TableHead><TableHead className="text-center w-[100px]">Margem (%)</TableHead><TableHead className="text-right">Custo Unit.</TableHead><TableHead className="text-right">Preço Unit.</TableHead><TableHead className="text-right">Total</TableHead><TableHead className="text-right text-emerald-600">Lucro</TableHead>{isEditable && <TableHead className="w-[50px]"></TableHead>}</TableRow></TableHeader>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Item</TableHead>
+            <TableHead className="text-center">Tipo</TableHead>
+            {isEditable && <TableHead className="text-center w-[140px]">Grupo</TableHead>}
+            <TableHead className="text-center w-[80px]">Qtd</TableHead>
+            <TableHead className="text-center w-[80px]">Margem (%)</TableHead>
+            <TableHead className="text-right">Custo Unit.</TableHead>
+            <TableHead className="text-right">Preço Unit.</TableHead>
+            <TableHead className="text-right">Total</TableHead>
+            <TableHead className="text-right text-emerald-600">Lucro</TableHead>
+            {isEditable && <TableHead className="w-[50px]"></TableHead>}
+          </TableRow>
+        </TableHeader>
         <TableBody>
           {items.map((item) => (
             <TableRow key={item.id}>
               <TableCell><div className="flex items-center gap-2">{getItemIcon(item.type)}<span className="font-medium">{item.name}</span></div></TableCell>
               <TableCell className="text-center text-xs text-muted-foreground">{getTypeLabel(item.type)}</TableCell>
+              {isEditable && (
+                <TableCell>
+                  <Select 
+                    value={item.groupName || 'none'} 
+                    onValueChange={(v) => updateItemInBudget(item.id, 'groupName', v)}
+                  >
+                    <SelectTrigger className="h-8 text-[10px] bg-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white border shadow-xl">
+                      <SelectItem value="none">Sem grupo</SelectItem>
+                      {budgetGroups.map(g => (
+                        <SelectItem key={g} value={g}>{g}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </TableCell>
+              )}
               <TableCell className="text-center">{isEditable ? (<Input type="number" min="1" value={item.quantity} onChange={(e) => updateItemInBudget(item.id, 'quantity', e.target.value)} className="h-8 text-center px-1" />) : (item.quantity)}</TableCell>
               <TableCell className="text-center">{isEditable ? (<Input type="number" step="0.1" value={item.marginPercent || 0} onChange={(e) => updateItemInBudget(item.id, 'marginPercent', e.target.value)} className="h-8 text-center px-1" />) : (<Badge variant="outline" className="text-[10px]">{item.marginPercent || 0}%</Badge>)}</TableCell>
               <TableCell className="text-right text-muted-foreground">{formatCurrency(item.unitCost)}</TableCell>
