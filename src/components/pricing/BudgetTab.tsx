@@ -24,10 +24,8 @@ import { ItemSelectionDialog } from './ItemSelectionDialog';
 function groupItems(items: BudgetItem[]): { groupName: string; items: BudgetItem[] }[] {
   const groups: Record<string, BudgetItem[]> = {};
   
-  // 1. Ordenar todos os itens por nome (A-Z)
   const sortedItems = [...items].sort((a, b) => a.name.localeCompare(b.name, 'pt-PT'));
   
-  // 2. Agrupar os itens já ordenados
   sortedItems.forEach(item => { 
     const key = item.groupName || '__ungrouped__'; 
     if (!groups[key]) groups[key] = []; 
@@ -36,7 +34,6 @@ function groupItems(items: BudgetItem[]): { groupName: string; items: BudgetItem
   
   const result: { groupName: string; items: BudgetItem[] }[] = [];
   
-  // 3. Obter e ordenar os nomes dos grupos alfabeticamente
   const groupNames = Object.keys(groups)
     .filter(k => k !== '__ungrouped__')
     .sort((a, b) => a.localeCompare(b, 'pt-PT'));
@@ -45,7 +42,6 @@ function groupItems(items: BudgetItem[]): { groupName: string; items: BudgetItem
     result.push({ groupName: name, items: groups[name] }); 
   });
   
-  // 4. Adicionar itens sem grupo no final
   if (groups['__ungrouped__']) { 
     result.push({ groupName: '', items: groups['__ungrouped__'] }); 
   }
@@ -141,8 +137,8 @@ export function BudgetTab({ budgets, products, labor, transport, clients, projec
     const statusLabels: Record<string, string> = { draft: 'Rascunho', sent: 'Enviado', approved: 'Aprovado', rejected: 'Rejeitado' };
     const pageHeight = doc.internal.pageSize.height;
 
-    const renderHeader = (title: string, isInternal: boolean) => {
-      doc.setFontSize(20); doc.setTextColor(33, 37, 41); doc.text(title, 14, 22);
+    const renderHeader = (title: string, isInternal: boolean, isCostOnly: boolean = false) => {
+      doc.setFontSize(18); doc.setTextColor(33, 37, 41); doc.text(title, 14, 22);
       doc.setFontSize(10); doc.setTextColor(108, 117, 125); 
       doc.text(`Nº: ${budget.id.slice(0, 8).toUpperCase()}`, 14, 30); 
       doc.text(`Data: ${format(new Date(budget.createdAt), "dd/MM/yyyy", { locale: pt })}`, 14, 36); 
@@ -152,13 +148,15 @@ export function BudgetTab({ budgets, products, labor, transport, clients, projec
       if (client?.name) { doc.setFontSize(10); doc.setTextColor(108, 117, 125); doc.text(`Cliente: ${client.name}`, 14, y); y += 6; } 
       if (project) { doc.setFontSize(10); doc.setTextColor(108, 117, 125); doc.text(`Projecto: ${project.name}`, 14, y); y += 6; }
       if (isInternal) { doc.setFontSize(10); doc.setTextColor(220, 38, 38); doc.text('DOCUMENTO PARA USO INTERNO - NÃO ENVIAR AO CLIENTE', 14, y); y += 6; }
+      if (isCostOnly) { doc.setFontSize(10); doc.setTextColor(37, 99, 235); doc.text('VALORES BASEADOS EM PREÇO DE CUSTO (SEM MARGEM)', 14, y); y += 6; }
       return y + 4;
     };
 
+    // PÁGINA 1: ORÇAMENTO CLIENTE (PREÇO FINAL)
     let yPos = renderHeader('ORÇAMENTO (CLIENTE)', false);
     grouped.forEach((group) => {
       if (yPos > pageHeight - 40) { doc.addPage(); yPos = 20; }
-      if (group.groupName) { doc.setFontSize(11); doc.setTextColor(79, 70, 229); doc.text(`▸ ${group.groupName}`, 14, yPos); yPos += 6; }
+      if (group.groupName) { doc.setFontSize(11); doc.setTextColor(79, 70, 229); doc.text(`GRUPO: ${group.groupName.toUpperCase()}`, 14, yPos); yPos += 6; }
       
       const groupTotal = group.items.reduce((s, i) => s + i.totalPrice, 0);
       const tableData = group.items.map(item => [item.name, typeLabels[item.type] || item.type, item.quantity.toString(), formatCurrency(item.unitPrice), formatCurrency(item.totalPrice)]);
@@ -176,15 +174,10 @@ export function BudgetTab({ budgets, products, labor, transport, clients, projec
       
       yPos = (doc as any).lastAutoTable.finalY + 6;
       if (group.groupName) {
-        doc.setFontSize(9);
-        doc.setTextColor(33, 37, 41);
-        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(9); doc.setTextColor(33, 37, 41); doc.setFont('helvetica', 'bold');
         doc.text(`Subtotal ${group.groupName}: ${formatCurrency(groupTotal)}`, 196, yPos, { align: 'right' });
-        doc.setFont('helvetica', 'normal');
-        yPos += 10;
-      } else {
-        yPos += 4;
-      }
+        doc.setFont('helvetica', 'normal'); yPos += 10;
+      } else { yPos += 4; }
     });
 
     if (yPos > pageHeight - 40) { doc.addPage(); yPos = 20; }
@@ -193,11 +186,12 @@ export function BudgetTab({ budgets, products, labor, transport, clients, projec
     doc.setFontSize(14); doc.setTextColor(37, 99, 235); doc.text(formatCurrency(budget.totalValue), 100, yPos + 12);
     if (budget.notes) { yPos += 30; if (yPos > pageHeight - 30) { doc.addPage(); yPos = 20; } doc.setFontSize(10); doc.setTextColor(33, 37, 41); doc.text('Notas:', 14, yPos); doc.setFontSize(9); doc.setTextColor(108, 117, 125); const splitNotes = doc.splitTextToSize(budget.notes, 180); doc.text(splitNotes, 14, yPos + 6); }
 
+    // PÁGINA 2: RELATÓRIO INTERNO (CUSTOS + MARGENS)
     doc.addPage();
     yPos = renderHeader('RELATÓRIO DE CUSTOS (INTERNO)', true);
     grouped.forEach((group) => {
       if (yPos > pageHeight - 40) { doc.addPage(); yPos = 20; }
-      if (group.groupName) { doc.setFontSize(11); doc.setTextColor(220, 38, 38); doc.text(`▸ ${group.groupName}`, 14, yPos); yPos += 6; }
+      if (group.groupName) { doc.setFontSize(11); doc.setTextColor(220, 38, 38); doc.text(`GRUPO: ${group.groupName.toUpperCase()}`, 14, yPos); yPos += 6; }
       
       const groupTotalCost = group.items.reduce((s, i) => s + i.totalCost, 0);
       const groupTotalValue = group.items.reduce((s, i) => s + i.totalPrice, 0);
@@ -218,15 +212,10 @@ export function BudgetTab({ budgets, products, labor, transport, clients, projec
       
       yPos = (doc as any).lastAutoTable.finalY + 6;
       if (group.groupName) {
-        doc.setFontSize(8);
-        doc.setTextColor(220, 38, 38);
-        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8); doc.setTextColor(220, 38, 38); doc.setFont('helvetica', 'bold');
         doc.text(`Subtotal Custo ${group.groupName}: ${formatCurrency(groupTotalCost)} | Lucro: ${formatCurrency(groupProfit)}`, 196, yPos, { align: 'right' });
-        doc.setFont('helvetica', 'normal');
-        yPos += 10;
-      } else {
-        yPos += 4;
-      }
+        doc.setFont('helvetica', 'normal'); yPos += 10;
+      } else { yPos += 4; }
     });
 
     if (yPos > pageHeight - 60) { doc.addPage(); yPos = 20; }
@@ -234,8 +223,42 @@ export function BudgetTab({ budgets, products, labor, transport, clients, projec
     doc.setFontSize(10); doc.setTextColor(108, 117, 125); doc.text('RESUMO FINANCEIRO INTERNO:', 20, yPos + 10); doc.text('Custo Total de Execução:', 20, yPos + 20); doc.text('Lucro Bruto Previsto:', 20, yPos + 28); doc.text('Margem Média Global:', 20, yPos + 36);
     doc.setFontSize(11); doc.setTextColor(33, 37, 41); doc.text(formatCurrency(budget.totalCost), 100, yPos + 20); doc.setTextColor(22, 163, 74); doc.text(formatCurrency(budget.totalProfit), 100, yPos + 28); doc.text(`${budget.marginPercent.toFixed(1)}%`, 100, yPos + 36);
 
+    // PÁGINA 3: ORÇAMENTO SEM MARGEM (PREÇO DE CUSTO)
+    doc.addPage();
+    yPos = renderHeader('ORÇAMENTO (PREÇO DE CUSTO)', false, true);
+    grouped.forEach((group) => {
+      if (yPos > pageHeight - 40) { doc.addPage(); yPos = 20; }
+      if (group.groupName) { doc.setFontSize(11); doc.setTextColor(37, 99, 235); doc.text(`GRUPO: ${group.groupName.toUpperCase()}`, 14, yPos); yPos += 6; }
+      
+      const groupTotalCost = group.items.reduce((s, i) => s + i.totalCost, 0);
+      const tableData = group.items.map(item => [item.name, typeLabels[item.type] || item.type, item.quantity.toString(), formatCurrency(item.unitCost), formatCurrency(item.totalCost)]);
+      
+      autoTable(doc, { 
+        startY: yPos, 
+        head: [['Item', 'Tipo', 'Qtd', 'Custo Unit.', 'Total Custo']], 
+        body: tableData, 
+        theme: 'striped', 
+        headStyles: { fillColor: [37, 99, 235], textColor: 255, fontSize: 9 }, 
+        bodyStyles: { fontSize: 8 }, 
+        columnStyles: { 2: { halign: 'center' }, 3: { halign: 'right' }, 4: { halign: 'right' } }, 
+        margin: { bottom: 20 } 
+      });
+      
+      yPos = (doc as any).lastAutoTable.finalY + 6;
+      if (group.groupName) {
+        doc.setFontSize(9); doc.setTextColor(33, 37, 41); doc.setFont('helvetica', 'bold');
+        doc.text(`Subtotal Custo ${group.groupName}: ${formatCurrency(groupTotalCost)}`, 196, yPos, { align: 'right' });
+        doc.setFont('helvetica', 'normal'); yPos += 10;
+      } else { yPos += 4; }
+    });
+
+    if (yPos > pageHeight - 40) { doc.addPage(); yPos = 20; }
+    doc.setDrawColor(200, 200, 200); doc.setFillColor(239, 246, 255); doc.roundedRect(14, yPos, 182, 20, 3, 3, 'FD'); 
+    doc.setFontSize(10); doc.setTextColor(108, 117, 125); doc.text('VALOR TOTAL (PREÇO DE CUSTO):', 20, yPos + 12); 
+    doc.setFontSize(14); doc.setTextColor(37, 99, 235); doc.text(formatCurrency(budget.totalCost), 100, yPos + 12);
+
     doc.save(`orcamento-${budget.name.replace(/\s+/g, '-').toLowerCase()}.pdf`);
-    toast.success('PDF exportado com subtotais por grupo!');
+    toast.success('PDF exportado com 3 páginas!');
   };
 
   const currentTotalValue = budgetItems.reduce((sum, item) => sum + item.totalPrice, 0);
