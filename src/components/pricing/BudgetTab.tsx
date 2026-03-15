@@ -378,7 +378,7 @@ export function BudgetTab({ budgets, products, labor, transport, clients, projec
         <div><h3 className="text-lg font-semibold">Orçamentos</h3><p className="text-sm text-muted-foreground">Crie, edite, clone e exporte orçamentos</p></div>
         <Dialog open={isDialogOpen} onOpenChange={(open) => { setIsDialogOpen(open); if (!open) resetForm(); }}>
           <DialogTrigger asChild><Button className="gap-2"><Plus className="w-4 h-4" />Novo Orçamento</Button></DialogTrigger>
-          <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto">
             <DialogHeader><DialogTitle className="text-xl">{isEditMode ? 'Editar Orçamento' : 'Criar Orçamento'}</DialogTitle></DialogHeader>
             <div className="space-y-6 mt-2">
               <div className="space-y-4">
