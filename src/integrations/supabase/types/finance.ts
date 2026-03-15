@@ -17,6 +17,7 @@ export interface FinanceTable {
       user_id: string
       client_id: string | null
       project_id: string | null
+      security_coefficient: number
     }
     Insert: {
       client_name?: string | null
@@ -33,6 +34,7 @@ export interface FinanceTable {
       user_id: string
       client_id?: string | null
       project_id?: string | null
+      security_coefficient?: number
     }
     Update: {
       client_name?: string | null
@@ -49,6 +51,7 @@ export interface FinanceTable {
       user_id?: string
       client_id?: string | null
       project_id?: string | null
+      security_coefficient?: number
     }
     Relationships: []
   }
