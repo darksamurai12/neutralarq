@@ -320,3 +320,17 @@ export interface Alert {
   read: boolean;
   dismissed: boolean;
 }
+
+export interface Partner {
+  id: string;
+  userId: string;
+  name: string;
+  type: string;
+  email: string;
+  phone: string;
+  services: string;
+  status: 'Ativo' | 'Inativo';
+  nif: string;
+  address: string;
+  createdAt: Date;
+}

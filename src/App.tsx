@@ -17,6 +17,7 @@ import Notes from "./pages/Notes";
 import NoteEditor from "./pages/NoteEditor";
 import Tasks from "./pages/Tasks";
 import Documents from "./pages/Documents";
+import Partners from "./pages/Partners";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -39,6 +40,7 @@ const App = () => (
               <Route path="/notas" element={<ProtectedRoute><Notes /></ProtectedRoute>} />
               <Route path="/notas/:id" element={<ProtectedRoute><NoteEditor /></ProtectedRoute>} />
               <Route path="/projetos" element={<ProtectedRoute><Projects /></ProtectedRoute>} />
+              <Route path="/parceiros" element={<ProtectedRoute><Partners /></ProtectedRoute>} />
               <Route path="/financas" element={<ProtectedRoute><Finance /></ProtectedRoute>} />
               <Route path="/inventario" element={<ProtectedRoute><Inventory /></ProtectedRoute>} />
               <Route path="/precificacao" element={<ProtectedRoute><Pricing /></ProtectedRoute>} />
