@@ -50,7 +50,7 @@ export function useNotes(userId: string | undefined) {
       is_archived: note.isArchived,
       tags: note.tags,
       user_id: userId,
-      priority: 'medium' // Valor padrão para evitar erro se a coluna for obrigatória
+      priority: 'medium'
     }).select().single();
 
     if (error) {
@@ -63,25 +63,33 @@ export function useNotes(userId: string | undefined) {
     toast.success('Nota criada');
   };
 
-  const updateNote = async (id: string, updates: Partial<Note>) => {
-    const dbUpdates: any = { ...updates };
+  const updateNote = async (id: string, updates: any) => {
+    const dbUpdates: any = {};
+    
+    // Mapeamento explícito para evitar enviar campos inexistentes ou com nomes errados
+    if (updates.title !== undefined) dbUpdates.title = updates.title;
+    if (updates.content !== undefined) dbUpdates.content = updates.content;
+    if (updates.color !== undefined) dbUpdates.color = updates.color;
+    if (updates.tags !== undefined) dbUpdates.tags = updates.tags;
+    
+    // Mapeamento camelCase -> snake_case
     if (updates.isPinned !== undefined) dbUpdates.is_pinned = updates.isPinned;
     if (updates.isArchived !== undefined) dbUpdates.is_archived = updates.isArchived;
     if (updates.type !== undefined) dbUpdates.note_type = updates.type;
-    
-    // Limpar campos que não existem na DB ou não devem ser atualizados manualmente
-    delete dbUpdates.id;
-    delete dbUpdates.createdAt;
-    delete dbUpdates.updatedAt;
-    delete dbUpdates.userId;
-    delete dbUpdates.type;
 
-    const { error } = await supabase.from('notes').update(dbUpdates).eq('id', id);
+    const { error } = await supabase
+      .from('notes')
+      .update(dbUpdates)
+      .eq('id', id);
+
     if (error) {
-      toast.error('Erro ao atualizar nota');
+      console.error('Erro ao atualizar nota:', error);
+      toast.error('Erro ao atualizar nota: ' + error.message);
       return;
     }
+    
     fetchNotes();
+    toast.success('Nota atualizada');
   };
 
   const deleteNote = async (id: string) => {
