@@ -256,41 +256,18 @@ export interface Budget {
 }
 
 export type NoteColor = 'default' | 'blue' | 'green' | 'yellow' | 'purple' | 'rose';
-export type NoteType = 'text' | 'checklist' | 'office' | 'procedure' | 'meeting' | 'idea' | 'reminder' | 'personal';
-export type NotePriority = 'low' | 'medium' | 'high' | 'urgent';
-
-export interface NoteList {
-  id: string;
-  name: string;
-  color: string;
-  icon: string;
-  userId: string;
-}
-
-export interface NoteChecklistItem {
-  id: string;
-  noteId: string;
-  description: string;
-  isCompleted: boolean;
-  order_index: number;
-}
+export type NoteType = 'text' | 'checklist';
 
 export interface Note {
   id: string;
   userId: string;
-  listId: string | null;
   title: string;
   content: string;
   type: NoteType;
-  priority: NotePriority;
   color: NoteColor;
-  category?: string;
   isPinned: boolean;
-  isImportant: boolean;
   isArchived: boolean;
-  reminderDate: Date | null;
-  authorName?: string;
-  checklistItems?: NoteChecklistItem[];
+  tags: string[];
   createdAt: Date;
   updatedAt: Date;
 }

@@ -9,15 +9,16 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Note, NoteColor } from '@/types';
-import { Pin, Trash2, Palette, Check } from 'lucide-react';
+import { Note, NoteColor, NoteType } from '@/types';
+import { Pin, Trash2, Palette, Check, Tag, Archive, ListChecks, Type } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import { RichTextEditor } from './RichTextEditor';
+import { Badge } from '@/components/ui/badge';
 
 interface NoteDialogProps {
   open: boolean;
@@ -27,13 +28,13 @@ interface NoteDialogProps {
   onDelete?: (id: string) => void;
 }
 
-const colors: { name: NoteColor; class: string }[] = [
-  { name: 'default', class: 'bg-white border-slate-200' },
-  { name: 'blue', class: 'bg-pastel-sky border-blue-200' },
-  { name: 'green', class: 'bg-pastel-mint border-emerald-200' },
-  { name: 'yellow', class: 'bg-pastel-amber border-amber-200' },
-  { name: 'purple', class: 'bg-pastel-lavender border-primary/20' },
-  { name: 'rose', class: 'bg-pastel-rose border-rose-200' },
+const colors: { name: NoteColor; class: string; hex: string }[] = [
+  { name: 'default', class: 'bg-white border-slate-200', hex: '#ffffff' },
+  { name: 'blue', class: 'bg-pastel-sky border-blue-200', hex: '#E7F5FF' },
+  { name: 'green', class: 'bg-pastel-mint border-emerald-200', hex: '#EBFBEE' },
+  { name: 'yellow', class: 'bg-pastel-amber border-amber-200', hex: '#FFF9DB' },
+  { name: 'purple', class: 'bg-pastel-lavender border-primary/20', hex: '#F3F0FF' },
+  { name: 'rose', class: 'bg-pastel-rose border-rose-200', hex: '#FFF0F6' },
 ];
 
 export function NoteDialog({ open, onOpenChange, editingNote, onSubmit, onDelete }: NoteDialogProps) {
@@ -41,6 +42,10 @@ export function NoteDialog({ open, onOpenChange, editingNote, onSubmit, onDelete
   const [content, setContent] = useState('');
   const [color, setColor] = useState<NoteColor>('default');
   const [isPinned, setIsPinned] = useState(false);
+  const [isArchived, setIsArchived] = useState(false);
+  const [type, setType] = useState<NoteType>('text');
+  const [tags, setTags] = useState<string[]>([]);
+  const [newTag, setNewTag] = useState('');
 
   useEffect(() => {
     if (editingNote) {
@@ -48,70 +53,90 @@ export function NoteDialog({ open, onOpenChange, editingNote, onSubmit, onDelete
       setContent(editingNote.content);
       setColor(editingNote.color);
       setIsPinned(editingNote.isPinned);
+      setIsArchived(editingNote.isArchived);
+      setType(editingNote.type);
+      setTags(editingNote.tags || []);
     } else {
       setTitle('');
       setContent('');
       setColor('default');
       setIsPinned(false);
+      setIsArchived(false);
+      setType('text');
+      setTags([]);
     }
   }, [editingNote, open]);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!title.trim()) return;
-    onSubmit({ title, content, color, isPinned });
+  const handleSubmit = (e?: React.FormEvent) => {
+    e?.preventDefault();
+    if (!title.trim() && !content.trim()) return;
+    onSubmit({ title, content, color, isPinned, isArchived, type, tags });
+    onOpenChange(false);
   };
+
+  const addTag = () => {
+    if (newTag.trim() && !tags.includes(newTag.trim())) {
+      setTags([...tags, newTag.trim()]);
+      setNewTag('');
+    }
+  };
+
+  const removeTag = (tagToRemove: string) => {
+    setTags(tags.filter(t => t !== tagToRemove));
+  };
+
+  const currentColorHex = colors.find(c => c.name === color)?.hex || '#ffffff';
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={cn(
-        "sm:max-w-xl transition-colors duration-300 border-none shadow-2xl",
-        color === 'default' ? 'bg-white dark:bg-slate-900' : 
-        color === 'blue' ? 'bg-[#E7F5FF]' :
-        color === 'green' ? 'bg-[#EBFBEE]' :
-        color === 'yellow' ? 'bg-[#FFF9DB]' :
-        color === 'purple' ? 'bg-[#F3F0FF]' :
-        'bg-[#FFF0F6]'
-      )}>
-        <DialogHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-          <DialogTitle className="text-xl font-bold text-slate-800 dark:text-white">
-            {editingNote ? 'Editar Nota' : 'Nova Nota'}
-          </DialogTitle>
-          <div className="flex items-center gap-2">
+      <DialogContent 
+        className="sm:max-w-3xl max-h-[90vh] overflow-y-auto border-none shadow-2xl p-0"
+        style={{ backgroundColor: currentColorHex }}
+      >
+        <div className="p-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <Input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Título"
+              className="text-2xl font-bold border-none bg-transparent shadow-none focus-visible:ring-0 px-0 h-auto placeholder:opacity-50"
+            />
             <Button
               variant="ghost"
               size="icon"
-              className={cn("h-9 w-9 rounded-xl", isPinned && "text-primary bg-primary/10")}
+              className={cn("h-10 w-10 rounded-xl", isPinned && "text-primary bg-primary/10")}
               onClick={() => setIsPinned(!isPinned)}
             >
-              <Pin className={cn("w-4 h-4", isPinned && "fill-current")} />
+              <Pin className={cn("w-5 h-5", isPinned && "fill-current")} />
             </Button>
           </div>
-        </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <Input
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Título da nota..."
-            className="text-lg font-bold border-none bg-transparent shadow-none focus-visible:ring-0 px-0"
-            required
-          />
-          
-          <Textarea
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            placeholder="Escreva algo..."
-            className="min-h-[200px] border-none bg-transparent shadow-none focus-visible:ring-0 px-0 resize-none text-slate-700 dark:text-slate-300"
-          />
+          <div className="min-h-[300px]">
+            <RichTextEditor 
+              content={content} 
+              onChange={setContent} 
+              placeholder="Escreva uma nota..."
+            />
+          </div>
 
-          {/* Toolbar */}
-          <div className="flex items-center justify-between pt-4 border-t border-black/5">
-            <div className="flex items-center gap-2">
+          {tags.length > 0 && (
+            <div className="flex flex-wrap gap-2 pt-2">
+              {tags.map(tag => (
+                <Badge key={tag} variant="secondary" className="gap-1 px-2 py-1 rounded-lg bg-black/5 border-none">
+                  {tag}
+                  <button onClick={() => removeTag(tag)} className="hover:text-destructive">×</button>
+                </Badge>
+              ))}
+            </div>
+          )}
+
+          {/* Toolbar Inferior */}
+          <div className="flex flex-wrap items-center justify-between pt-4 border-t border-black/5">
+            <div className="flex items-center gap-1">
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl">
-                    <Palette className="w-4 h-4 text-slate-500" />
+                  <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl hover:bg-black/5">
+                    <Palette className="w-4 h-4 text-slate-600" />
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-2" align="start">
@@ -133,9 +158,41 @@ export function NoteDialog({ open, onOpenChange, editingNote, onSubmit, onDelete
                 </PopoverContent>
               </Popover>
 
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl hover:bg-black/5">
+                    <Tag className="w-4 h-4 text-slate-600" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-64 p-3" align="start">
+                  <div className="space-y-3">
+                    <p className="text-xs font-bold uppercase text-slate-400">Etiquetas</p>
+                    <div className="flex gap-2">
+                      <Input 
+                        value={newTag} 
+                        onChange={e => setNewTag(e.target.value)}
+                        placeholder="Nova etiqueta..."
+                        className="h-8 text-xs"
+                        onKeyDown={e => e.key === 'Enter' && addTag()}
+                      />
+                      <Button size="sm" className="h-8" onClick={addTag}>Add</Button>
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
+
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className={cn("h-9 w-9 rounded-xl hover:bg-black/5", isArchived && "text-primary")}
+                onClick={() => setIsArchived(!isArchived)}
+                title="Arquivar"
+              >
+                <Archive className="w-4 h-4" />
+              </Button>
+
               {editingNote && onDelete && (
                 <Button
-                  type="button"
                   variant="ghost"
                   size="icon"
                   className="h-9 w-9 rounded-xl text-rose-500 hover:bg-rose-50"
@@ -147,15 +204,15 @@ export function NoteDialog({ open, onOpenChange, editingNote, onSubmit, onDelete
             </div>
 
             <div className="flex gap-2">
-              <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
+              <Button variant="ghost" onClick={() => onOpenChange(false)} className="rounded-xl">
                 Cancelar
               </Button>
-              <Button type="submit" className="rounded-xl px-6">
-                {editingNote ? 'Guardar' : 'Criar Nota'}
+              <Button onClick={() => handleSubmit()} className="rounded-xl px-8 font-bold">
+                Concluído
               </Button>
             </div>
           </div>
-        </form>
+        </div>
       </DialogContent>
     </Dialog>
   );
