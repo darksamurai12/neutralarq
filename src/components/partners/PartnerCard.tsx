@@ -17,11 +17,15 @@ interface PartnerCardProps {
   partner: Partner;
   onEdit: (partner: Partner) => void;
   onDelete: (id: string) => void;
+  onClick: (partner: Partner) => void;
 }
 
-export function PartnerCard({ partner, onEdit, onDelete }: PartnerCardProps) {
+export function PartnerCard({ partner, onEdit, onDelete, onClick }: PartnerCardProps) {
   return (
-    <Card className="group relative overflow-hidden transition-all duration-300 hover:shadow-glass border-none bg-white dark:bg-slate-900 rounded-2xl shadow-sm">
+    <Card 
+      className="group relative overflow-hidden transition-all duration-300 hover:shadow-glass border-none bg-white dark:bg-slate-900 rounded-2xl shadow-sm cursor-pointer"
+      onClick={() => onClick(partner)}
+    >
       <div className={cn(
         "h-2 w-full",
         partner.status === 'Ativo' ? "bg-emerald-400" : "bg-slate-300"
@@ -44,16 +48,19 @@ export function PartnerCard({ partner, onEdit, onDelete }: PartnerCardProps) {
           </div>
           
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
+            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
               <Button variant="ghost" size="icon" className="h-8 w-8 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity">
                 <MoreHorizontal className="w-4 h-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-40">
-              <DropdownMenuItem onClick={() => onEdit(partner)}>
+              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onEdit(partner); }}>
                 <Pencil className="w-4 h-4 mr-2" /> Editar
               </DropdownMenuItem>
-              <DropdownMenuItem className="text-destructive" onClick={() => onDelete(partner.id)}>
+              <DropdownMenuItem 
+                className="text-destructive" 
+                onClick={(e) => { e.stopPropagation(); onDelete(partner.id); }}
+              >
                 <Trash2 className="w-4 h-4 mr-2" /> Eliminar
               </DropdownMenuItem>
             </DropdownMenuContent>

@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PartnerCard } from '@/components/partners/PartnerCard';
 import { PartnerFormDialog } from '@/components/partners/PartnerFormDialog';
+import { PartnerDetailsDialog } from '@/components/partners/PartnerDetailsDialog';
 import { Partner } from '@/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
@@ -17,6 +18,7 @@ export default function Partners() {
   
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingPartner, setEditingPartner] = useState<Partner | null>(null);
+  const [selectedPartner, setSelectedPartner] = useState<Partner | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<string>('all');
 
@@ -34,6 +36,7 @@ export default function Partners() {
 
   const handleEdit = (partner: Partner) => {
     setEditingPartner(partner);
+    setSelectedPartner(null);
     setIsFormOpen(true);
   };
 
@@ -90,6 +93,7 @@ export default function Partners() {
             <SelectItem value="Fornecedor">Fornecedores</SelectItem>
             <SelectItem value="Subempreiteiro">Subempreiteiros</SelectItem>
             <SelectItem value="Consultor">Consultores</SelectItem>
+            <SelectItem value="Outro">Outros</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -101,6 +105,7 @@ export default function Partners() {
             partner={partner} 
             onEdit={handleEdit}
             onDelete={deletePartner}
+            onClick={setSelectedPartner}
           />
         ))}
         
@@ -118,6 +123,14 @@ export default function Partners() {
         onOpenChange={setIsFormOpen}
         editingPartner={editingPartner}
         onSubmit={handleFormSubmit}
+      />
+
+      <PartnerDetailsDialog
+        partner={selectedPartner}
+        open={!!selectedPartner}
+        onOpenChange={(open) => !open && setSelectedPartner(null)}
+        onEdit={handleEdit}
+        onDelete={deletePartner}
       />
     </AppLayout>
   );
