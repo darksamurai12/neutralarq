@@ -3,7 +3,7 @@
 import { Partner } from '@/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Mail, Phone, Briefcase, MoreHorizontal, Pencil, Trash2, MapPin, ShieldCheck } from 'lucide-react';
+import { Mail, Phone, Briefcase, MoreHorizontal, Pencil, Trash2, ShieldCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   DropdownMenu,
