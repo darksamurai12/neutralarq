@@ -5,12 +5,8 @@ import StarterKit from '@tiptap/starter-kit';
 import { Underline } from '@tiptap/extension-underline';
 import { TextAlign } from '@tiptap/extension-text-align';
 import { Highlight } from '@tiptap/extension-highlight';
-import { TextStyle } from '@tiptap/extension-text-style';
-import { Color } from '@tiptap/extension-color';
-import { Table } from '@tiptap/extension-table';
-import { TableRow } from '@tiptap/extension-table-row';
-import { TableHeader } from '@tiptap/extension-table-header';
-import { TableCell } from '@tiptap/extension-table-cell';
+import { Link } from '@tiptap/extension-link';
+import { Image } from '@tiptap/extension-image';
 import { TaskList } from '@tiptap/extension-task-list';
 import { TaskItem } from '@tiptap/extension-task-item';
 import { NoteToolbar } from './NoteToolbar';
@@ -25,28 +21,14 @@ interface RichTextEditorProps {
 export function RichTextEditor({ content, onChange, placeholder }: RichTextEditorProps) {
   const editor = useEditor({
     extensions: [
-      StarterKit.configure({
-        heading: {
-          levels: [1, 2, 3],
-        },
-      }),
+      StarterKit,
       Underline,
-      TextAlign.configure({
-        types: ['heading', 'paragraph'],
-      }),
+      TextAlign.configure({ types: ['heading', 'paragraph'] }),
       Highlight.configure({ multicolor: true }),
-      TextStyle,
-      Color,
-      Table.configure({
-        resizable: true,
-      }),
-      TableRow,
-      TableHeader,
-      TableCell,
+      Link.configure({ openOnClick: false, HTMLAttributes: { class: 'text-primary underline cursor-pointer' } }),
+      Image.configure({ HTMLAttributes: { class: 'rounded-lg max-w-full h-auto my-4' } }),
       TaskList,
-      TaskItem.configure({
-        nested: true,
-      }),
+      TaskItem.configure({ nested: true }),
     ],
     content: content,
     onUpdate: ({ editor }) => {
@@ -54,7 +36,7 @@ export function RichTextEditor({ content, onChange, placeholder }: RichTextEdito
     },
     editorProps: {
       attributes: {
-        class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-2xl focus:outline-none min-h-[500px] max-w-none text-slate-700 dark:text-slate-300 leading-relaxed',
+        class: 'prose prose-sm sm:prose lg:prose-lg focus:outline-none min-h-[300px] max-w-none text-slate-700 dark:text-slate-300',
       },
     },
   });
@@ -66,9 +48,9 @@ export function RichTextEditor({ content, onChange, placeholder }: RichTextEdito
   }, [content, editor]);
 
   return (
-    <div className="flex flex-col w-full rounded-2xl overflow-hidden border border-slate-200 bg-white dark:bg-slate-900 shadow-sm">
+    <div className="flex flex-col w-full rounded-xl overflow-hidden border border-black/5 bg-white/50 dark:bg-slate-900/50">
       <NoteToolbar editor={editor} />
-      <div className="p-6 md:p-10 overflow-y-auto custom-scrollbar">
+      <div className="p-4 min-h-[300px] cursor-text" onClick={() => editor?.chain().focus().run()}>
         <EditorContent editor={editor} />
       </div>
     </div>

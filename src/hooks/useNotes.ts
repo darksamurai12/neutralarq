@@ -10,6 +10,7 @@ export function useNotes(userId: string | undefined) {
   const [loading, setLoading] = useState(false);
 
   const fetchNotes = useCallback(async () => {
+    if (!userId) return;
     setLoading(true);
     const { data, error } = await supabase
       .from('notes')
@@ -25,33 +26,36 @@ export function useNotes(userId: string | undefined) {
         userId: row.user_id,
         title: row.title,
         content: row.content || '',
-        type: row.note_type as NoteType,
-        color: row.color as NoteColor,
-        isPinned: row.is_pinned,
-        isArchived: row.is_archived,
+        type: (row.note_type || 'text') as NoteType,
+        color: (row.color || 'default') as NoteColor,
+        isPinned: !!row.is_pinned,
+        isArchived: !!row.is_archived,
         tags: row.tags || [],
         createdAt: new Date(row.created_at),
         updatedAt: new Date(row.updated_at)
       })));
     }
     setLoading(false);
-  }, []);
+  }, [userId]);
 
   const addNote = async (note: Omit<Note, 'id' | 'createdAt' | 'updatedAt' | 'userId'>) => {
     if (!userId) return;
+    
     const { data, error } = await supabase.from('notes').insert({
-      title: note.title,
+      title: note.title || 'Sem título',
       content: note.content,
       note_type: note.type,
       color: note.color,
       is_pinned: note.isPinned,
       is_archived: note.isArchived,
       tags: note.tags,
-      user_id: userId
+      user_id: userId,
+      priority: 'medium' // Valor padrão para evitar erro se a coluna for obrigatória
     }).select().single();
 
     if (error) {
-      toast.error('Erro ao criar nota');
+      console.error('Erro Supabase:', error);
+      toast.error('Erro ao criar nota: ' + error.message);
       return;
     }
     
@@ -65,10 +69,12 @@ export function useNotes(userId: string | undefined) {
     if (updates.isArchived !== undefined) dbUpdates.is_archived = updates.isArchived;
     if (updates.type !== undefined) dbUpdates.note_type = updates.type;
     
+    // Limpar campos que não existem na DB ou não devem ser atualizados manualmente
     delete dbUpdates.id;
     delete dbUpdates.createdAt;
     delete dbUpdates.updatedAt;
     delete dbUpdates.userId;
+    delete dbUpdates.type;
 
     const { error } = await supabase.from('notes').update(dbUpdates).eq('id', id);
     if (error) {
