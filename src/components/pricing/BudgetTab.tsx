@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, FileText, TrendingUp, ChevronDown, ChevronUp, Package, Users, Truck, Edit, Copy, Download, Banknote, FolderPlus, Folder, Percent, AlertCircle, Search, MoveHorizontal } from 'lucide-react';
+import { Plus, Trash2, FileText, TrendingUp, ChevronDown, ChevronUp, Package, Users, Truck, Edit, Copy, Download, Banknote, FolderPlus, Folder, Percent, AlertCircle, Search, MoveHorizontal, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -57,6 +57,7 @@ export function BudgetTab({ budgets, products, labor, transport, clients, projec
   const [expandedBudget, setExpandedBudget] = useState<string | null>(null);
   const [budgetName, setBudgetName] = useState('');
   const [budgetNotes, setBudgetNotes] = useState('');
+  const [securityCoefficient, setSecurityCoefficient] = useState('0');
   const [selectedClientId, setSelectedClientId] = useState<string>('');
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
   const [budgetItems, setBudgetItems] = useState<BudgetItem[]>([]);
@@ -65,7 +66,7 @@ export function BudgetTab({ budgets, products, labor, transport, clients, projec
   const [newGroupName, setNewGroupName] = useState('');
   const [showNewGroupInput, setShowNewGroupInput] = useState(false);
 
-  const resetForm = () => { setBudgetName(''); setBudgetNotes(''); setSelectedClientId(''); setSelectedProjectId(''); setBudgetItems([]); setBudgetGroups([]); setSelectedGroup(''); setNewGroupName(''); setShowNewGroupInput(false); setIsDialogOpen(false); setIsEditMode(false); setEditingBudgetId(null); };
+  const resetForm = () => { setBudgetName(''); setBudgetNotes(''); setSecurityCoefficient('0'); setSelectedClientId(''); setSelectedProjectId(''); setBudgetItems([]); setBudgetGroups([]); setSelectedGroup(''); setNewGroupName(''); setShowNewGroupInput(false); setIsDialogOpen(false); setIsEditMode(false); setEditingBudgetId(null); };
 
   const addGroup = () => { const name = newGroupName.trim(); if (!name || budgetGroups.includes(name)) return; setBudgetGroups(prev => [...prev, name]); setSelectedGroup(name); setNewGroupName(''); setShowNewGroupInput(false); toast.success(`Grupo "${name}" criado`); };
 
@@ -103,16 +104,25 @@ export function BudgetTab({ budgets, products, labor, transport, clients, projec
   const handleCreateOrUpdateBudget = () => { 
     if (!budgetName || budgetItems.length === 0) return; 
     const client = clients.find(c => c.id === selectedClientId);
+    const data = { 
+      name: budgetName, 
+      items: budgetItems, 
+      notes: budgetNotes, 
+      securityCoefficient: parseFloat(securityCoefficient) || 0,
+      clientName: client?.name || null, 
+      projectId: selectedProjectId || null 
+    };
+
     if (isEditMode && editingBudgetId) {
-      onUpdateBudget(editingBudgetId, { name: budgetName, items: budgetItems, notes: budgetNotes, clientName: client?.name || null, projectId: selectedProjectId || null });
+      onUpdateBudget(editingBudgetId, data);
     } else {
-      onCreateBudget({ name: budgetName, clientId: selectedClientId || null, clientName: client?.name || null, projectId: selectedProjectId || null, items: budgetItems, status: 'draft', notes: budgetNotes }); 
+      onCreateBudget({ ...data, clientId: selectedClientId || null, status: 'draft' }); 
     }
     resetForm(); 
   };
 
   const handleEditBudget = (budget: Budget) => { 
-    setIsEditMode(true); setEditingBudgetId(budget.id); setBudgetName(budget.name); setBudgetNotes(budget.notes || ''); setBudgetItems([...budget.items]); 
+    setIsEditMode(true); setEditingBudgetId(budget.id); setBudgetName(budget.name); setBudgetNotes(budget.notes || ''); setSecurityCoefficient(budget.securityCoefficient.toString()); setBudgetItems([...budget.items]); 
     const client = clients.find(c => c.name === budget.clientName);
     setSelectedClientId(client?.id || ''); setSelectedProjectId(budget.projectId || ''); 
     const existingGroups = [...new Set(budget.items.map(i => i.groupName).filter(Boolean))] as string[]; 
@@ -120,7 +130,7 @@ export function BudgetTab({ budgets, products, labor, transport, clients, projec
   };
 
   const handleCloneBudget = (budget: Budget) => { 
-    setIsEditMode(false); setEditingBudgetId(null); setBudgetName(`${budget.name} (Cópia)`); setBudgetNotes(budget.notes || ''); setBudgetItems(budget.items.map(item => ({ ...item, id: crypto.randomUUID() }))); 
+    setIsEditMode(false); setEditingBudgetId(null); setBudgetName(`${budget.name} (Cópia)`); setBudgetNotes(budget.notes || ''); setSecurityCoefficient(budget.securityCoefficient.toString()); setBudgetItems(budget.items.map(item => ({ ...item, id: crypto.randomUUID() }))); 
     const client = clients.find(c => c.name === budget.clientName);
     setSelectedClientId(client?.id || ''); setSelectedProjectId(budget.projectId || ''); 
     const existingGroups = [...new Set(budget.items.map(i => i.groupName).filter(Boolean))] as string[]; 
@@ -180,11 +190,19 @@ export function BudgetTab({ budgets, products, labor, transport, clients, projec
       } else { yPos += 4; }
     });
 
-    if (yPos > pageHeight - 40) { doc.addPage(); yPos = 20; }
-    doc.setDrawColor(200, 200, 200); doc.setFillColor(248, 249, 250); doc.roundedRect(14, yPos, 182, 20, 3, 3, 'FD'); 
-    doc.setFontSize(10); doc.setTextColor(108, 117, 125); doc.text('VALOR TOTAL DO ORÇAMENTO:', 20, yPos + 12); 
-    doc.setFontSize(14); doc.setTextColor(37, 99, 235); doc.text(formatCurrency(budget.totalValue), 100, yPos + 12);
-    if (budget.notes) { yPos += 30; if (yPos > pageHeight - 30) { doc.addPage(); yPos = 20; } doc.setFontSize(10); doc.setTextColor(33, 37, 41); doc.text('Notas:', 14, yPos); doc.setFontSize(9); doc.setTextColor(108, 117, 125); const splitNotes = doc.splitTextToSize(budget.notes, 180); doc.text(splitNotes, 14, yPos + 6); }
+    if (yPos > pageHeight - 60) { doc.addPage(); yPos = 20; }
+    const subtotalItems = budget.items.reduce((s, i) => s + i.totalPrice, 0);
+    const securityVal = subtotalItems * (budget.securityCoefficient / 100);
+    
+    doc.setDrawColor(200, 200, 200); doc.setFillColor(248, 249, 250); doc.roundedRect(14, yPos, 182, 35, 3, 3, 'FD'); 
+    doc.setFontSize(9); doc.setTextColor(108, 117, 125); 
+    doc.text('Subtotal Itens:', 20, yPos + 10); doc.text(formatCurrency(subtotalItems), 100, yPos + 10);
+    doc.text(`Coeficiente de Segurança (${budget.securityCoefficient}%):`, 20, yPos + 18); doc.text(formatCurrency(securityVal), 100, yPos + 18);
+    doc.setFontSize(12); doc.setTextColor(37, 99, 235); doc.setFont('helvetica', 'bold');
+    doc.text('VALOR TOTAL DO ORÇAMENTO:', 20, yPos + 28); doc.text(formatCurrency(budget.totalValue), 100, yPos + 28);
+    doc.setFont('helvetica', 'normal');
+
+    if (budget.notes) { yPos += 45; if (yPos > pageHeight - 30) { doc.addPage(); yPos = 20; } doc.setFontSize(10); doc.setTextColor(33, 37, 41); doc.text('Notas:', 14, yPos); doc.setFontSize(9); doc.setTextColor(108, 117, 125); const splitNotes = doc.splitTextToSize(budget.notes, 180); doc.text(splitNotes, 14, yPos + 6); }
 
     // PÁGINA 2: RELATÓRIO INTERNO (CUSTOS + MARGENS)
     doc.addPage();
@@ -219,9 +237,11 @@ export function BudgetTab({ budgets, products, labor, transport, clients, projec
     });
 
     if (yPos > pageHeight - 60) { doc.addPage(); yPos = 20; }
-    doc.setDrawColor(200, 200, 200); doc.setFillColor(254, 242, 242); doc.roundedRect(14, yPos, 182, 40, 3, 3, 'FD'); 
-    doc.setFontSize(10); doc.setTextColor(108, 117, 125); doc.text('RESUMO FINANCEIRO INTERNO:', 20, yPos + 10); doc.text('Custo Total de Execução:', 20, yPos + 20); doc.text('Lucro Bruto Previsto:', 20, yPos + 28); doc.text('Margem Média Global:', 20, yPos + 36);
-    doc.setFontSize(11); doc.setTextColor(33, 37, 41); doc.text(formatCurrency(budget.totalCost), 100, yPos + 20); doc.setTextColor(22, 163, 74); doc.text(formatCurrency(budget.totalProfit), 100, yPos + 28); doc.text(`${budget.marginPercent.toFixed(1)}%`, 100, yPos + 36);
+    doc.setDrawColor(200, 200, 200); doc.setFillColor(254, 242, 242); doc.roundedRect(14, yPos, 182, 45, 3, 3, 'FD'); 
+    doc.setFontSize(10); doc.setTextColor(108, 117, 125); doc.text('RESUMO FINANCEIRO INTERNO:', 20, yPos + 10); 
+    doc.text('Custo Total de Execução:', 20, yPos + 20); doc.text(formatCurrency(budget.totalCost), 100, yPos + 20);
+    doc.text('Lucro Bruto Previsto:', 20, yPos + 28); doc.setTextColor(22, 163, 74); doc.text(formatCurrency(budget.totalProfit), 100, yPos + 28); doc.setTextColor(108, 117, 125);
+    doc.text('Margem Média Global:', 20, yPos + 36); doc.text(`${budget.marginPercent.toFixed(1)}%`, 100, yPos + 36);
 
     // PÁGINA 3: ORÇAMENTO SEM MARGEM (PREÇO DE CUSTO)
     doc.addPage();
@@ -258,10 +278,13 @@ export function BudgetTab({ budgets, products, labor, transport, clients, projec
     doc.setFontSize(14); doc.setTextColor(37, 99, 235); doc.text(formatCurrency(budget.totalCost), 100, yPos + 12);
 
     doc.save(`orcamento-${budget.name.replace(/\s+/g, '-').toLowerCase()}.pdf`);
-    toast.success('PDF exportado com 3 páginas!');
+    toast.success('PDF exportado com coeficiente de segurança!');
   };
 
-  const currentTotalValue = budgetItems.reduce((sum, item) => sum + item.totalPrice, 0);
+  const subtotalItems = budgetItems.reduce((sum, item) => sum + item.totalPrice, 0);
+  const securityVal = subtotalItems * ((parseFloat(securityCoefficient) || 0) / 100);
+  const currentTotalValue = subtotalItems + securityVal;
+  
   const currentTotalCost = budgetItems.reduce((sum, item) => sum + item.totalCost, 0);
   const currentTotalProfit = currentTotalValue - currentTotalCost;
   const currentMargin = currentTotalCost > 0 ? ((currentTotalProfit / currentTotalCost) * 100) : 0;
@@ -421,7 +444,45 @@ export function BudgetTab({ budgets, products, labor, transport, clients, projec
                   </div>
                 </div>
               </div>
-              {budgetItems.length > 0 && (<><Separator /><div className="space-y-4"><div className="flex items-center gap-2 text-sm font-medium text-primary"><div className="h-6 w-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold">3</div>Itens do Orçamento ({budgetItems.length})</div><div className="pl-8"><Card><CardContent className="p-0 overflow-x-auto">{renderGroupedItems(budgetItems, true)}</CardContent></Card><Card className="mt-4 border-primary/20 bg-primary/5"><CardContent className="p-4"><div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center"><div><p className="text-xs text-muted-foreground">Custo Total</p><p className="text-lg font-bold">{formatCurrency(currentTotalCost)}</p></div><div><p className="text-xs text-muted-foreground">Valor Cliente</p><p className="text-lg font-bold text-blue-600">{formatCurrency(currentTotalValue)}</p></div><div><p className="text-xs text-muted-foreground">Lucro Empresa</p><p className="text-lg font-bold text-emerald-600">{formatCurrency(currentTotalProfit)}</p></div><div><p className="text-xs text-muted-foreground">Margem</p><p className="text-lg font-bold text-violet-600">{currentMargin.toFixed(1)}%</p></div></div></CardContent></Card></div></div></>)}
+              {budgetItems.length > 0 && (
+                <>
+                  <Separator />
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-sm font-medium text-primary">
+                        <div className="h-6 w-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold">3</div>
+                        Itens do Orçamento ({budgetItems.length})
+                      </div>
+                      <div className="flex items-center gap-3 bg-amber-50 p-2 rounded-xl border border-amber-100">
+                        <ShieldCheck className="w-4 h-4 text-amber-600" />
+                        <Label htmlFor="security" className="text-xs font-bold text-amber-700 uppercase">Coeficiente de Segurança (%)</Label>
+                        <Input 
+                          id="security" 
+                          type="number" 
+                          step="0.1" 
+                          value={securityCoefficient} 
+                          onChange={(e) => setSecurityCoefficient(e.target.value)} 
+                          className="h-8 w-20 bg-white text-center font-bold" 
+                        />
+                      </div>
+                    </div>
+                    <div className="pl-8">
+                      <Card><CardContent className="p-0 overflow-x-auto">{renderGroupedItems(budgetItems, true)}</CardContent></Card>
+                      <Card className="mt-4 border-primary/20 bg-primary/5">
+                        <CardContent className="p-4">
+                          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-center">
+                            <div><p className="text-[10px] text-muted-foreground uppercase font-bold">Custo Total</p><p className="text-lg font-bold">{formatCurrency(currentTotalCost)}</p></div>
+                            <div><p className="text-[10px] text-muted-foreground uppercase font-bold">Subtotal Itens</p><p className="text-lg font-bold">{formatCurrency(subtotalItems)}</p></div>
+                            <div className="bg-amber-100/50 rounded-lg py-1"><p className="text-[10px] text-amber-700 uppercase font-bold">Segurança ({securityCoefficient}%)</p><p className="text-lg font-bold text-amber-600">+{formatCurrency(securityVal)}</p></div>
+                            <div><p className="text-[10px] text-muted-foreground uppercase font-bold">Total Final</p><p className="text-lg font-bold text-blue-600">{formatCurrency(currentTotalValue)}</p></div>
+                            <div><p className="text-[10px] text-muted-foreground uppercase font-bold">Lucro Total</p><p className="text-lg font-bold text-emerald-600">{formatCurrency(currentTotalProfit)}</p></div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </div>
+                </>
+              )}
               <div className="flex justify-end gap-3 pt-2 border-t"><Button type="button" variant="outline" onClick={resetForm}>Cancelar</Button><Button onClick={handleCreateOrUpdateBudget} disabled={!budgetName || budgetItems.length === 0} className="gap-2">{isEditMode ? (<><Edit className="w-4 h-4" /> Guardar Alterações</>) : (<><Plus className="w-4 h-4" /> Criar Orçamento</>)}</Button></div>
             </div>
           </DialogContent>
@@ -452,7 +513,39 @@ export function BudgetTab({ budgets, products, labor, transport, clients, projec
               <Collapsible key={budget.id} open={isExpanded} onOpenChange={() => setExpandedBudget(isExpanded ? null : budget.id)}>
                 <Card className="overflow-hidden transition-shadow hover:shadow-md">
                   <CollapsibleTrigger className="w-full"><div className="p-4 flex items-center justify-between hover:bg-muted/30 transition-colors"><div className="flex items-center gap-4"><div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center"><FileText className="w-5 h-5 text-primary" /></div><div className="text-left"><p className="font-semibold">{budget.name}</p><p className="text-sm text-muted-foreground">{client?.name || 'Sem cliente'} • {format(new Date(budget.createdAt), "dd MMM yyyy", { locale: pt })}</p></div></div><div className="flex items-center gap-3"><Badge className={statusConfig.className}>{statusConfig.label}</Badge><div className="text-right hidden sm:block"><p className="font-semibold text-blue-600">{formatCurrency(budget.totalValue)}</p><p className="text-xs text-emerald-600">Lucro: {formatCurrency(budget.totalProfit)}</p></div>{isExpanded ? <ChevronUp className="w-5 h-5 text-muted-foreground" /> : <ChevronDown className="w-5 h-5 text-muted-foreground" />}</div></div></CollapsibleTrigger>
-                  <CollapsibleContent><div className="border-t px-4 pb-4 pt-4">{renderGroupedItems(budget.items)}<Card className="mt-4 border-primary/20 bg-primary/5"><CardContent className="p-4"><div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center"><div><p className="text-xs text-muted-foreground">Custo Total</p><p className="text-lg font-bold">{formatCurrency(budget.totalCost)}</p></div><div><p className="text-xs text-muted-foreground">Valor Cliente</p><p className="text-lg font-bold text-blue-600">{formatCurrency(budget.totalValue)}</p></div><div><p className="text-xs text-muted-foreground">Lucro Empresa</p><p className="text-lg font-bold text-emerald-600">{formatCurrency(budget.totalProfit)}</p></div><div><p className="text-xs text-muted-foreground">Margem</p><p className="text-lg font-bold text-violet-600">{budget.marginPercent.toFixed(1)}%</p></div></div></CardContent></Card><div className="flex justify-between items-center mt-4"><Select value={budget.status} onValueChange={(v: Budget['status']) => onUpdateBudget(budget.id, { status: v })}><SelectTrigger className="w-[150px] bg-white"><SelectValue /></SelectTrigger><SelectContent className="bg-white border shadow-xl"><SelectItem value="draft">Rascunho</SelectItem><SelectItem value="sent">Enviado</SelectItem><SelectItem value="approved">Aprovado</SelectItem><SelectItem value="rejected">Rejeitado</SelectItem></SelectContent></Select><div className="flex items-center gap-2"><Button variant="outline" size="sm" className="gap-1.5 bg-white" onClick={() => handleExportPDF(budget)}><Download className="w-3.5 h-3.5" /> PDF</Button><Button variant="outline" size="sm" className="gap-1.5 bg-white" onClick={() => handleCloneBudget(budget)}><Copy className="w-3.5 h-3.5" /> Clonar</Button><Button variant="outline" size="sm" className="gap-1.5 bg-white" onClick={() => handleEditBudget(budget)}><Edit className="w-3.5 h-3.5" /> Editar</Button><Button variant="destructive" size="sm" className="gap-1.5" onClick={() => onDeleteBudget(budget.id)}><Trash2 className="w-3.5 h-3.5" /> Eliminar</Button></div></div></div></CollapsibleContent>
+                  <CollapsibleContent>
+                    <div className="border-t px-4 pb-4 pt-4">
+                      {renderGroupedItems(budget.items)}
+                      <Card className="mt-4 border-primary/20 bg-primary/5">
+                        <CardContent className="p-4">
+                          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-center">
+                            <div><p className="text-xs text-muted-foreground">Custo Total</p><p className="text-lg font-bold">{formatCurrency(budget.totalCost)}</p></div>
+                            <div><p className="text-xs text-muted-foreground">Subtotal Itens</p><p className="text-lg font-bold">{formatCurrency(budget.items.reduce((s, i) => s + i.totalPrice, 0))}</p></div>
+                            <div><p className="text-xs text-amber-700">Segurança ({budget.securityCoefficient}%)</p><p className="text-lg font-bold text-amber-600">+{formatCurrency(budget.items.reduce((s, i) => s + i.totalPrice, 0) * (budget.securityCoefficient / 100))}</p></div>
+                            <div><p className="text-xs text-muted-foreground">Total Final</p><p className="text-lg font-bold text-blue-600">{formatCurrency(budget.totalValue)}</p></div>
+                            <div><p className="text-xs text-muted-foreground">Lucro Empresa</p><p className="text-lg font-bold text-emerald-600">{formatCurrency(budget.totalProfit)}</p></div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                      <div className="flex justify-between items-center mt-4">
+                        <Select value={budget.status} onValueChange={(v: Budget['status']) => onUpdateBudget(budget.id, { status: v })}>
+                          <SelectTrigger className="w-[150px] bg-white"><SelectValue /></SelectTrigger>
+                          <SelectContent className="bg-white border shadow-xl">
+                            <SelectItem value="draft">Rascunho</SelectItem>
+                            <SelectItem value="sent">Enviado</SelectItem>
+                            <SelectItem value="approved">Aprovado</SelectItem>
+                            <SelectItem value="rejected">Rejeitado</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <div className="flex items-center gap-2">
+                          <Button variant="outline" size="sm" className="gap-1.5 bg-white" onClick={() => handleExportPDF(budget)}><Download className="w-3.5 h-3.5" /> PDF</Button>
+                          <Button variant="outline" size="sm" className="gap-1.5 bg-white" onClick={() => handleCloneBudget(budget)}><Copy className="w-3.5 h-3.5" /> Clonar</Button>
+                          <Button variant="outline" size="sm" className="gap-1.5 bg-white" onClick={() => handleEditBudget(budget)}><Edit className="w-3.5 h-3.5" /> Editar</Button>
+                          <Button variant="destructive" size="sm" className="gap-1.5" onClick={() => onDeleteBudget(budget.id)}><Trash2 className="w-3.5 h-3.5" /> Eliminar</Button>
+                        </div>
+                      </div>
+                    </div>
+                  </CollapsibleContent>
                 </Card>
               </Collapsible>
             );

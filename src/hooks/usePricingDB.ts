@@ -64,6 +64,7 @@ export function usePricingDB() {
         totalCost: Number(budget.total_cost),
         totalProfit: Number(budget.total_profit),
         marginPercent: Number(budget.margin_percent),
+        securityCoefficient: Number((budget as any).security_coefficient || 0),
         createdAt: new Date(budget.created_at),
         notes: budget.notes || '',
         items: (budget.budget_items || []).map((item: any) => ({
@@ -185,13 +186,18 @@ export function usePricingDB() {
 
   const deleteTransport = async (id: string) => {
     const { error } = await supabase.from('pricing_transport').delete().eq('id', id);
-    if (!error) { fetchTransport(); toast({ title: 'Sucesso', description: 'Transporte eliminado' }); }
+    if (!error) { fetchProducts(); toast({ title: 'Sucesso', description: 'Transporte eliminado' }); }
   };
 
   const createBudget = async (budget: Omit<Budget, 'id' | 'createdAt' | 'totalValue' | 'totalCost' | 'totalProfit' | 'marginPercent'>) => {
     if (!user) return null;
-    const totalValue = budget.items.reduce((sum, item) => sum + item.totalPrice, 0);
+    const subtotalValue = budget.items.reduce((sum, item) => sum + item.totalPrice, 0);
     const totalCost = budget.items.reduce((sum, item) => sum + item.totalCost, 0);
+    
+    // Aplicar coeficiente de segurança sobre o total com margem
+    const securityAmount = subtotalValue * (budget.securityCoefficient / 100);
+    const totalValue = subtotalValue + securityAmount;
+    
     const totalProfit = totalValue - totalCost;
     const marginPercent = totalCost > 0 ? (totalProfit / totalCost) * 100 : 0;
     
@@ -206,12 +212,13 @@ export function usePricingDB() {
       total_cost: totalCost,
       total_profit: totalProfit, 
       margin_percent: marginPercent,
+      security_coefficient: budget.securityCoefficient,
       notes: budget.notes || null
     }).select().single();
 
     if (bError || !bData) {
       console.error('Erro ao criar orçamento:', bError);
-      toast({ title: 'Erro', description: 'Não foi possível guardar o orçamento. Verifique a ligação.', variant: 'destructive' });
+      toast({ title: 'Erro', description: 'Não foi possível guardar o orçamento.', variant: 'destructive' });
       return null;
     }
 
@@ -226,7 +233,7 @@ export function usePricingDB() {
       unit_cost: item.unitCost, 
       total_cost: item.totalCost, 
       profit: item.profit, 
-      group_name: item.groupName || null,
+      group_name: item.group_name || null,
       margin_percent: item.marginPercent
     }));
 
@@ -234,7 +241,6 @@ export function usePricingDB() {
     
     if (itemsError) {
       console.error('Erro ao inserir itens do orçamento:', itemsError);
-      toast({ title: 'Aviso', description: 'Orçamento criado, mas houve um erro ao salvar os itens.', variant: 'destructive' });
     } else {
       toast({ title: 'Sucesso', description: 'Orçamento criado com sucesso!' });
     }
@@ -253,18 +259,26 @@ export function usePricingDB() {
     if (updates.clientName !== undefined) dbUpdates.client_name = updates.clientName;
     if (updates.clientId !== undefined) dbUpdates.client_id = updates.clientId;
     if (updates.projectId !== undefined) dbUpdates.project_id = updates.projectId;
+    if (updates.securityCoefficient !== undefined) dbUpdates.security_coefficient = updates.securityCoefficient;
+
+    const currentBudget = budgets.find(b => b.id === id);
+    const items = updates.items || currentBudget?.items || [];
+    const securityCoefficient = updates.securityCoefficient !== undefined ? updates.securityCoefficient : (currentBudget?.securityCoefficient || 0);
+
+    const subtotalValue = items.reduce((sum, item) => sum + item.totalPrice, 0);
+    const totalCost = items.reduce((sum, item) => sum + item.totalCost, 0);
+    
+    const securityAmount = subtotalValue * (securityCoefficient / 100);
+    const totalValue = subtotalValue + securityAmount;
+    
+    const totalProfit = totalValue - totalCost;
+    
+    dbUpdates.total_value = totalValue;
+    dbUpdates.total_cost = totalCost;
+    dbUpdates.total_profit = totalProfit;
+    dbUpdates.margin_percent = totalCost > 0 ? (totalProfit / totalCost) * 100 : 0;
 
     if (updates.items) {
-      const totalValue = updates.items.reduce((sum, item) => sum + item.totalPrice, 0);
-      const totalCost = updates.items.reduce((sum, item) => sum + item.totalCost, 0);
-      const totalProfit = totalValue - totalCost;
-      
-      dbUpdates.total_value = totalValue;
-      dbUpdates.total_cost = totalCost;
-      dbUpdates.total_profit = totalProfit;
-      dbUpdates.margin_percent = totalCost > 0 ? (totalProfit / totalCost) * 100 : 0;
-
-      // Atualizar itens: remover antigos e inserir novos
       const { error: deleteError } = await supabase.from('budget_items').delete().eq('budget_id', id);
       if (deleteError) console.error('Erro ao limpar itens antigos:', deleteError);
 
@@ -279,7 +293,7 @@ export function usePricingDB() {
         unit_cost: item.unitCost, 
         total_cost: item.totalCost, 
         profit: item.profit, 
-        group_name: item.groupName || null,
+        group_name: item.group_name || null,
         margin_percent: item.marginPercent
       }));
       const { error: insertError } = await supabase.from('budget_items').insert(itemsToInsert);

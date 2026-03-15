@@ -250,6 +250,7 @@ export interface Budget {
   totalCost: number;
   totalProfit: number;
   marginPercent: number;
+  securityCoefficient: number;
   notes?: string;
   createdAt: Date;
 }
@@ -271,7 +272,7 @@ export interface NoteChecklistItem {
   noteId: string;
   description: string;
   isCompleted: boolean;
-  orderIndex: number;
+  order_index: number;
 }
 
 export interface Note {
