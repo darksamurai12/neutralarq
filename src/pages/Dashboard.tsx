@@ -16,13 +16,14 @@ import {
   ArrowUpRight,
   Target,
   Briefcase,
-  DollarSign
+  DollarSign,
+  Handshake
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/currency';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function Dashboard() {
-  const { getDashboardMetrics } = useApp();
+  const { getDashboardMetrics, partners } = useApp();
   const metrics = getDashboardMetrics();
 
   return (
@@ -36,7 +37,7 @@ export default function Dashboard() {
       />
 
       {/* Stats Grid - Pastel Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-4 mb-8">
         <DashboardStatCard
           title="Clientes Activos"
           value={metrics.activeClients}
@@ -90,6 +91,15 @@ export default function Dashboard() {
           icon={Target}
           pastelClass="bg-pastel-rose"
           iconColor="bg-rose-100 text-rose-600"
+        />
+        <DashboardStatCard
+          title="Parceiros"
+          value={partners.length}
+          subtitle="Contactos"
+          subtitleIcon={Handshake}
+          icon={Handshake}
+          pastelClass="bg-pastel-slate"
+          iconColor="bg-slate-200 text-slate-600"
         />
       </div>
 

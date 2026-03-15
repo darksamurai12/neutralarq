@@ -1,10 +1,9 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
-import { usePartners } from '@/hooks/usePartners';
-import { useAuth } from '@/hooks/useAuth';
+import { useApp } from '@/contexts/AppContext';
 import { Handshake, Plus, Search, Filter, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,17 +13,12 @@ import { Partner } from '@/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export default function Partners() {
-  const { user } = useAuth();
-  const { partners, loading, fetchPartners, addPartner, updatePartner, deletePartner } = usePartners(user?.id);
+  const { partners, loading, addPartner, updatePartner, deletePartner } = useApp();
   
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingPartner, setEditingPartner] = useState<Partner | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<string>('all');
-
-  useEffect(() => {
-    if (user) fetchPartners();
-  }, [user, fetchPartners]);
 
   const filteredPartners = partners.filter(p => {
     const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
